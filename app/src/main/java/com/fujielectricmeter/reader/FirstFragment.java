@@ -1,0 +1,105 @@
+package com.fujielectricmeter.blemeter;
+
+import android.app.Activity;
+import android.content.Context;
+import android.graphics.Color;
+import android.os.Bundle;
+import android.util.Log;
+import android.view.LayoutInflater;
+import android.view.View;
+import android.view.ViewGroup;
+
+import android.widget.AdapterView;
+
+import androidx.annotation.NonNull;
+import androidx.navigation.fragment.NavHostFragment;
+
+import com.fujielectricmeter.blemeter.databinding.FragmentFirstBinding;
+
+import java.util.ArrayList;
+
+public class FirstFragment extends ItemFragment {
+
+    private FragmentFirstBinding binding;
+
+    @Override
+    public void onAttach(Context context) {
+        super.onAttach(context);
+        Log.i(TAG, "onAttach.");
+        Activity a = getActivity();
+        if (a instanceof FirstFragment.messageManager == false) {
+            throw new ClassCastException("Activity have to implement FirstFragment.messageManager");
+        }
+        mCallback = (FirstFragment.messageManager) a;
+        MainActivity.mfirstName = null;
+        MainActivity.mfirstKey = null;
+    }
+
+    @Override
+    public View onCreateView(
+            LayoutInflater inflater, ViewGroup container,
+            Bundle savedInstanceState
+    ) {
+        mCallback.fragment(this);
+        binding = FragmentFirstBinding.inflate(inflater, container, false);
+        return binding.getRoot();
+    }
+
+    public void onViewCreated(@NonNull View view, Bundle savedInstanceState) {
+        super.onViewCreated(view, savedInstanceState);
+
+        Log.i(TAG, "onViewCreated.");
+        MainActivity.mFragmentid = 1;
+        mCallback.fragmentOrder(MainActivity.ODR_UPDATE);
+        mCallback.fragmentOrder(MainActivity.ODR_SCAN_OFF);
+        MainActivity.mfirstName = null;
+        MainActivity.mfirstKey = null;
+
+        ArrayList<SampleListItem> listItems = new ArrayList<>();
+        MainActivity.firstcsv = new CSVParser("building.csv", MainActivity.folderExternal);
+        while (true) {
+            String id = MainActivity.firstcsv.Row(getString(R.string.table1_key));
+            if (id == null) {
+                break;
+            }
+            SampleListItem item = new SampleListItem(
+                    MainActivity.firstcsv.Column(getString(R.string.table1_col2)),
+                    String.format("%s:%s, %s:%s",
+                            getString(R.string.table1_key),
+                            MainActivity.firstcsv.Column(getString(R.string.table1_key)),
+                            getString(R.string.table1_col1),
+                            MainActivity.firstcsv.Column(getString(R.string.table1_col1))),
+                    id,
+                    Color.BLACK);
+            listItems.add(item);
+        }
+        if (listItems.size() > 0) {
+            // レイアウトからリストビューを取得
+            SampleListAdapter adapter = new SampleListAdapter(getActivity(), R.layout.custom_list, listItems);
+            binding.firstlist.setAdapter(adapter);
+            binding.firstlist.setOnItemClickListener(onItemClickListener);
+        }
+    }
+
+    @Override
+    public void invalidate() {
+        super.invalidate();
+        binding.firstlist.invalidate();
+    }
+
+    private AdapterView.OnItemClickListener onItemClickListener = new AdapterView.OnItemClickListener() {
+        @Override
+        public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+            MainActivity.mfirstKey = MainActivity.firstcsv.Cell(position, getString(R.string.table1_key));
+            MainActivity.mfirstName = MainActivity.firstcsv.Cell(position, getString(R.string.table1_col2));
+            MainActivity.trail.operation(MainActivity.mfirstKey + "," + MainActivity.mfirstName);
+            NavHostFragment.findNavController(FirstFragment.this)
+                    .navigate(R.id.action_FirstFragment_to_SecondFragment);
+        }
+    };
+
+    @Override
+    public void onDestroyView() {
+        super.onDestroyView();
+    }
+}
