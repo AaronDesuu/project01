@@ -54,6 +54,7 @@ public class FirstFragment extends ItemFragment {
         mCallback.fragmentOrder(MainActivity.ODR_SCAN_OFF);
         MainActivity.mfirstName = null;
         MainActivity.mfirstKey = null;
+        MainActivity.d.setCurrentLevel(0);//仮
 
         ArrayList<SampleListItem> listItems = new ArrayList<>();
         MainActivity.firstcsv = new CSVParser("building.csv", MainActivity.folderExternal);

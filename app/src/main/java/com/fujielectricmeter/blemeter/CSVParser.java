@@ -6,7 +6,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStreamBleMeter;
+import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.util.ArrayList;
 
@@ -312,7 +312,7 @@ public class CSVParser {
         if (mCsv != null) {
             clear();
             File file = new File(mFolder, mCsv);
-            try (BufferedReader br = new BufferedReader(new InputStreamBleMeter(new FileInputStream(file), "Shift-JIS"))) {
+            try (BufferedReader br = new BufferedReader(new InputStreamReader(new FileInputStream(file), "Shift-JIS"))) {
                 while (true) {
                     String read = br.readLine();
                     if (read != null) {

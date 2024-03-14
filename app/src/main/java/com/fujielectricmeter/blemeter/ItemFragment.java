@@ -26,9 +26,6 @@ public class ItemFragment extends Fragment {
     public Button mCurrentButton;
     public ArrayList<String> mTemp = new ArrayList<String>();
     public messageManager mCallback;
-
-    public void Progress(final String msg, final int now, final int end){
-    };
     public int DataArrived(final ArrayList<String> in, final boolean last) {
         mTemp.addAll(in);
         return 0;

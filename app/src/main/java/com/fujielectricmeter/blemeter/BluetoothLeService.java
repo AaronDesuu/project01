@@ -68,9 +68,9 @@ public class BluetoothLeService extends Service {
     public final static String EXTRA_DATA =
             "com.fujielectricmeter.bluetooth.le.EXTRA_DATA";
 
-    private final UUID uuid_service = UUID.fromString("723d81a2-c55c-445a-aa67-ade88999f0d8");
-    private final UUID uuid_read  = UUID.fromString("723d81a2-c55c-445a-aa67-ade88999f0d9");
-    private final UUID uuid_write = UUID.fromString("723d81a2-c55c-445a-aa67-ade88999f0da");
+    private final UUID uuid_service = UUID.fromString("b973f2e0-b19e-11e2-9e96-0800200c9a66");
+    private final UUID uuid_read  = UUID.fromString("d973f2e1-b19e-11e2-9e96-0800200c9a66");
+    private final UUID uuid_write = UUID.fromString("e973f2e2-b19e-11e2-9e96-0800200c9a66");
     private final UUID uuid_config = UUID.fromString("00002902-0000-1000-8000-00805f9b34fb");
 
     // Implements callback methods for GATT events that the app cares about.  For example,

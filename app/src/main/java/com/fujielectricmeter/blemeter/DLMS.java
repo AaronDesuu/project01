@@ -9,254 +9,261 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.security.InvalidAlgorithmParameterException;
+import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.Locale;
+import java.util.Random;
+
+import javax.crypto.BadPaddingException;
+import javax.crypto.Cipher;
+import javax.crypto.IllegalBlockSizeException;
+import javax.crypto.NoSuchPaddingException;
+import javax.crypto.spec.GCMParameterSpec;
+import javax.crypto.spec.SecretKeySpec;
 
 public class DLMS {
-    public final static int RANK_HHU = 2;
-    public final static int RANK_COM = 3;
-    public final static int RANK_PUB = 4;
-    public String SERIAL_ID;
-    private Long timestamp;
+    public final static int RANK_SUPER = 0;
+    public final static int RANK_ADMIN = 1;
+    public final static int RANK_POWER = 2;
+    public final static int RANK_READER = 3;
+    public final static int RANK_PUBLIC = 4;
+
     private final String TAG = DLMS.class.getSimpleName();
     private int seed0;
     private long seed1, seed2, seed3;
-    private int mCurrentMeter = 0;
+    private int mCurrentAcount = 0;
+    private ArrayList<AccountInfo> AccountInformation;
 
     private Context mContext;
 
     DLMS(Context context) {
         mContext = context;
+        AccountInformation = new ArrayList<AccountInfo>();
+        AccountInfo  level0 = new AccountInfo();
+        level0.set("Super   ,00000000000000000000000000000000,7f,00");
+        AccountInformation.add(level0);
+
+        AccountInfo  level1 = new AccountInfo();
+        level1.set("Admin   ,30303030303030303030303030303030,61,01");
+        AccountInformation.add(level1);
+
+        AccountInfo  level2 = new AccountInfo();
+        level2.set("Power   ,3030303030303030,41,02");
+        AccountInformation.add(level2);
+
+        AccountInfo  level3 = new AccountInfo();
+        level3.set("Reader  ,3030303030303030,41,03");
+        AccountInformation.add(level3);
     }
 
-    public final static int IST_LOGICAL_NAME = 0;    //1:COSEMLogicalDeviceName
-    public final static int IST_SERIAL_NO = (IST_LOGICAL_NAME + 1);    //2:ID番号
-    public final static int IST_EVENT_CODE = (IST_SERIAL_NO + 1);    //3:イベントコード
-    public final static int IST_FAULT_MAX = (IST_EVENT_CODE + 1);    //4:相互接続認証エラー上限回数
-    public final static int IST_PRODUCT_ID = (IST_FAULT_MAX + 1);    //5:計器型式
-    public final static int IST_PHASE_LINE = (IST_PRODUCT_ID + 1);    //6:相線式種別
-    public final static int IST_NUM_AMPR_RATIO = (IST_PHASE_LINE + 1);    //7:変流比(分子)
-    public final static int IST_NUM_VOLT_RATIO = (IST_NUM_AMPR_RATIO + 1);    //8:変圧比(分子)
-    public final static int IST_NUM_TRANS_RATIO = (IST_NUM_VOLT_RATIO + 1);    //9:変成比(分子)
-    public final static int IST_DEN_AMPR_RATIO = (IST_NUM_TRANS_RATIO + 1);    //10:変流比(分母)
-    public final static int IST_DEN_VOLT_RATIO = (IST_DEN_AMPR_RATIO + 1);    //11:変圧比(分母)
-    public final static int IST_DEN_TRANS_RATIO = (IST_DEN_VOLT_RATIO + 1);    //12:変成比(分母)
-    public final static int IST_TIME_NOW = (IST_DEN_TRANS_RATIO + 1);    //13:現在時刻
-    public final static int IST_DATE_NOW = (IST_TIME_NOW + 1);    //14:現在月日
-    public final static int IST_DIGIT = (IST_DATE_NOW + 1);    //15:計器桁数
-    public final static int IST_FUNCTION = (IST_DIGIT + 1);    //16:計器機能
-    public final static int IST_VERSION = (IST_FUNCTION + 1);    //17:仕様書対応改版数
-    public final static int IST_TRANS_RATIO = (IST_VERSION + 1);    //18:乗率
-    public final static int IST_TRANS_RATIO_TYPE = (IST_TRANS_RATIO + 1);    //19:乗率方式
-    public final static int IST_ENABLE_EVENT = (IST_TRANS_RATIO_TYPE + 1);    //20:イベントの記録有効/無効
-    public final static int IST_ENABLE_EXTRA = (IST_ENABLE_EVENT + 1);    //21:イベントコードの拡張設定有効/無効
-    public final static int IST_ENABLE_DETAIL = (IST_ENABLE_EXTRA + 1);    //22:各イベントの詳細記録設定有効/無効
-    public final static int IST_ENABLE_DISPLAY = (IST_ENABLE_DETAIL + 1);    //23:その他表示有効/無効
-    public final static int IST_DISPLAY_VALUE = (IST_ENABLE_DISPLAY + 1);    //24:その他表示値
-    public final static int IST_ENABLE_FLICKER = (IST_DISPLAY_VALUE + 1);    //25:画面フリッカ有効/無効
-    public final static int IST_FLICKER_STATE = (IST_ENABLE_FLICKER + 1);    //26:画面フリッカ状態
-    public final static int IST_BREAKER = (IST_FLICKER_STATE + 1);    //27:開閉区分
-    public final static int IST_LIMIT_STD = (IST_BREAKER + 1);    //28:負荷制限(基本設定)
-    public final static int IST_LIMIT_TMP = (IST_LIMIT_STD + 1);    //29:負荷制限(臨時設定)
-    public final static int IST_LIMIT_CUR = (IST_LIMIT_TMP + 1);    //30:負荷制限(動作設定値)
-    public final static int IST_LIMIT_RSV = (IST_LIMIT_CUR + 1);    //31:負荷制限予約
-    public final static int IST_BREAKER_COUNT = (IST_LIMIT_RSV + 1);    //32:開閉器動作回数
-    public final static int IST_SET_ACT_TIME = (IST_BREAKER_COUNT + 1);    //33:通電開始時刻設定
-    public final static int IST_SET_ACT_SINGLE = (IST_SET_ACT_TIME + 1);    //34:個別通電設定
-    public final static int IST_SET_ACT_MULTI = (IST_SET_ACT_SINGLE + 1);    //35:多段通電設定
-    public final static int IST_APPROVAL_MODE = (IST_SET_ACT_MULTI + 1);    //36:検定モード，画面表示切替
-    public final static int IST_EVENT_NO = (IST_APPROVAL_MODE + 1);    //37:イベントデータレコード番号
-    public final static int IST_ACTIVE30_NO = (IST_EVENT_NO + 1);    //38:有効電力量30分値レコード番号
-    public final static int IST_VOLT30_NO = (IST_ACTIVE30_NO + 1);    //39:平均電圧30分値レコード番号
-    public final static int IST_BREAKER_NO = (IST_VOLT30_NO + 1);    //40:開閉器動作履歴レコード番号
-    public final static int IST_REACTIVE30_NO = (IST_BREAKER_NO + 1);    //41:無効電力量30分値レコード番号
-    public final static int IST_VOLT01_NO = (IST_REACTIVE30_NO + 1);    //42:平均電圧1分値レコード番号
-    public final static int IST_SURVEY_WEEK_NO = (IST_VOLT01_NO + 1);    //43:24時間統計データレコード番号
-    public final static int IST_SURVEY_MONTH_NO = (IST_SURVEY_WEEK_NO + 1);    //44:月間統計データレコード番号
-    public final static int IST_SURVEY_YEAR_NO = (IST_SURVEY_MONTH_NO + 1);    //45:年間統計データレコード番号
-    public final static int IST_FAULT_LOCK = (IST_SURVEY_YEAR_NO + 1);    //46:相互接続認証エラー通信ロック時間
-    public final static int IST_SPEC_VOLT = (IST_FAULT_LOCK + 1);    //47:定格電圧
-    public final static int IST_SPEC_AMPR = (IST_SPEC_VOLT + 1);    //48:定格電流
-    public final static int IST_FWD_ENERGY = (IST_SPEC_AMPR + 1);    //49:有効電力量(順潮流)
-    public final static int IST_FWD_ENERGY_CENT = (IST_FWD_ENERGY + 1);    //50:有効電力量(順潮流)1/100
-    public final static int IST_FWD_SURVEY = (IST_FWD_ENERGY_CENT + 1);    //51:有効電力量(順潮流)ロードサーベイ値
-    public final static int IST_FWD_POWER = (IST_FWD_SURVEY + 1);    //52:平均有効電力(順潮流)
-    public final static int IST_AVE_FWD_SURVEY = (IST_FWD_POWER + 1);    //53:24時間平均有効電力量(順潮流)
-    public final static int IST_AVE_AVE_FWD_SURVEY = (IST_AVE_FWD_SURVEY + 1);    //54:週間平均有効電力量(順潮流)平均値
-    public final static int IST_AVE_MAX_FWD_SURVEY = (IST_AVE_AVE_FWD_SURVEY + 1);    //55:週間最大有効電力量(順潮流)平均値
-    public final static int IST_BAK_ENERGY = (IST_AVE_MAX_FWD_SURVEY + 1);    //56:有効電力量(逆潮流)
-    public final static int IST_BAK_ENERGY_CENT = (IST_BAK_ENERGY + 1);    //57:有効電力量(逆潮流)1/100
-    public final static int IST_BAK_SURVEY = (IST_BAK_ENERGY_CENT + 1);    //58:有効電力量(逆潮流)ロードサーベイ値
-    public final static int IST_BAK_POWER = (IST_BAK_SURVEY + 1);    //59:平均有効電力(逆潮流)
-    public final static int IST_AVE_BAK_SURVEY = (IST_BAK_POWER + 1);    //60:24時間平均有効電力量(逆潮流)
-    public final static int IST_AVE_AVE_BAK_SURVEY = (IST_AVE_BAK_SURVEY + 1);    //61:週間平均有効電力量(逆潮流)平均値
-    public final static int IST_AVE_MAX_BAK_SURVEY = (IST_AVE_AVE_BAK_SURVEY + 1);    //62:週間最大有効電力量(逆潮流)平均値
-    public final static int IST_REACTIVE_L = (IST_AVE_MAX_BAK_SURVEY + 1);    //63:無効電力量(遅れ)
-    public final static int IST_REACTIVE_C = (IST_REACTIVE_L + 1);    //64:無効電力量(進み)
-    public final static int IST_AMPR1 = (IST_REACTIVE_C + 1);    //65:平均電流値(L1)
-    public final static int IST_VOLT1_30 = (IST_AMPR1 + 1);    //66:30分平均電圧値(L1)
-    public final static int IST_VOLT1_01 = (IST_VOLT1_30 + 1);    //67:1分平均電圧値(L1)
-    public final static int IST_VOLT1 = (IST_VOLT1_01 + 1);    //68:平均電圧値(L1)
-    public final static int IST_AMPR3 = (IST_VOLT1 + 1);    //69:平均電流値(L3)
-    public final static int IST_VOLT3_30 = (IST_AMPR3 + 1);    //70:30分平均電圧値(L3)
-    public final static int IST_VOLT3_01 = (IST_VOLT3_30 + 1);    //71:1分平均電圧値(L3)
-    public final static int IST_VOLT3 = (IST_VOLT3_01 + 1);    //72:平均電圧値(L3)
-    public final static int IST_COMBINE_AMPR13 = (IST_VOLT3 + 1);    //73:平均合成電流(L1+L3)
-    public final static int IST_FWD_DISPLAY = (IST_COMBINE_AMPR13 + 1);    //74:順潮流電力量表示時間
-    public final static int IST_BAK_DISPLAY = (IST_FWD_DISPLAY + 1);    //75:逆潮流電力量表示時間
-    public final static int IST_IDLE_TIME = (IST_BAK_DISPLAY + 1);    //76:通信部未要求時間
-    public final static int IST_OFFLINE_TIME = (IST_IDLE_TIME + 1);    //77:通信部供給電源切断時間
-    public final static int IST_MAX_FWD_SURVEY = (IST_OFFLINE_TIME + 1);    //78:24時間最大有効電力量(順潮流)
-    public final static int IST_MAX_FWD_SURVEY_MONTH = (IST_MAX_FWD_SURVEY + 1);    //79:月間最大有効電力量(順潮流)
-    public final static int IST_MAX_FWD_SURVEY_YEAR = (IST_MAX_FWD_SURVEY_MONTH + 1);    //80:年間最大有効電力量(順潮流)
-    public final static int IST_MAX_BAK_SURVEY = (IST_MAX_FWD_SURVEY_YEAR + 1);    //81:24時間最大有効電力量(逆潮流)
-    public final static int IST_MAX_BAK_SURVEY_MONTH = (IST_MAX_BAK_SURVEY + 1);    //82:月間最大有効電力量(逆潮流)
-    public final static int IST_MAX_BAK_SURVEY_YEAR = (IST_MAX_BAK_SURVEY_MONTH + 1);    //83:年間最大有効電力量(逆潮流)
-    public final static int IST_EVENT_RECORD = (IST_MAX_BAK_SURVEY_YEAR + 1);    //84:イベントデータ
-    public final static int IST_BREAKER_RECORD = (IST_EVENT_RECORD + 1);    //85:開閉器動作履歴
-    public final static int IST_ACTIVE30_RECORD = (IST_BREAKER_RECORD + 1);    //86:有効電力量30分値
-    public final static int IST_VOLT30_RECORD = (IST_ACTIVE30_RECORD + 1);    //87:平均電圧30分値
-    public final static int IST_REACTIVE30_RECORD = (IST_VOLT30_RECORD + 1);    //88:無効電力量30分値
-    public final static int IST_VOLT01_RECORD = (IST_REACTIVE30_RECORD + 1);    //89:平均電圧1分値
-    public final static int IST_SURVEY_WEEK_RECORD = (IST_VOLT01_RECORD + 1);    //90:24時間統計データ
-    public final static int IST_SURVEY_MONTH_RECORD = (IST_SURVEY_WEEK_RECORD + 1);    //91:月間統計データ
-    public final static int IST_SURVEY_YEAR_RECORD = (IST_SURVEY_MONTH_RECORD + 1);    //92:年間統計データ
-    public final static int IST_SPECIFICATION = (IST_SURVEY_YEAR_RECORD + 1);    //93:計器諸元
-    public final static int IST_CHECK_SETTING = (IST_SPECIFICATION + 1);    //94:設定値一括確認
-    public final static int IST_CHECK_STATE = (IST_CHECK_SETTING + 1);    //95:計器状態確認
-    public final static int IST_CHECK_DEMAND = (IST_CHECK_STATE + 1);    //96:負荷制限確認
-    public final static int IST_CHECK_ACT_TIME = (IST_CHECK_DEMAND + 1);    //97:通電開始時刻確認
-    public final static int IST_CHECK_ACT_SINGLE = (IST_CHECK_ACT_TIME + 1);    //98:個別通電確認
-    public final static int IST_CONF_MEASURE = (IST_CHECK_ACT_SINGLE + 1);    //99:現在値検針
-    public final static int IST_CHECK_MEASURE = (IST_CONF_MEASURE + 1);    //100:現在値確認
-    public final static int IST_CHECK_BREAKER = (IST_CHECK_MEASURE + 1);    //101:開閉器状態確認
-    public final static int IST_AVE_SURVEY = (IST_CHECK_BREAKER + 1);    //102:週間詳細データ
-    public final static int IST_DATETIME_NOW = (IST_AVE_SURVEY + 1);    //103:現在日時
-    public final static int IST_GLOBAL_RESET = (IST_DATETIME_NOW + 1);    //104:統計データリセット
-    public final static int IST_ASSO_LN0 = (IST_GLOBAL_RESET + 1);    //105:CurrentAsso
-    public final static int IST_ASSO_LN1 = (IST_ASSO_LN0 + 1);    //106:検定用クライアントAsso
-    public final static int IST_ASSO_LN2 = (IST_ASSO_LN1 + 1);    //107:HT用クライアントAsso
-    public final static int IST_ASSO_LN3 = (IST_ASSO_LN2 + 1);    //108:通信用クライアントAsso
-    public final static int IST_SETUP_HDLC = (IST_ASSO_LN3 + 1);    //109:HDLC設定
-    public final static int IST_SETUP_SECURITY = (IST_SETUP_HDLC + 1);    //110:暗号化/認証無しセキュリティ設定
-    public final static int IST_SETUP_AUTH = (IST_SETUP_SECURITY + 1);    //111:暗号化/認証有りセキュリティ設定
+    public final static int IST_FIRM_VER = 1;
+    public final static int IST_FIRM_SIG = 2;
+    public final static int IST_TIME_NOW = 3;
+    public final static int IST_DATE_NOW = 4;
+    public final static int IST_LOGICAL_NAME = 5;
+    public final static int IST_APPROVAL_NO = 6;
+    public final static int IST_SERIAL_NO = 7;
+    public final static int IST_CONTRUCT_NO = 8;
+    public final static int IST_BLUETOOTH_ID = 9;
+    public final static int IST_PROFILE_STATUS = 10;
+    public final static int IST_EVENT = 11;
+    public final static int IST_LOG_CODE = 12;
+    public final static int IST_FAULT = 13;
+    public final static int IST_ALARM_REG1 = 14;
+    public final static int IST_ALARM_REG2 = 15;
+    public final static int IST_ALARM_FIL1 = 16;
+    public final static int IST_ALARM_FIL2 = 17;
+    public final static int IST_ALARM_DSC1 = 18;
+    public final static int IST_ALARM_DSC2 = 19;
+    public final static int IST_RAM = 20;
+    public final static int IST_E2P = 21;
+    public final static int IST_ROM = 22;
+    public final static int IST_CAL_ENERGY = 23;
+    public final static int IST_ENERGY = 24;
+    public final static int IST_CAL_VOLTAMP = 25;
+    public final static int IST_VOLTAMP = 26;
+    public final static int IST_CALB_RTC0 = 27;
+    public final static int IST_SETTING0 = 28;
+    public final static int IST_OBJECT_MAP0 = 29;
+    public final static int IST_CLIENT0 = 30;
+    public final static int IST_ACCESS_TBL0 = 31;
+    public final static int IST_DISPLAY0 = 32;
+    public final static int IST_UNIT0 = 33;
+    public final static int IST_RECORD0 = 34;
+    public final static int IST_SETUP_PULS = 35;
+    public final static int IST_DETECT = 36;
+    public final static int IST_TYPE = 37;
+    public final static int IST_MODEL = 38;
+    public final static int IST_BATT_VOLT = 39;
+    public final static int IST_CPUTIME = 40;
+    public final static int IST_MAGNET = 41;
+    public final static int IST_CPUTEMP = 42;
+    public final static int IST_FWD_POWER = 43;
+    public final static int IST_FWD_ENERGY = 44;
+    public final static int IST_FWD_DEMAND = 45;
+    public final static int IST_BAK_POWER = 46;
+    public final static int IST_BAK_ENERGY = 47;
+    public final static int IST_BAK_DEMAND = 48;
+    public final static int IST_REACTIVE_L = 49;
+    public final static int IST_REACTIVE_C = 50;
+    public final static int IST_AMPR0 = 51;
+    public final static int IST_MINIMUM_VOLT0 = 52;
+    public final static int IST_AVERAGE_VOLT0 = 53;
+    public final static int IST_VOLT0 = 54;
+    public final static int IST_AVERAGE_VOLT0_15 = 55;
+    public final static int IST_POWER_FACTOR = 56;
+    public final static int IST_FREQ = 57;
+    public final static int IST_ABS_ENERGY = 58;
+    public final static int IST_NET_ENERGY = 59;
+    public final static int IST_AMPR1 = 60;
+    public final static int IST_AMPR1_30 = 61;
+    public final static int IST_MINIMUM_VOLT1 = 62;
+    public final static int IST_AVERAGE_VOLT1 = 63;
+    public final static int IST_VOLT1 = 64;
+    public final static int IST_AVERAGE_VOLT1_15 = 65;
+    public final static int IST_AMPR2 = 66;
+    public final static int IST_MINIMUM_VOLT2 = 67;
+    public final static int IST_AVERAGE_VOLT2 = 68;
+    public final static int IST_VOLT2 = 69;
+    public final static int IST_AMPR3 = 70;
+    public final static int IST_MINIMUM_VOLT3 = 71;
+    public final static int IST_VOLT3 = 72;
+    public final static int IST_COMB_POWER = 73;
+    public final static int IST_MAX_FWD_DEMAND = 74;
+    public final static int IST_MAX_FWD_DEMAND0 = 75;
+    public final static int IST_MAX_BAK_DEMAND = 76;
+    public final static int IST_MAX_BAK_DEMAND0 = 77;
+    public final static int IST_POWER_QUALITY = 78;
+    public final static int IST_METER_LOG = 79;
+    public final static int IST_BILLING_PARAMS = 80;
+    public final static int IST_LOAD_PROFILE = 81;
+    public final static int IST_REACTIVE_RECORD = 82;
+    public final static int IST_AMPR_RECORD = 83;
+    public final static int IST_SPECIFICATION = 84;
+    public final static int IST_CHECK_MEASURE = 85;
+    public final static int IST_DATETIME_NOW = 86;
+    public final static int IST_DATETIME_RTC = 87;
+    public final static int IST_DEMAND_RESET = 88;
+    public final static int IST_ASSO_LN0 = 89;
+    public final static int IST_ASSO_LN1 = 90;
+    public final static int IST_ASSO_LN2 = 91;
+    public final static int IST_ASSO_LN3 = 92;
+    public final static int IST_IMG_TRANS = 93;
+    public final static int IST_SETUP_OPTI = 94;
+    public final static int IST_SETUP_HDLC0 = 95;
+    public final static int IST_SETUP_HDLC1 = 96;
+    public final static int IST_SECURITY_NONE = 97;
+    public final static int IST_SECURITY_HLS = 98;
+    public final static int IST_SECURITY_LLS = 99;
 
 
-    private final byte[][] g_ist = {
-            {(byte) 1, (byte) 0x00, (byte) 0x00, (byte) 0x2a, (byte) 0x00, (byte) 0x00, (byte) 0xff},
-            {(byte) 1, (byte) 0x00, (byte) 0x00, (byte) 0x60, (byte) 0x01, (byte) 0x00, (byte) 0xff},
-            {(byte) 1, (byte) 0x00, (byte) 0x00, (byte) 0x60, (byte) 0x0b, (byte) 0x00, (byte) 0xff},
-            {(byte) 1, (byte) 0x00, (byte) 0x41, (byte) 0x2b, (byte) 0x00, (byte) 0x00, (byte) 0xff},
-            {(byte) 1, (byte) 0x01, (byte) 0x00, (byte) 0x00, (byte) 0x00, (byte) 0x00, (byte) 0xff},
-            {(byte) 1, (byte) 0x01, (byte) 0x00, (byte) 0x00, (byte) 0x02, (byte) 0x04, (byte) 0xff},
-            {(byte) 1, (byte) 0x01, (byte) 0x00, (byte) 0x00, (byte) 0x04, (byte) 0x02, (byte) 0xff},
-            {(byte) 1, (byte) 0x01, (byte) 0x00, (byte) 0x00, (byte) 0x04, (byte) 0x03, (byte) 0xff},
-            {(byte) 1, (byte) 0x01, (byte) 0x00, (byte) 0x00, (byte) 0x04, (byte) 0x04, (byte) 0xff},
-            {(byte) 1, (byte) 0x01, (byte) 0x00, (byte) 0x00, (byte) 0x04, (byte) 0x05, (byte) 0xff},
-            {(byte) 1, (byte) 0x01, (byte) 0x00, (byte) 0x00, (byte) 0x04, (byte) 0x06, (byte) 0xff},
-            {(byte) 1, (byte) 0x01, (byte) 0x00, (byte) 0x00, (byte) 0x04, (byte) 0x07, (byte) 0xff},
-            {(byte) 1, (byte) 0x01, (byte) 0x00, (byte) 0x00, (byte) 0x09, (byte) 0x01, (byte) 0xff},
-            {(byte) 1, (byte) 0x01, (byte) 0x00, (byte) 0x00, (byte) 0x09, (byte) 0x02, (byte) 0xff},
-            {(byte) 1, (byte) 0x01, (byte) 0x41, (byte) 0x00, (byte) 0x00, (byte) 0x00, (byte) 0xff},
-            {(byte) 1, (byte) 0x01, (byte) 0x41, (byte) 0x00, (byte) 0x00, (byte) 0x01, (byte) 0xff},
-            {(byte) 1, (byte) 0x01, (byte) 0x41, (byte) 0x00, (byte) 0x00, (byte) 0x02, (byte) 0xff},
-            {(byte) 1, (byte) 0x01, (byte) 0x41, (byte) 0x00, (byte) 0x10, (byte) 0x00, (byte) 0xff},
-            {(byte) 1, (byte) 0x01, (byte) 0x41, (byte) 0x00, (byte) 0x10, (byte) 0x01, (byte) 0xff},
-            {(byte) 1, (byte) 0x01, (byte) 0x41, (byte) 0x00, (byte) 0x11, (byte) 0x00, (byte) 0xff},
-            {(byte) 1, (byte) 0x01, (byte) 0x41, (byte) 0x00, (byte) 0x11, (byte) 0x01, (byte) 0xff},
-            {(byte) 1, (byte) 0x01, (byte) 0x41, (byte) 0x00, (byte) 0x11, (byte) 0x02, (byte) 0xff},
-            {(byte) 1, (byte) 0x01, (byte) 0x41, (byte) 0x00, (byte) 0x21, (byte) 0x00, (byte) 0xff},
-            {(byte) 1, (byte) 0x01, (byte) 0x41, (byte) 0x00, (byte) 0x21, (byte) 0x01, (byte) 0xff},
-            {(byte) 1, (byte) 0x01, (byte) 0x41, (byte) 0x00, (byte) 0x22, (byte) 0x00, (byte) 0xff},
-            {(byte) 1, (byte) 0x01, (byte) 0x41, (byte) 0x00, (byte) 0x22, (byte) 0x01, (byte) 0xff},
-            {(byte) 1, (byte) 0x01, (byte) 0x41, (byte) 0x00, (byte) 0x80, (byte) 0x00, (byte) 0xff},
-            {(byte) 1, (byte) 0x01, (byte) 0x41, (byte) 0x00, (byte) 0x81, (byte) 0x00, (byte) 0xff},
-            {(byte) 1, (byte) 0x01, (byte) 0x41, (byte) 0x00, (byte) 0x81, (byte) 0x01, (byte) 0xff},
-            {(byte) 1, (byte) 0x01, (byte) 0x41, (byte) 0x00, (byte) 0x81, (byte) 0x02, (byte) 0xff},
-            {(byte) 1, (byte) 0x01, (byte) 0x41, (byte) 0x00, (byte) 0x82, (byte) 0x00, (byte) 0xff},
-            {(byte) 1, (byte) 0x01, (byte) 0x41, (byte) 0x00, (byte) 0x83, (byte) 0x00, (byte) 0xff},
-            {(byte) 1, (byte) 0x01, (byte) 0x41, (byte) 0x00, (byte) 0x8e, (byte) 0x00, (byte) 0xff},
-            {(byte) 1, (byte) 0x01, (byte) 0x41, (byte) 0x00, (byte) 0x8e, (byte) 0x01, (byte) 0xff},
-            {(byte) 1, (byte) 0x01, (byte) 0x41, (byte) 0x00, (byte) 0x8e, (byte) 0x02, (byte) 0xff},
-            {(byte) 1, (byte) 0x01, (byte) 0x7f, (byte) 0x00, (byte) 0x00, (byte) 0x00, (byte) 0xff},
-            {(byte) 3, (byte) 0x00, (byte) 0x00, (byte) 0x60, (byte) 0x0f, (byte) 0x00, (byte) 0xff},
-            {(byte) 3, (byte) 0x00, (byte) 0x00, (byte) 0x60, (byte) 0x0f, (byte) 0x01, (byte) 0xff},
-            {(byte) 3, (byte) 0x00, (byte) 0x00, (byte) 0x60, (byte) 0x0f, (byte) 0x02, (byte) 0xff},
-            {(byte) 3, (byte) 0x00, (byte) 0x00, (byte) 0x60, (byte) 0x0f, (byte) 0x03, (byte) 0xff},
-            {(byte) 3, (byte) 0x00, (byte) 0x00, (byte) 0x60, (byte) 0x0f, (byte) 0x04, (byte) 0xff},
-            {(byte) 3, (byte) 0x00, (byte) 0x00, (byte) 0x60, (byte) 0x0f, (byte) 0x06, (byte) 0xff},
-            {(byte) 3, (byte) 0x00, (byte) 0x00, (byte) 0x60, (byte) 0x0f, (byte) 0x0a, (byte) 0xff},
-            {(byte) 3, (byte) 0x00, (byte) 0x00, (byte) 0x60, (byte) 0x0f, (byte) 0x0b, (byte) 0xff},
-            {(byte) 3, (byte) 0x00, (byte) 0x00, (byte) 0x60, (byte) 0x0f, (byte) 0x0c, (byte) 0xff},
-            {(byte) 3, (byte) 0x00, (byte) 0x41, (byte) 0x2b, (byte) 0x00, (byte) 0x01, (byte) 0xff},
-            {(byte) 3, (byte) 0x01, (byte) 0x00, (byte) 0x00, (byte) 0x06, (byte) 0x00, (byte) 0xff},
-            {(byte) 3, (byte) 0x01, (byte) 0x00, (byte) 0x00, (byte) 0x06, (byte) 0x01, (byte) 0xff},
-            {(byte) 3, (byte) 0x01, (byte) 0x00, (byte) 0x01, (byte) 0x08, (byte) 0x00, (byte) 0xff},
-            {(byte) 3, (byte) 0x01, (byte) 0x00, (byte) 0x01, (byte) 0x08, (byte) 0x80, (byte) 0xff},
-            {(byte) 3, (byte) 0x01, (byte) 0x00, (byte) 0x01, (byte) 0x09, (byte) 0x00, (byte) 0xff},
-            {(byte) 3, (byte) 0x01, (byte) 0x00, (byte) 0x01, (byte) 0x19, (byte) 0x00, (byte) 0xff},
-            {(byte) 3, (byte) 0x01, (byte) 0x00, (byte) 0x01, (byte) 0x19, (byte) 0x10, (byte) 0xff},
-            {(byte) 3, (byte) 0x01, (byte) 0x00, (byte) 0x01, (byte) 0x19, (byte) 0x11, (byte) 0xff},
-            {(byte) 3, (byte) 0x01, (byte) 0x00, (byte) 0x01, (byte) 0x1a, (byte) 0x11, (byte) 0xff},
-            {(byte) 3, (byte) 0x01, (byte) 0x00, (byte) 0x02, (byte) 0x08, (byte) 0x00, (byte) 0xff},
-            {(byte) 3, (byte) 0x01, (byte) 0x00, (byte) 0x02, (byte) 0x08, (byte) 0x80, (byte) 0xff},
-            {(byte) 3, (byte) 0x01, (byte) 0x00, (byte) 0x02, (byte) 0x09, (byte) 0x00, (byte) 0xff},
-            {(byte) 3, (byte) 0x01, (byte) 0x00, (byte) 0x02, (byte) 0x19, (byte) 0x00, (byte) 0xff},
-            {(byte) 3, (byte) 0x01, (byte) 0x00, (byte) 0x02, (byte) 0x19, (byte) 0x10, (byte) 0xff},
-            {(byte) 3, (byte) 0x01, (byte) 0x00, (byte) 0x02, (byte) 0x19, (byte) 0x11, (byte) 0xff},
-            {(byte) 3, (byte) 0x01, (byte) 0x00, (byte) 0x02, (byte) 0x1a, (byte) 0x11, (byte) 0xff},
-            {(byte) 3, (byte) 0x01, (byte) 0x00, (byte) 0x03, (byte) 0x08, (byte) 0x00, (byte) 0xff},
-            {(byte) 3, (byte) 0x01, (byte) 0x00, (byte) 0x04, (byte) 0x08, (byte) 0x00, (byte) 0xff},
-            {(byte) 3, (byte) 0x01, (byte) 0x00, (byte) 0x1f, (byte) 0x19, (byte) 0x00, (byte) 0xff},
-            {(byte) 3, (byte) 0x01, (byte) 0x00, (byte) 0x20, (byte) 0x05, (byte) 0x00, (byte) 0xff},
-            {(byte) 3, (byte) 0x01, (byte) 0x00, (byte) 0x20, (byte) 0x05, (byte) 0x01, (byte) 0xff},
-            {(byte) 3, (byte) 0x01, (byte) 0x00, (byte) 0x20, (byte) 0x19, (byte) 0x00, (byte) 0xff},
-            {(byte) 3, (byte) 0x01, (byte) 0x00, (byte) 0x47, (byte) 0x19, (byte) 0x00, (byte) 0xff},
-            {(byte) 3, (byte) 0x01, (byte) 0x00, (byte) 0x48, (byte) 0x05, (byte) 0x00, (byte) 0xff},
-            {(byte) 3, (byte) 0x01, (byte) 0x00, (byte) 0x48, (byte) 0x05, (byte) 0x01, (byte) 0xff},
-            {(byte) 3, (byte) 0x01, (byte) 0x00, (byte) 0x48, (byte) 0x19, (byte) 0x00, (byte) 0xff},
-            {(byte) 3, (byte) 0x01, (byte) 0x00, (byte) 0x5a, (byte) 0x19, (byte) 0x00, (byte) 0xff},
-            {(byte) 3, (byte) 0x01, (byte) 0x41, (byte) 0x00, (byte) 0x20, (byte) 0x00, (byte) 0xff},
-            {(byte) 3, (byte) 0x01, (byte) 0x41, (byte) 0x00, (byte) 0x20, (byte) 0x01, (byte) 0xff},
-            {(byte) 3, (byte) 0x01, (byte) 0x41, (byte) 0x00, (byte) 0x30, (byte) 0x00, (byte) 0xff},
-            {(byte) 3, (byte) 0x01, (byte) 0x41, (byte) 0x00, (byte) 0x30, (byte) 0x01, (byte) 0xff},
-            {(byte) 4, (byte) 0x01, (byte) 0x00, (byte) 0x01, (byte) 0x1a, (byte) 0x10, (byte) 0xff},
-            {(byte) 4, (byte) 0x01, (byte) 0x00, (byte) 0x01, (byte) 0x1a, (byte) 0x12, (byte) 0xff},
-            {(byte) 4, (byte) 0x01, (byte) 0x00, (byte) 0x01, (byte) 0x1a, (byte) 0x13, (byte) 0xff},
-            {(byte) 4, (byte) 0x01, (byte) 0x00, (byte) 0x02, (byte) 0x1a, (byte) 0x10, (byte) 0xff},
-            {(byte) 4, (byte) 0x01, (byte) 0x00, (byte) 0x02, (byte) 0x1a, (byte) 0x12, (byte) 0xff},
-            {(byte) 4, (byte) 0x01, (byte) 0x00, (byte) 0x02, (byte) 0x1a, (byte) 0x13, (byte) 0xff},
-            {(byte) 7, (byte) 0x00, (byte) 0x00, (byte) 0x63, (byte) 0x62, (byte) 0x00, (byte) 0xff},
-            {(byte) 7, (byte) 0x00, (byte) 0x00, (byte) 0x63, (byte) 0x62, (byte) 0x02, (byte) 0xff},
-            {(byte) 7, (byte) 0x01, (byte) 0x00, (byte) 0x63, (byte) 0x01, (byte) 0x00, (byte) 0xff},
-            {(byte) 7, (byte) 0x01, (byte) 0x00, (byte) 0x63, (byte) 0x01, (byte) 0x01, (byte) 0xff},
-            {(byte) 7, (byte) 0x01, (byte) 0x00, (byte) 0x63, (byte) 0x01, (byte) 0x02, (byte) 0xff},
-            {(byte) 7, (byte) 0x01, (byte) 0x00, (byte) 0x63, (byte) 0x01, (byte) 0x11, (byte) 0xff},
-            {(byte) 7, (byte) 0x01, (byte) 0x00, (byte) 0x63, (byte) 0x02, (byte) 0x00, (byte) 0xff},
-            {(byte) 7, (byte) 0x01, (byte) 0x00, (byte) 0x63, (byte) 0x02, (byte) 0x02, (byte) 0xff},
-            {(byte) 7, (byte) 0x01, (byte) 0x00, (byte) 0x63, (byte) 0x02, (byte) 0x03, (byte) 0xff},
-            {(byte) 7, (byte) 0x01, (byte) 0x41, (byte) 0x62, (byte) 0x63, (byte) 0x00, (byte) 0xff},
-            {(byte) 7, (byte) 0x01, (byte) 0x41, (byte) 0x62, (byte) 0x63, (byte) 0x01, (byte) 0xff},
-            {(byte) 7, (byte) 0x01, (byte) 0x41, (byte) 0x62, (byte) 0x63, (byte) 0x02, (byte) 0xff},
-            {(byte) 7, (byte) 0x01, (byte) 0x41, (byte) 0x62, (byte) 0x63, (byte) 0x03, (byte) 0xff},
-            {(byte) 7, (byte) 0x01, (byte) 0x41, (byte) 0x62, (byte) 0x63, (byte) 0x30, (byte) 0xff},
-            {(byte) 7, (byte) 0x01, (byte) 0x41, (byte) 0x62, (byte) 0x63, (byte) 0x31, (byte) 0xff},
-            {(byte) 7, (byte) 0x01, (byte) 0x41, (byte) 0x63, (byte) 0x63, (byte) 0x00, (byte) 0xff},
-            {(byte) 7, (byte) 0x01, (byte) 0x41, (byte) 0x63, (byte) 0x63, (byte) 0x01, (byte) 0xff},
-            {(byte) 7, (byte) 0x01, (byte) 0x41, (byte) 0x63, (byte) 0x63, (byte) 0x02, (byte) 0xff},
-            {(byte) 7, (byte) 0x01, (byte) 0x00, (byte) 0x63, (byte) 0x02, (byte) 0x01, (byte) 0xff},
-            {(byte) 8, (byte) 0x00, (byte) 0x00, (byte) 0x01, (byte) 0x00, (byte) 0x00, (byte) 0xff},
-            {(byte) 9, (byte) 0x00, (byte) 0x00, (byte) 0x0a, (byte) 0x00, (byte) 0x00, (byte) 0xff},
-            {(byte) 15, (byte) 0x00, (byte) 0x00, (byte) 0x28, (byte) 0x00, (byte) 0x00, (byte) 0xff},
-            {(byte) 15, (byte) 0x00, (byte) 0x00, (byte) 0x28, (byte) 0x00, (byte) 0x01, (byte) 0xff},
-            {(byte) 15, (byte) 0x00, (byte) 0x00, (byte) 0x28, (byte) 0x00, (byte) 0x02, (byte) 0xff},
-            {(byte) 15, (byte) 0x00, (byte) 0x00, (byte) 0x28, (byte) 0x00, (byte) 0x03, (byte) 0xff},
-            {(byte) 23, (byte) 0x00, (byte) 0x00, (byte) 0x16, (byte) 0x00, (byte) 0x00, (byte) 0xff},
-            {(byte) 64, (byte) 0x00, (byte) 0x00, (byte) 0x2b, (byte) 0x00, (byte) 0x00, (byte) 0xff},
-            {(byte) 64, (byte) 0x00, (byte) 0x00, (byte) 0x2b, (byte) 0x00, (byte) 0x01, (byte) 0xff},
+    private final static byte[][] g_ist = {
+            {(byte) 0, (byte) 0x00, (byte) 0x00, (byte) 0x00, (byte) 0x00, (byte) 0x00, (byte) 0x00},/* 0: 0 */
+            {(byte) 1, (byte) 0x00, (byte) 0x00, (byte) 0x00, (byte) 0x02, (byte) 0x01, (byte) 0xff},/* 1: Active firmware version */
+            {(byte) 1, (byte) 0x00, (byte) 0x00, (byte) 0x00, (byte) 0x02, (byte) 0x08, (byte) 0xff},/* 2: Active firmware signature */
+            {(byte) 1, (byte) 0x00, (byte) 0x00, (byte) 0x00, (byte) 0x09, (byte) 0x01, (byte) 0xff},/* 3: Time*/
+            {(byte) 1, (byte) 0x00, (byte) 0x00, (byte) 0x00, (byte) 0x09, (byte) 0x02, (byte) 0xff},/* 4: Date*/
+            {(byte) 1, (byte) 0x00, (byte) 0x00, (byte) 0x2a, (byte) 0x00, (byte) 0x00, (byte) 0xff},/* 5: COSEM logical device name */
+            {(byte) 1, (byte) 0x00, (byte) 0x00, (byte) 0x60, (byte) 0x01, (byte) 0x00, (byte) 0xff},/* 6: Approval NO(PEA NO.).*/
+            {(byte) 1, (byte) 0x00, (byte) 0x00, (byte) 0x60, (byte) 0x01, (byte) 0x01, (byte) 0xff},/* 7: SerialID*/
+            {(byte) 1, (byte) 0x00, (byte) 0x00, (byte) 0x60, (byte) 0x01, (byte) 0x02, (byte) 0xff},/* 8: Contract NO.*/
+            {(byte) 1, (byte) 0x00, (byte) 0x00, (byte) 0x60, (byte) 0x01, (byte) 0x09, (byte) 0xff},/* 9: Bluetooth mac address*/
+            {(byte) 1, (byte) 0x00, (byte) 0x00, (byte) 0x60, (byte) 0x0a, (byte) 0x01, (byte) 0xff},/* 10: Profile status */
+            {(byte) 1, (byte) 0x00, (byte) 0x00, (byte) 0x60, (byte) 0x0b, (byte) 0x00, (byte) 0xff},/* 11: Power quality code*/
+            {(byte) 1, (byte) 0x00, (byte) 0x00, (byte) 0x60, (byte) 0x0b, (byte) 0x0a, (byte) 0xff},/* 12: Meter log code*/
+            {(byte) 1, (byte) 0x00, (byte) 0x00, (byte) 0x60, (byte) 0x0b, (byte) 0x0b, (byte) 0xff},/* 13: Fault code*/
+            {(byte) 1, (byte) 0x00, (byte) 0x00, (byte) 0x61, (byte) 0x62, (byte) 0x00, (byte) 0xff},/* 14: Alarm register 1 */
+            {(byte) 1, (byte) 0x00, (byte) 0x00, (byte) 0x61, (byte) 0x62, (byte) 0x01, (byte) 0xff},/* 15: Alarm register 2 */
+            {(byte) 1, (byte) 0x00, (byte) 0x00, (byte) 0x61, (byte) 0x62, (byte) 0x0a, (byte) 0xff},/* 16: Alarm Filter 1 */
+            {(byte) 1, (byte) 0x00, (byte) 0x00, (byte) 0x61, (byte) 0x62, (byte) 0x0b, (byte) 0xff},/* 17: Alarm Filter 2 */
+            {(byte) 1, (byte) 0x00, (byte) 0x00, (byte) 0x61, (byte) 0x62, (byte) 0x14, (byte) 0xff},/* 18: Alarm Descriptor 1 */
+            {(byte) 1, (byte) 0x00, (byte) 0x00, (byte) 0x61, (byte) 0x62, (byte) 0x15, (byte) 0xff},/* 19: Alarm Discriptor 2 */
+            {(byte) 1, (byte) 0x00, (byte) 0x00, (byte) 0x80, (byte) 0x00, (byte) 0x00, (byte) 0xff},/* 20: RAM*/
+            {(byte) 1, (byte) 0x00, (byte) 0x00, (byte) 0x80, (byte) 0x00, (byte) 0x01, (byte) 0xff},/* 21: EEPROM*/
+            {(byte) 1, (byte) 0x00, (byte) 0x00, (byte) 0x80, (byte) 0x00, (byte) 0x02, (byte) 0xff},/* 22: ROM*/
+            {(byte) 1, (byte) 0x00, (byte) 0x00, (byte) 0x81, (byte) 0x00, (byte) 0x00, (byte) 0xff},/* 23: Energy calibcration*/
+            {(byte) 1, (byte) 0x00, (byte) 0x00, (byte) 0x81, (byte) 0x00, (byte) 0x01, (byte) 0xff},/* 24: Read energy(BF)　*/
+            {(byte) 1, (byte) 0x00, (byte) 0x00, (byte) 0x82, (byte) 0x00, (byte) 0x00, (byte) 0xff},/* 25: Voltage and ampare calibration*/
+            {(byte) 1, (byte) 0x00, (byte) 0x00, (byte) 0x82, (byte) 0x00, (byte) 0x01, (byte) 0xff},/* 26: 電圧/電流読み出し(D3)　*/
+            {(byte) 1, (byte) 0x00, (byte) 0x00, (byte) 0x83, (byte) 0x00, (byte) 0x00, (byte) 0xff},/* 27: RTC calibration*/
+            {(byte) 1, (byte) 0x00, (byte) 0x00, (byte) 0x90, (byte) 0x00, (byte) 0x00, (byte) 0xff},/* 28: Factory setting*/
+            {(byte) 1, (byte) 0x00, (byte) 0x00, (byte) 0x91, (byte) 0x00, (byte) 0x00, (byte) 0xff},/* 29: Object map*/
+            {(byte) 1, (byte) 0x00, (byte) 0x00, (byte) 0x91, (byte) 0x00, (byte) 0x01, (byte) 0xff},/* 30: Client setup*/
+            {(byte) 1, (byte) 0x00, (byte) 0x00, (byte) 0x91, (byte) 0x00, (byte) 0x02, (byte) 0xff},/* 31: Access table setting*/
+            {(byte) 1, (byte) 0x00, (byte) 0x00, (byte) 0x92, (byte) 0x00, (byte) 0x00, (byte) 0xff},/* 32: Display setting*/
+            {(byte) 1, (byte) 0x00, (byte) 0x00, (byte) 0x93, (byte) 0x00, (byte) 0x00, (byte) 0xff},/* 33: Unit setting*/
+            {(byte) 1, (byte) 0x00, (byte) 0x00, (byte) 0x94, (byte) 0x00, (byte) 0x00, (byte) 0xff},/* 34: Record setting*/
+            {(byte) 1, (byte) 0x00, (byte) 0x00, (byte) 0xa0, (byte) 0x00, (byte) 0x00, (byte) 0xff},/* 35: Certification setting*/
+            {(byte) 1, (byte) 0x00, (byte) 0x00, (byte) 0xa0, (byte) 0x00, (byte) 0x01, (byte) 0xff},/* 36: Detect event setting*/
+            {(byte) 1, (byte) 0x01, (byte) 0x00, (byte) 0x00, (byte) 0x00, (byte) 0x00, (byte) 0xff},/* 37: Meter type*/
+            {(byte) 1, (byte) 0x01, (byte) 0x00, (byte) 0x00, (byte) 0x00, (byte) 0x01, (byte) 0xff},/* 38: Product model*/
+            {(byte) 3, (byte) 0x00, (byte) 0x00, (byte) 0x60, (byte) 0x06, (byte) 0x03, (byte) 0xff},/* 39: Battery voltage*/
+            {(byte) 3, (byte) 0x00, (byte) 0x00, (byte) 0x60, (byte) 0x08, (byte) 0x00, (byte) 0xff},/* 40: Operating time objects */
+            {(byte) 3, (byte) 0x00, (byte) 0x00, (byte) 0xb0, (byte) 0x00, (byte) 0x00, (byte) 0xff},/* 41: Magnet voltage*/
+            {(byte) 3, (byte) 0x00, (byte) 0x00, (byte) 0xb0, (byte) 0x00, (byte) 0x01, (byte) 0xff},/* 42: Temperature */
+            {(byte) 3, (byte) 0x01, (byte) 0x00, (byte) 0x01, (byte) 0x07, (byte) 0x00, (byte) 0xff},/* 43: Active power+*/
+            {(byte) 3, (byte) 0x01, (byte) 0x00, (byte) 0x01, (byte) 0x08, (byte) 0x00, (byte) 0xff},/* 44: Active power+ Wh*/
+            {(byte) 3, (byte) 0x01, (byte) 0x00, (byte) 0x01, (byte) 0x1b, (byte) 0x00, (byte) 0xff},/* 45: Demand+ W Ave 15min*/
+            {(byte) 3, (byte) 0x01, (byte) 0x00, (byte) 0x02, (byte) 0x07, (byte) 0x00, (byte) 0xff},/* 46: Active power-*/
+            {(byte) 3, (byte) 0x01, (byte) 0x00, (byte) 0x02, (byte) 0x08, (byte) 0x00, (byte) 0xff},/* 47: Active power- Wh*/
+            {(byte) 3, (byte) 0x01, (byte) 0x00, (byte) 0x02, (byte) 0x1b, (byte) 0x00, (byte) 0xff},/* 48: Demand- W Ave 15min*/
+            {(byte) 3, (byte) 0x01, (byte) 0x00, (byte) 0x03, (byte) 0x08, (byte) 0x00, (byte) 0xff},/* 49: Reactive energy (delay)*/
+            {(byte) 3, (byte) 0x01, (byte) 0x00, (byte) 0x04, (byte) 0x08, (byte) 0x00, (byte) 0xff},/* 50: Reactive energy (lead)*/
+            {(byte) 3, (byte) 0x01, (byte) 0x00, (byte) 0x0b, (byte) 0x07, (byte) 0x00, (byte) 0xff},/* 51: Current0 */
+            {(byte) 3, (byte) 0x01, (byte) 0x00, (byte) 0x0c, (byte) 0x03, (byte) 0x00, (byte) 0xff},/* 52: Minimum Voltage0*/
+            {(byte) 3, (byte) 0x01, (byte) 0x00, (byte) 0x0c, (byte) 0x04, (byte) 0x00, (byte) 0xff},/* 53: Voltage0 Ave 1min value */
+            {(byte) 3, (byte) 0x01, (byte) 0x00, (byte) 0x0c, (byte) 0x07, (byte) 0x00, (byte) 0xff},/* 54: Voltage0*/
+            {(byte) 3, (byte) 0x01, (byte) 0x00, (byte) 0x0c, (byte) 0x1b, (byte) 0x00, (byte) 0xff},/* 55: Voltage0 Ave 15min value */
+            {(byte) 3, (byte) 0x01, (byte) 0x00, (byte) 0x0d, (byte) 0x07, (byte) 0x00, (byte) 0xff},/* 56: Power factor0 */
+            {(byte) 3, (byte) 0x01, (byte) 0x00, (byte) 0x0e, (byte) 0x07, (byte) 0x00, (byte) 0xff},/* 57: Supply frequency L1 */
+            {(byte) 3, (byte) 0x01, (byte) 0x00, (byte) 0x0f, (byte) 0x08, (byte) 0x00, (byte) 0xff},/* 58: ABS Wh*/
+            {(byte) 3, (byte) 0x01, (byte) 0x00, (byte) 0x10, (byte) 0x08, (byte) 0x00, (byte) 0xff},/* 59: NET Wh*/
+            {(byte) 3, (byte) 0x01, (byte) 0x00, (byte) 0x1f, (byte) 0x07, (byte) 0x00, (byte) 0xff},/* 60: Current L1*/
+            {(byte) 3, (byte) 0x01, (byte) 0x00, (byte) 0x1f, (byte) 0x1c, (byte) 0x01, (byte) 0xff},/* 61: Current L1 Ave 30min*/
+            {(byte) 3, (byte) 0x01, (byte) 0x00, (byte) 0x20, (byte) 0x03, (byte) 0x00, (byte) 0xff},/* 62: Minimum Voltage of L1 */
+            {(byte) 3, (byte) 0x01, (byte) 0x00, (byte) 0x20, (byte) 0x04, (byte) 0x00, (byte) 0xff},/* 63: Voltage L1 Ave 1min value */
+            {(byte) 3, (byte) 0x01, (byte) 0x00, (byte) 0x20, (byte) 0x07, (byte) 0x00, (byte) 0xff},/* 64: Voltage L1*/
+            {(byte) 3, (byte) 0x01, (byte) 0x00, (byte) 0x20, (byte) 0x1b, (byte) 0x00, (byte) 0xff},/* 65: Voltage L1 Ave 15min value*/
+            {(byte) 3, (byte) 0x01, (byte) 0x00, (byte) 0x33, (byte) 0x07, (byte) 0x00, (byte) 0xff},/* 66: Current L2*/
+            {(byte) 3, (byte) 0x01, (byte) 0x00, (byte) 0x34, (byte) 0x03, (byte) 0x00, (byte) 0xff},/* 67: Minimum Voltage of L2 */
+            {(byte) 3, (byte) 0x01, (byte) 0x00, (byte) 0x34, (byte) 0x04, (byte) 0x00, (byte) 0xff},/* 68: Voltage L2 Ave 1min value */
+            {(byte) 3, (byte) 0x01, (byte) 0x00, (byte) 0x34, (byte) 0x07, (byte) 0x00, (byte) 0xff},/* 69: Voltage L2*/
+            {(byte) 3, (byte) 0x01, (byte) 0x00, (byte) 0x47, (byte) 0x05, (byte) 0x00, (byte) 0xff},/* 70: Current L3*/
+            {(byte) 3, (byte) 0x01, (byte) 0x00, (byte) 0x48, (byte) 0x03, (byte) 0x00, (byte) 0xff},/* 71: Minimum Voltage of L3 */
+            {(byte) 3, (byte) 0x01, (byte) 0x00, (byte) 0x48, (byte) 0x07, (byte) 0x00, (byte) 0xff},/* 72: Voltage L3*/
+            {(byte) 3, (byte) 0x01, (byte) 0x00, (byte) 0xa0, (byte) 0x00, (byte) 0x01, (byte) 0xff},/* 73: ActivePower+-*/
+            {(byte) 4, (byte) 0x01, (byte) 0x00, (byte) 0x01, (byte) 0x06, (byte) 0x00, (byte) 0xff},/* 74: Max.Demand+ W(Last reset) */
+            {(byte) 4, (byte) 0x01, (byte) 0x00, (byte) 0x01, (byte) 0x06, (byte) 0x01, (byte) 0xff},/* 75: Max.Demand+ W*/
+            {(byte) 4, (byte) 0x01, (byte) 0x00, (byte) 0x02, (byte) 0x06, (byte) 0x00, (byte) 0xff},/* 76: Max.Demand- W(Last reset) */
+            {(byte) 4, (byte) 0x01, (byte) 0x00, (byte) 0x02, (byte) 0x06, (byte) 0x01, (byte) 0xff},/* 77: Max.Demand- W*/
+            {(byte) 7, (byte) 0x00, (byte) 0x00, (byte) 0x63, (byte) 0x62, (byte) 0x00, (byte) 0xff},/* 78: Power qualty log*/
+            {(byte) 7, (byte) 0x00, (byte) 0x00, (byte) 0x63, (byte) 0x62, (byte) 0xff, (byte) 0xff},/* 79: Meter log*/
+            {(byte) 7, (byte) 0x01, (byte) 0x00, (byte) 0x62, (byte) 0x01, (byte) 0x00, (byte) 0xff},/* 80: Billing  record*/
+            {(byte) 7, (byte) 0x01, (byte) 0x00, (byte) 0x63, (byte) 0x01, (byte) 0x00, (byte) 0xff},/* 81: Load profile record*/
+            {(byte) 7, (byte) 0x01, (byte) 0x00, (byte) 0xb0, (byte) 0x00, (byte) 0x01, (byte) 0xff},/* 82: Reactive energy 30min data*/
+            {(byte) 7, (byte) 0x01, (byte) 0x00, (byte) 0xb0, (byte) 0x00, (byte) 0x02, (byte) 0xff},/* 83: Ampare record*/
+            {(byte) 7, (byte) 0x01, (byte) 0x00, (byte) 0xb0, (byte) 0x00, (byte) 0x03, (byte) 0xff},/* 84: Specification*/
+            {(byte) 7, (byte) 0x01, (byte) 0x00, (byte) 0xb0, (byte) 0x00, (byte) 0x04, (byte) 0xff},/* 85: Current measure*/
+            {(byte) 8, (byte) 0x00, (byte) 0x00, (byte) 0x01, (byte) 0x00, (byte) 0x00, (byte) 0xff},/* 86: Datetime*/
+            {(byte) 8, (byte) 0x00, (byte) 0x00, (byte) 0x01, (byte) 0x00, (byte) 0x01, (byte) 0xff},/* 87: Datetime(RTC)*/
+            {(byte) 9, (byte) 0x00, (byte) 0x00, (byte) 0x0a, (byte) 0x00, (byte) 0x01, (byte) 0xff},/* 88: Demand reset*/
+            {(byte) 15, (byte) 0x00, (byte) 0x00, (byte) 0x28, (byte) 0x00, (byte) 0x00, (byte) 0xff},/* 89: CurrentAsso */
+            {(byte) 15, (byte) 0x00, (byte) 0x00, (byte) 0x28, (byte) 0x00, (byte) 0x01, (byte) 0xff},/* 90: Association LN(PUB)*/
+            {(byte) 15, (byte) 0x00, (byte) 0x00, (byte) 0x28, (byte) 0x00, (byte) 0x02, (byte) 0xff},/* 91: Association LN(HLS)*/
+            {(byte) 15, (byte) 0x00, (byte) 0x00, (byte) 0x28, (byte) 0x00, (byte) 0x03, (byte) 0xff},/* 92: Association LN(LLS)*/
+            {(byte) 18, (byte) 0x00, (byte) 0x00, (byte) 0x2c, (byte) 0x00, (byte) 0x00, (byte) 0xff},/* 93: Image taransfer */
+            {(byte) 19, (byte) 0x00, (byte) 0x00, (byte) 0x14, (byte) 0x00, (byte) 0x00, (byte) 0xff},/* 94: Optical port setup object */
+            {(byte) 23, (byte) 0x00, (byte) 0x00, (byte) 0x16, (byte) 0x00, (byte) 0x00, (byte) 0xff},/* 95: HDLC Setting(Optical)*/
+            {(byte) 23, (byte) 0x00, (byte) 0x01, (byte) 0x16, (byte) 0x00, (byte) 0x00, (byte) 0xff},/* 96: HDLC Setting(Other)*/
+            {(byte) 64, (byte) 0x00, (byte) 0x00, (byte) 0x2b, (byte) 0x00, (byte) 0x00, (byte) 0xff},/* 97: Setup security(For security NON)*/
+            {(byte) 64, (byte) 0x00, (byte) 0x00, (byte) 0x2b, (byte) 0x00, (byte) 0x01, (byte) 0xff},/* 98: Setup security(For security HLS)*/
+            {(byte) 64, (byte) 0x00, (byte) 0x00, (byte) 0x2b, (byte) 0x00, (byte) 0x02, (byte) 0xff},/* 99: Setup security(For security LLS) */
     };
 
     private final int[] YEAR = {
@@ -355,9 +362,9 @@ public class DLMS {
     };
     private final int[] MONTH = {
             0,
-            31,     //31
-            59,     //28
-            90,     //31
+            31,        //31
+            59,        //28
+            90,        //31
             120,    //30
             151,    //31
             181,    //30
@@ -472,9 +479,6 @@ public class DLMS {
         s %= 60;
         return String.format("%04x%02x%02xff%02x%02x%02xff800000", y + 2010, m + 1, d, h, k, s);
     }
-
-
-
 
 
     private int getUI8(final byte[] in, final int offset) {
@@ -669,43 +673,7 @@ public class DLMS {
             return t;
         }
     }
-    public void addViewData(final String data) {
-        if (!data.isEmpty()) {
-            File file = new File(MainActivity.folderFiles, "viewData");
-            try (FileWriter writer = new FileWriter(file, true)) {
-                writer.write(data);
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        }
-    }
 
-    public void clearViewData() {
-        File file = new File(MainActivity.folderFiles, "viewData");
-        try (FileWriter writer = new FileWriter(file, false)) {
-            writer.write("");
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
-
-    public ArrayList<String> readViewData() {
-        File file = new File(MainActivity.folderFiles, "viewData");
-        ArrayList<String> out = new ArrayList<>();
-        try (BufferedReader br = new BufferedReader(new FileReader(file))) {
-            while (true) {
-                String read = br.readLine();
-                if (read != null) {
-                    out.add(read + "\n");
-                } else {
-                    break;
-                }
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        return out;
-    }
 
     private void writeFile(String data, File file) {
         // try-with-resources
@@ -784,6 +752,283 @@ public class DLMS {
         return interval;
     }
 
+    public int Count(){
+        return AccountInformation.size();
+    }
+
+    public void Account(final String newAccount, final int sel) {
+        int pos;
+        if (sel < 0) {
+            pos = mCurrentAcount;
+        } else {
+            pos = sel;
+        }
+        AccountInformation.get(pos).Account(newAccount);
+    }
+
+    public String Account(final int sel) {
+        int pos;
+        if (sel < 0) {
+            pos = mCurrentAcount;
+        } else {
+            pos = sel;
+        }
+        return AccountInformation.get(pos).Account();
+    }
+
+    public void Password(final String newPassword, final int sel) {
+        int pos;
+        if (sel < 0) {
+            pos = mCurrentAcount;
+        } else {
+            pos = sel;
+        }
+        AccountInformation.get(pos).Key(newPassword);
+    }
+
+    public String Password(final int sel) {
+        int pos;
+        if (sel < 0) {
+            pos = mCurrentAcount;
+        } else {
+            pos = sel;
+        }
+        return AccountInformation.get(pos).Key();
+    }
+
+    public void writeAddress(final String address,final int sel) {
+        int pos;
+        if (sel < 0) {
+            pos = mCurrentAcount;
+        } else {
+            pos = sel;
+        }
+        AccountInformation.get(pos).Logical(address);
+    }
+
+    public String getAddress(final int sel) {
+        int pos;
+        if (sel < 0) {
+            pos = mCurrentAcount;
+        } else {
+            pos = sel;
+        }
+        return AccountInformation.get(pos).Logical();
+    }
+
+    public void writeRank(final String rank,final int sel) {
+        int pos;
+        if (sel < 0) {
+            pos = mCurrentAcount;
+        } else {
+            pos = sel;
+        }
+        AccountInformation.get(pos).Rank(rank);
+    }
+    public String getRank(final int sel) {
+        int pos;
+        if (sel < 0) {
+            pos = mCurrentAcount;
+        } else {
+            pos = sel;
+        }
+        return AccountInformation.get(pos).Rank();
+    }
+    private byte[] octetPassword() {
+        return setStr2Oct(Password(-1));
+    }
+    private byte[] octetAddress() {
+        return setStr2Oct(getAddress(-1));
+    }
+    private byte[] octetRank() {
+        return setStr2Oct(getRank(-1));
+    }
+    public byte Addr() {
+        byte[] r = octetAddress();
+        return r[0];
+    }
+
+    public byte Rank() {
+        byte[] r = octetRank();
+        return r[0];
+    }
+
+    public class AccountInfo {
+        private String[] mProperty = {null, null, null, null};
+
+        public AccountInfo() {
+        }
+
+        public AccountInfo(final String in) {
+            set(in);
+        }
+
+        public AccountInfo(final AccountInfo in) {
+            set(in.get());
+        }
+
+        public boolean set(final String in) {
+            boolean ret = false;
+
+            String data;
+            if (in != null) {
+                if (in.isEmpty()) {
+                    data = new String("Reader  ,3030303030303030,41,03");
+                } else {
+                    data = in;
+                }
+            } else {
+                data = new String("Reader  ,3030303030303030,41,03");
+            }
+            String[] cells = data.split(",");
+            if (cells.length == mProperty.length) {
+                for (int i = 0; i < mProperty.length; i++) {
+                    if (i < cells.length) {
+                        mProperty[i] = cells[i];
+                    }
+                }
+                ret = true;
+            }
+            return ret;
+        }
+
+        public boolean set(final String in1, final String in2, final String in3,final String in4) {
+            mProperty[0] = in1;
+            mProperty[1] = in2;
+            mProperty[2] = in3;
+            mProperty[3] = in4;
+            return true;
+        }
+
+        public final String get() {
+            return String.format("%s,%s,%s,%s",
+                    mProperty[0], mProperty[1], mProperty[2],mProperty[3]);
+        }
+
+        public final String Account() {
+            return mProperty[0];
+        }
+        public void Account(final String in) {
+            mProperty[0] = in;
+        }
+
+        public final String Key() {
+            return mProperty[1];
+        }
+        public void Key(final String in) {
+            mProperty[1] = in;
+        }
+
+        public final String Logical() {
+            return mProperty[2];
+        }
+        public void Logical(final String in) {
+            mProperty[2] = in;
+        }
+
+        public final String Rank() {
+            return mProperty[3];
+        }
+        public void Rank(final String in) {
+            mProperty[3] = in;
+        }
+    }
+    public void updateAllMeterInformation() {
+        if(AccountInformation.size()>1) {
+            File file = new File(mContext.getFilesDir(), "meterinfo");
+            try (FileWriter writer = new FileWriter(file, false)) {
+                for (int i = 0; i < AccountInformation.size(); i++) {
+                    writer.write(AccountInformation.get(i).get() + "\n");
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    public int addMeterInformation(final AccountInfo info) {
+        File file = new File(mContext.getFilesDir(), "meterinfo");
+        try (FileWriter writer = new FileWriter(file, true)) {
+            writer.write(info.get() + "\n");
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        AccountInformation.add(info);
+        return AccountInformation.size() - 1;
+    }
+
+    public void readMeterInformation() {
+        AccountInformation.clear();
+        File file = new File(mContext.getFilesDir(), "meterinfo");
+        try (BufferedReader br = new BufferedReader(new FileReader(file))) {
+            while (true) {
+                String read = br.readLine();
+                if (read != null) {
+                    AccountInfo temp = new AccountInfo(read);
+                    AccountInformation.add(temp);
+                } else {
+                    break;
+                }
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        if (AccountInformation.size() == 0) {
+            mCurrentAcount = addMeterInformation(new AccountInfo());
+        }
+    }
+    public int findAccount(final String acount){
+        int find = 0;
+        for (int i = 1; i < AccountInformation.size(); i++) {
+            if (AccountInformation.get(i).Account().equals(acount)) {
+                find  = i;
+            }
+        }
+        return find;
+    }
+
+    public boolean setCurrentAccount(final String account) {
+
+        boolean find = false;
+
+        mCurrentAcount = findAccount(account);
+        if (mCurrentAcount != 0) {
+            find = true;
+        } else {
+            AccountInfo temp = new AccountInfo(AccountInformation.get(0).get());
+            temp.Account(account);
+            mCurrentAcount = addMeterInformation(temp);
+        }
+        return find;
+    }
+
+    public void setCurrentLevel(final int level) {
+        mCurrentAcount = level;
+    }
+
+    public void changeCurrent(final int pos){
+        mCurrentAcount = pos;
+    }
+    public int getCurrent(){
+        return mCurrentAcount;
+    }
+
+    public String getAccountList(){
+        StringBuffer ret = new StringBuffer();
+        for(int i = 0; i< AccountInformation.size(); i++){
+            if(i>0){
+                ret.append(",");
+            }
+            if(AccountInformation.get(i).Account().isEmpty()) {
+                ret.append("Default");
+            }
+            else{
+                ret.append(AccountInformation.get(i).Account());
+            }
+        }
+        return ret.toString();
+    }
+
     private final int[] fcs16Table = {
             0x0000, 0x1189, 0x2312, 0x329B, 0x4624, 0x57AD, 0x6536, 0x74BF,
             0x8C48, 0x9DC1, 0xAF5A, 0xBED3, 0xCA6C, 0xDBE5, 0xE97E, 0xF8F7,
@@ -829,16 +1074,25 @@ public class DLMS {
         fcs16 = ((fcs16 >> 8) & 0xFF) | (fcs16 << 8);
         return (fcs16 & 0xFFFF);
     }
+
     private final static byte AARQ = (byte) 0x60;
     private final static byte AARE = (byte) 0x61;
     private final static byte RLRQ = (byte) 0x62;
+    private final static byte initQ = (byte) 0x01;
+    private final static byte glo_iniQ = (byte) 33;
+    private final static byte glo_getQ = (byte) 200;
+    private final static byte glo_setQ = (byte) 201;
+    private final static byte glo_actQ = (byte) 203;
+    private final static byte ded_getQ = (byte) 208;
+    private final static byte ded_setQ = (byte) 209;
+    private final static byte ded_actQ = (byte) 211;
     private final static byte[] def_app1 = {(byte) 0xa1, (byte) 0x09, (byte) 0x06, (byte) 0x07, (byte) 0x60, (byte) 0x85, (byte) 0x74, (byte) 0x05, (byte) 0x08, (byte) 0x01, (byte) 0x01};
     private final static byte[] def_app6 = {(byte) 0xa6, (byte) 0x0a, (byte) 0x04, (byte) 0x08, (byte) 0x00, (byte) 0x00, (byte) 0x00, (byte) 0x11, (byte) 0x22, (byte) 0x33, (byte) 0x44, (byte) 0x55};
     private final static byte[] def_app10 = {(byte) 0x8a, (byte) 0x02, (byte) 0x07, (byte) 0x80};
     private final static byte[] def_app11 = {(byte) 0x8b, (byte) 0x07, (byte) 0x60, (byte) 0x85, (byte) 0x74, (byte) 0x05, (byte) 0x08, (byte) 0x02, (byte) 0x01};
     private final static byte def_app12 = (byte) 0xac;//(byte) 0x12, (byte) 0x80, (byte) 0x10};
     private final static byte def_app30 = (byte) 0xbe;//(byte) 0x10, (byte) 0x04, (byte) 0x0e};
-    private final static byte[] def_conf = {(byte) 0x00, (byte) 0x00, (byte) 0x06, (byte) 0x5f, (byte) 0x1f, (byte) 0x04, (byte) 0x00, (byte) 0x00, (byte) 0x10, (byte) 0x1d, (byte) 0x03, (byte) 0x00};/*224*/
+    private final static byte[] def_conf = {(byte) 0x00, (byte) 0x00, (byte) 0x06, (byte) 0x5f, (byte) 0x1f, (byte) 0x04, (byte) 0x00, (byte) 0x00, (byte) 0x10, (byte) 0x1d, (byte) 0x00, (byte) 0xD0};/*224*/
     //    private final static byte [] def_conf = {(byte) 0x00, (byte) 0x00, (byte) 0x06, (byte) 0x5f, (byte) 0x1f, (byte) 0x04, (byte) 0x00, (byte) 0x00, (byte) 0x10, (byte) 0x1d, (byte) 0x03, (byte) 0x00};
     private final static byte[] def_rlrq = {(byte) 0x80, (byte) 0x01, (byte) 0x00};/*224*/
     private byte[] app1;
@@ -848,6 +1102,11 @@ public class DLMS {
     private byte[] app12;
     private byte[] app30;
     private int client;
+    private byte[] challenge0 = new byte[31];
+    private byte[] frameCounter0 = new byte[4];
+    private byte[] challenge1;
+    private byte[] master;
+    private byte[] dedicate;
 
     private final static byte[] GETRQ = {
             (byte) 0xc0, (byte) 0x01, (byte) 0x41,
@@ -962,7 +1221,7 @@ public class DLMS {
     };
     public static String PQCODE[] =
             {
-                    "RSV(0)",
+                    "UNDEF(0)",
                     "RSV(1)",
                     "RSV(2)",
                     "RSV(3)",
@@ -1047,9 +1306,9 @@ public class DLMS {
                     "RSV(82)",
                     "RSV(83)",
                     "RSV(84)",
-                    "NORMAL_V1(85)",
-                    "NORMAL_V2(86)",
-                    "NORMAL_V3(87)",
+                    "Normal voltage1",
+                    "Normal voltage2",
+                    "Normal voltage3",
                     "RSV(88)",
                     "RSV(89)",
                     "RSV(90)",
@@ -1164,63 +1423,62 @@ public class DLMS {
                     "RSV(199)",
                     "RSV(200)",
                     "RSV(201)",
-                    "UNDER_V1(202)",
-                    "UNDER_V2(203)",
-                    "UNDER_V3(204)",
+                    "Bad voltage1",
+                    "Bad voltage1",
+                    "Bad voltage1",
                     "UNDEF(205)",
                     "UNDEF(206)",
                     "UNDEF(207)",
                     "UNDEF(208)",
-                    "OVER_V1(209)",
-                    "OVER_V2(210)",
-                    "OVER_V3(211)",
-                    "DEMAND_RESET(212)",
-                    "HRD_ERR(213)",
-                    "DAT_INVR(214)",
-                    "CLOCK_CHANGE1(215)",
-                    "MISS_VLT2(216)",
-                    "MISS_VLT2R(217)",
-                    "MISS_VLT3(218)",
-                    "MISS_VLT3R(219)",
-                    "BATTLO(220)",
-                    "CLOCK_CHANGE0(221)",
-                    "DAT_INV(222)",
-                    "POWER_DOWN(223)",
-                    "POWER_UP(224)",
-                    "PRG_ERR(225)",
-                    "PRG_ERRR(226)",
-                    "CLK_INV(227)",
-                    "CLK_INVR(228)",
-                    "MISS_VLT1(229)",
-                    "MISS_VLT1R(230)",
+                    "Over voltage1",
+                    "Over voltage2",
+                    "Over voltage3",
+                    "UNDEF(212)",
+                    "UNDEF(213)",
+                    "UNDEF(214)",
+                    "UNDEF(215)",
+                    "UNDEF(216)",
+                    "UNDEF(217)",
+                    "UNDEF(218)",
+                    "UNDEF(219)",
+                    "Invalid clock",
+                    "Changed clock",
+                    "Invalid data",
+                    "Power failure",
+                    "Power resume",
+                    "Program error",
+                    "Program recover",
+                    "Battery low",
+                    "Battery recover",
+                    "Missing volt",
+                    "Detect volt",
                     "UNBALANCE(231)",
-                    "UNBALANCER(232)",
-                    "REVERSAL(233)",
-                    "REVERSALR(234)",
-                    "PN_CHGV(235)",
-                    "PN_CHGVR(236)",
-                    "NEUTRAL(237)",
-                    "NEUTRALR(238)",
-                    "OPTICAL(239)",
-                    "OPTICALR(240)",
-                    "BATT_STS(241)",
-                    "FLASH_START(242)",
-                    "WRONG(243)",
-                    "WRONGR(244)",
-                    "INOUT(245)",
-                    "INOUTR(246)",
-                    "COVER(247)",
-                    "COVERR(248)",
-                    "BATTLOR(249)",
+                    "BALANCED(232)",
+                    "Current reversal",
+                    "Current observe",
+                    "P-N interchange",
+                    "N-P interchange",
+                    "Missing neutral",
+                    "Detect neutral",
+                    "Local communication attempt(239)",
+                    "Local communication exit(240)",
+                    "Battery level changed",
+                    "UNDEF(242)",
+                    "UNDEF(243)",
+                    "UNDEF(244)",
+                    "UNDEF(245)",
+                    "UNDEF(246)",
+                    "UNDEF(247)",
+                    "UNDEF(248)",
+                    "UNDEF(249)",
                     "UNDEF(250)",
                     "UNDEF(251)",
                     "UNDEF(252)",
                     "UNDEF(253)",
-                    "CLEAR_LP(254)",
-                    "CLEAR_PQ(255)",
+                    "Load profile cleared",
+                    "Event records cleared"
             };
-
-    public static String LOGCODE0[] =
+    public static String LOGCODE[] =
             {
                     "Unknown",//0:予約
                     "LOG_FUKUDEN",//1:復電検出
@@ -1291,150 +1549,18 @@ public class DLMS {
                     "ETSN2",//
             };
 
-    public static String LOGCODE[] =
-            {
-                    "LOG_RSV0",
-                    "LOG_FUKUDEN",
-                    "LOG_TEIDEN",
-                    "LOG_LVI",
-                    "LOG_CLK_INV",
-                    "LOG_CLK_INVR",
-                    "LOG_CLK_INVC",
-                    "LOG_KIDO",
-                    "LOG_CPU",
-                    "LOG_RTC",
-                    "LOG_ONM",
-                    "LOG_FLASH",
-                    "LOG_SIG_STS",
-                    "LOG_CLK_CHG0",
-                    "LOG_KEY_CHG",
-                    "LOG_REC_RST",
-                    "LOG_ARM",
-                    "LOG_BATT_STS",
-                    "LOG_OBJMAP",
-                    "LOG_MANUAL",
-                    "LOG_METER",
-                    "LOG_DEFSET",
-                    "LOG_USERSET",
-                    "LOG_RESET",
-                    "LOG_MEMORY",
-                    "LOG_CMD",
-                    "LOG_BATT",
-                    "LOG_BATTR",
-                    "LOG_BATTC",
-                    "LOG_TSN_OPC",
-                    "LOG_TSN_OPCR",
-                    "LOG_TSN_OPCC",
-                    "LOG_MISS_V",
-                    "LOG_MISS_VR",
-                    "LOG_MISS_VC",
-                    "LOG_VLT_H",
-                    "LOG_VLT_HR",
-                    "LOG_VLT_HC",
-                    "LOG_VLT_L",
-                    "LOG_VLT_LR",
-                    "LOG_VLT_LC",
-                    "LOG_MAG",
-                    "LOG_MAGR",
-                    "LOG_MAGC",
-                    "LOG_AMP_A",
-                    "LOG_AMP_AR",
-                    "LOG_AMP_AC",
-                    "LOG_AMP_B",
-                    "LOG_AMP_BR",
-                    "LOG_AMP_BC",
-                    "LOG_VLT_N",
-                    "LOG_VLT_NR",
-                    "LOG_VLT_NC",
-                    "LOG_AMP_D",
-                    "LOG_AMP_DR",
-                    "LOG_AMP_DC",
-                    "LOG_VLT_P",
-                    "LOG_VLT_PR",
-                    "LOG_VLT_PC",
-                    "LOG_INOUT",
-                    "LOG_INOUT_R",
-                    "LOG_INOUT_C",
-                    "LOG_COVER",
-                    "LOG_COVER_R",
-                    "LOG_COVER_C",
-                    "LOG_WRONG",
-                    "LOG_WRONG_R",
-                    "LOG_WRONG_C",
-                    "LOG_CLIENT",
-                    "LOG_ACCESS_TBL",
-                    "ELOG_CPU",
-                    "ELOG_CPUR",
-                    "ELOG_CPUC",
-                    "ELOG_WAT",
-                    "ELOG_WATR",
-                    "ELOG_WATC",
-                    "ELOG_VAR",
-                    "ELOG_VARR",
-                    "ELOG_VARC",
-                    "ELOG_VI",
-                    "ELOG_VIR",
-                    "ELOG_VIC",
-                    "ELOG_EEP",
-                    "ELOG_EEPR",
-                    "ELOG_EEPC",
-                    "ELOG_RTC",
-                    "ELOG_RTCR",
-                    "ELOG_RTCC",
-                    "ELOG_MAG",
-                    "ELOG_MAGR",
-                    "ELOG_MAGC",
-                    "ELOG_TSN",
-                    "ELOG_TSNR",
-                    "ELOG_TSNC",
-                    "ETSN1",
-                    "ETSN2",
-                    "LOG_CLK_CHG1",
-                    "LOG_ALM_OFF",
-                    "LOG_ALM_ACT",
-            };
-
     private int getAlert(ArrayList<String> out, final String in, final String[] alert) {
-        long eval = 1;
+        byte eval = 1;
         int detect = 0;
         long tmp = Long.parseLong(in);
         byte[] hex = new byte[4];
         setUInt32(hex, 0, (int) tmp);
         for (int i = 0; i < 32; i++) {
-            if ((tmp & eval) > 0) {
+            if ((i % 8) == 0) {
+                eval = 1;
+            }
+            if ((hex[3 - (i / 8)] & eval) > 0) {
                 out.add(String.format("  %s", alert[i]));
-                detect++;
-            }
-            eval <<= 1;
-        }
-        return detect;
-    }
-
-    public int getAlert1(ArrayList<String> out, final String in) {
-        long eval = 1;
-        int detect = 0;
-        long tmp = Long.parseLong(in);
-        byte[] hex = new byte[4];
-        setUInt32(hex, 0, (int) tmp);
-        for (int i = 0; i < 32; i++) {
-            if ((tmp & eval) > 0) {
-                out.add(alert1[i]);
-                detect++;
-            }
-            eval <<= 1;
-        }
-        return detect;
-    }
-
-    public int getAlert2(ArrayList<String> out, final String in) {
-        long eval = 1;
-        int detect = 0;
-        long tmp = Long.parseLong(in);
-        byte[] hex = new byte[4];
-        setUInt32(hex, 0, (int) tmp);
-        for (int i = 0; i < 32; i++) {
-            if ((tmp & eval) > 0) {
-                out.add(alert2[i]);
                 detect++;
             }
             eval <<= 1;
@@ -1445,345 +1571,156 @@ public class DLMS {
     private Gson modelingData(ArrayList<String> out, final ArrayList<String> data) {
         Long val;
         Gson gson = new Gson();
-        int idx, mod;
+        int idx;
         float f0, f1;
-
         ArrayList<String> tmp = new ArrayList<String>();
         switch (mObj) {
-            case IST_LOGICAL_NAME://1:COSEMLogicalDeviceName
-                break;
-            case IST_SERIAL_NO://2:ID番号
+            case IST_APPROVAL_NO:
                 out.add(String.format("Serial NO: %s", data.get(0)));
                 break;
-            case IST_EVENT_CODE://3:イベントコード
-                break;
-            case IST_FAULT_MAX://4:相互接続認証エラー上限回数
-                break;
-            case IST_PRODUCT_ID://5:計器型式
-                break;
-            case IST_PHASE_LINE://6:相線式種別
-                break;
-            case IST_NUM_AMPR_RATIO://7:変流比(分子)
-                break;
-            case IST_NUM_VOLT_RATIO://8:変圧比(分子)
-                break;
-            case IST_NUM_TRANS_RATIO://9:変成比(分子)
-                break;
-            case IST_DEN_AMPR_RATIO://10:変流比(分母)
-                break;
-            case IST_DEN_VOLT_RATIO://11:変圧比(分母)
-                break;
-            case IST_DEN_TRANS_RATIO://12:変成比(分母)
-                break;
-            case IST_TIME_NOW://13:現在時刻
-                break;
-            case IST_DATE_NOW://14:現在月日
-                break;
-            case IST_DIGIT://15:計器桁数
-                break;
-            case IST_FUNCTION://16:計器機能
-                break;
-            case IST_VERSION://17:仕様書対応改版数
-                break;
-            case IST_TRANS_RATIO://18:乗率
-                break;
-            case IST_TRANS_RATIO_TYPE://19:乗率方式
-                break;
-            case IST_ENABLE_EVENT://20:イベントの記録有効/無効
-                break;
-            case IST_ENABLE_EXTRA://21:イベントコードの拡張設定有効/無効
-                break;
-            case IST_ENABLE_DETAIL://22:各イベントの詳細記録設定有効/無効
-                break;
-            case IST_ENABLE_DISPLAY://23:その他表示有効/無効
-                break;
-            case IST_DISPLAY_VALUE://24:その他表示値
-                break;
-            case IST_ENABLE_FLICKER://25:画面フリッカ有効/無効
-                break;
-            case IST_FLICKER_STATE://26:画面フリッカ状態
-                break;
-            case IST_BREAKER://27:開閉区分
-                break;
-            case IST_LIMIT_STD://28:負荷制限(基本設定)
-                break;
-            case IST_LIMIT_TMP://29:負荷制限(臨時設定)
-                break;
-            case IST_LIMIT_CUR://30:負荷制限(動作設定値)
-                break;
-            case IST_LIMIT_RSV://31:負荷制限予約
-                break;
-            case IST_BREAKER_COUNT://32:開閉器動作回数
-                break;
-            case IST_SET_ACT_TIME://33:通電開始時刻設定
-                break;
-            case IST_SET_ACT_SINGLE://34:個別通電設定
-                break;
-            case IST_SET_ACT_MULTI://35:多段通電設定
-                break;
-            case IST_APPROVAL_MODE://36:検定モード，画面表示切替
-                break;
-            case IST_EVENT_NO://37:イベントデータレコード番号
-                break;
-            case IST_ACTIVE30_NO://38:有効電力量30分値レコード番号
-                break;
-            case IST_VOLT30_NO://39:平均電圧30分値レコード番号
-                break;
-            case IST_BREAKER_NO://40:開閉器動作履歴レコード番号
-                break;
-            case IST_REACTIVE30_NO://41:無効電力量30分値レコード番号
-                break;
-            case IST_VOLT01_NO://42:平均電圧1分値レコード番号
-                break;
-            case IST_SURVEY_WEEK_NO://43:24時間統計データレコード番号
-                break;
-            case IST_SURVEY_MONTH_NO://44:月間統計データレコード番号
-                break;
-            case IST_SURVEY_YEAR_NO://45:年間統計データレコード番号
-                break;
-            case IST_FAULT_LOCK://46:相互接続認証エラー通信ロック時間
-                break;
-            case IST_SPEC_VOLT://47:定格電圧
-                break;
-            case IST_SPEC_AMPR://48:定格電流
-                break;
-            case IST_FWD_ENERGY://49:有効電力量(順潮流)
-                break;
-            case IST_FWD_ENERGY_CENT://50:有効電力量(順潮流)1/100
-                break;
-            case IST_FWD_SURVEY://51:有効電力量(順潮流)ロードサーベイ値
-                break;
-            case IST_FWD_POWER://52:平均有効電力(順潮流)
-                break;
-            case IST_AVE_FWD_SURVEY://53:24時間平均有効電力量(順潮流)
-                break;
-            case IST_AVE_AVE_FWD_SURVEY://54:週間平均有効電力量(順潮流)平均値
-                break;
-            case IST_AVE_MAX_FWD_SURVEY://55:週間最大有効電力量(順潮流)平均値
-                break;
-            case IST_BAK_ENERGY://56:有効電力量(逆潮流)
-                break;
-            case IST_BAK_ENERGY_CENT://57:有効電力量(逆潮流)1/100
-                break;
-            case IST_BAK_SURVEY://58:有効電力量(逆潮流)ロードサーベイ値
-                break;
-            case IST_BAK_POWER://59:平均有効電力(逆潮流)
-                break;
-            case IST_AVE_BAK_SURVEY://60:24時間平均有効電力量(逆潮流)
-                break;
-            case IST_AVE_AVE_BAK_SURVEY://61:週間平均有効電力量(逆潮流)平均値
-                break;
-            case IST_AVE_MAX_BAK_SURVEY://62:週間最大有効電力量(逆潮流)平均値
-                break;
-            case IST_REACTIVE_L://63:無効電力量(遅れ)
-                break;
-            case IST_REACTIVE_C://64:無効電力量(進み)
-                break;
-            case IST_AMPR1://65:平均電流値(L1)
-                break;
-            case IST_VOLT1_30://66:30分平均電圧値(L1)
-                break;
-            case IST_VOLT1_01://67:1分平均電圧値(L1)
-                break;
-            case IST_VOLT1://68:平均電圧値(L1)
-                break;
-            case IST_AMPR3://69:平均電流値(L3)
-                break;
-            case IST_VOLT3_30://70:30分平均電圧値(L3)
-                break;
-            case IST_VOLT3_01://71:1分平均電圧値(L3)
-                break;
-            case IST_VOLT3://72:平均電圧値(L3)
-                break;
-            case IST_COMBINE_AMPR13://73:平均合成電流(L1+L3)
-                break;
-            case IST_FWD_DISPLAY://74:順潮流電力量表示時間
-                break;
-            case IST_BAK_DISPLAY://75:逆潮流電力量表示時間
-                break;
-            case IST_IDLE_TIME://76:通信部未要求時間
-                break;
-            case IST_OFFLINE_TIME://77:通信部供給電源切断時間
-                break;
-            case IST_MAX_FWD_SURVEY://78:24時間最大有効電力量(順潮流)
-                break;
-            case IST_MAX_FWD_SURVEY_MONTH://79:月間最大有効電力量(順潮流)
-                break;
-            case IST_MAX_FWD_SURVEY_YEAR://80:年間最大有効電力量(順潮流)
-                break;
-            case IST_MAX_BAK_SURVEY://81:24時間最大有効電力量(逆潮流)
-                break;
-            case IST_MAX_BAK_SURVEY_MONTH://82:月間最大有効電力量(逆潮流)
-                break;
-            case IST_MAX_BAK_SURVEY_YEAR://83:年間最大有効電力量(逆潮流)
-                break;
-            case IST_EVENT_RECORD://84:イベントデータ
-                if (data.size() > 3) {
-                    if (data.get(3).length() < 11) {
-                        mod = 1;
-                    } else {
-                        mod = 0;
-                    }
-                } else {
-                    mod = 0;
+            case IST_RAM:
+                out.add(String.format("Setting value is \"%s\"", data.get(0)));
+                break;
+            case IST_SERIAL_NO:
+                out.add(String.format("Serial No: %s", data.get(0)));
+                break;
+            case IST_FIRM_VER:
+                out.add(String.format("Revision No: %s", data.get(0)));
+                out.add(String.format("Date: %s", data.get(1)));
+                out.add(String.format("Time: %s", data.get(2)));
+                out.add(String.format("Code: %s", data.get(3)));
+                out.add(String.format("Year: %s", data.get(4)));
+                out.add(String.format("Account: %s", data.get(5)));
+                break;
+            case IST_ALARM_DSC1:
+                getAlert(out, data.get(0), alert1);
+                if (out.size() == 0) {
+                    out.add("No Alert");
                 }
+                break;
+            case IST_ALARM_DSC2:
+                getAlert(out, data.get(0), alert2);
+                if (out.size() == 0) {
+                    out.add("No Alert");
+                }
+                break;
+            case IST_SETUP_PULS:
+                out.add(String.format("Shift: %s", data.get(0)));
+                out.add(String.format("FixedPlus: %s", data.get(1)));
+                out.add(String.format("Source: %s", data.get(2)));
+                out.add(String.format("Division1: %s", data.get(3)));
+                out.add(String.format("Division2: %s", data.get(4)));
+                out.add(String.format("Division3: %s", data.get(5)));
+                out.add(String.format("Division4: %s", data.get(6)));
+                break;
+
+            case IST_SPECIFICATION:
+                out.add(data.get(0));
+                out.add(String.format("Serial NO.: %s", data.get(4)));
+                out.add(String.format("Battery Lev: %s", data.get(9)));
+                out.add(String.format("Potential  : %s", data.get(10)));
+                out.add(String.format("Last status: %s", getBitsStr(data.get(11))));
+                idx = Integer.parseInt(data.get(12));
+                out.add(String.format("Last event : %s", PQCODE[idx]));
+//              out.add(String.format("Fault: %s", data.get(13)));
+                out.add(String.format("Alert1 Dsc : %s", data.get(14)));
+                tmp.clear();
+                getAlert(tmp, data.get(14), alert1);
+                out.addAll(tmp);
+                out.add(String.format("Alert2 Dsc : %s", data.get(15)));
+                tmp.clear();
+                getAlert(tmp, data.get(15), alert2);
+                out.addAll(tmp);
+                break;
+
+            case IST_CHECK_MEASURE:
+                out.add(data.get(0));
+//              out.add(String.format("Stamp date: %s", data.get(7)));
+//              out.add(String.format("Stamp date: %s", data.get(9)));
+                out.add(String.format("Serial NO.: %s", data.get(1)));
+                out.add(String.format("IMP: %.3f [kWh]", Float(1000.0, data.get(2))));
+                out.add(String.format("EXP: %.3f [kWh]", Float(1000.0, data.get(3))));
+                out.add(String.format("ABS: %.3f [kWh]", Float(1000.0, data.get(4))));
+                out.add(String.format("NET: %.3f [kWh]", Float(1000.0, data.get(5))));
+                out.add(String.format("Max Imp : %.3f [kW], Exp: %.3f [kW]", Float(1000.0, data.get(6)), Float(1000.0, data.get(8))));
+                out.add(String.format("Inst Imp: %.3f [kW], Exp: %.3f [kW]", Float(1000.0, data.get(10)), Float(1000.0, data.get(11))));
+                out.add(String.format("Volt0: %.2f [V], Min: %.2f [V]", Float(100.0, data.get(12)), Float(100.0, data.get(13))));
+                out.add(String.format("Current L1: %.2f [A], L2: %.2f [A]", Float(100.0, data.get(14)), Float(100.0, data.get(15))));
+                out.add(String.format("Power factor: %.2f ", Float(100.0, data.get(16))));
+                out.add(String.format("Block Imp: %.3f [kW], Exp: %.3f [kW]", Float(1000.0, data.get(17)), Float(1000.0, data.get(18))));
+                break;
+
+            case IST_BILLING_PARAMS:
+                ArrayList<BillingData> list = new ArrayList<BillingData>();
+                for (int i = 0; i < data.size(); ) {
+                    out.add(data.get(i + 0));
+                    out.add(String.format("IMP: %.3f [kWh], EXP: %.3f [kWh]", Float(1000.0, data.get(i + 1)), Float(1000.0, data.get(i + 2))));
+                    out.add(String.format("ABS: %.3f [kWh], NET: %.3f [kWh]", Float(1000.0, data.get(i + 3)), Float(1000.0, data.get(i + 4))));
+                    out.add(String.format("Max Imp: %.3f [kW], Exp: %.3f [kW]", Float(1000.0, data.get(i + 5)), Float(1000.0, data.get(i + 6))));
+                    out.add(String.format("Volt0 Min: %.2f [V]", Float(100.0, data.get(i + 7))));
+                    out.add(String.format("Alert1 Dsc: %s", getBitsStr(data.get(i + 8))));
+                    out.add(String.format("Alert2 Dsc: %s", getBitsStr(data.get(i + 9))));
+                    i += 10;
+                }
+                break;
+
+            case IST_LOAD_PROFILE:
+                for (int i = 0; i < data.size(); ) {
+                    out.add(data.get(i++));
+                    out.add(String.format("Status   : %s", getBitsStr(data.get(i++))));
+                    out.add(String.format("Volt0 Ave: %.2f [V]", Float(100.0, data.get(i++))));
+                    out.add(String.format("Block Imp: %.3f [kW], Exp: %.3f [kW]", Float(1000.0, data.get(i++)), Float(1000.0, data.get(i++))));
+                }
+                break;
+            case IST_AMPR_RECORD:
+                for (int i = 0; i < data.size(); ) {
+                    out.add(data.get(i++));
+                    out.add(String.format("Current L1 Ave: %.2f [A]", Float(100.0, data.get(i++))));
+                }
+                break;
+            case IST_POWER_QUALITY:
                 for (int i = 0; i < data.size(); ) {
                     out.add(data.get(i++));
                     idx = Integer.parseInt(data.get(i++));
                     out.add(String.format("Event: %s", PQCODE[idx]));
-                    if (mod == 0) {
-                        out.add(String.format("V1: %.2f [V]", Float(100.0, data.get(i++))));
-                    } else {
-                        out.add(String.format("V1: %.2f [V], V2: %.2f [V], V3: %.2f [V]", Float(100.0, data.get(i++)), Float(100.0, data.get(i++)), Float(100.0, data.get(i++))));
-                    }
+                    out.add(String.format("Volt0: %.2f [V]", Float(100.0, data.get(i++))));
                 }
                 break;
-            case IST_BREAKER_RECORD://85:開閉器動作履歴
-                break;
-            case IST_ACTIVE30_RECORD://86:有効電力量30分値
-                if (data.size() > 5) {
-                    if (data.get(5).length() < 11) {
-                        mod = 1;
-                    } else {
-                        mod = 0;
-                    }
-                } else {
-                    mod = 0;
-                }
+            case IST_METER_LOG:
                 for (int i = 0; i < data.size(); ) {
-                    out.add(data.get(i++));
-                    out.add(String.format("Status   : %s", getBitsStr(data.get(i++))));
-                    if (mod == 0) {
-                        out.add(String.format("V1: %.2f [V]", Float(100.0, data.get(i++))));
-                    } else {
-                        out.add(String.format("V1: %.2f [V], V2: %.2f [V], V3: %.2f [V]", Float(100.0, data.get(i++)), Float(100.0, data.get(i++)), Float(100.0, data.get(i++))));
+                    long sec = Long.parseLong(data.get(i++));
+                    byte[] code = setStr2Oct(data.get(i++));
+                    idx = getUI8(code, 0);
+                    int num = getUI8(code, 1);
+                    ;
+                    if (idx > LOGCODE.length) {
+                        idx = 0;
                     }
-                    out.add(String.format("Imp: %.3f [kW], Exp: %.3f [kW]", Float(1000.0, data.get(i++)), Float(1000.0, data.get(i++))));
+                    long day = sec / 86400;
+                    sec %= 86400;
+                    long hour = sec / 3600;
+                    sec %= 3600;
+                    long min = sec / 60;
+                    sec %= 60;
+                    out.add(String.format("%d Day %02d:%02d:%02d,%s,%d", day, hour, min, sec, LOGCODE[idx], num));
                 }
                 break;
-            case IST_VOLT30_RECORD://87:平均電圧30分値
-                break;
-            case IST_REACTIVE30_RECORD://88:無効電力量30分値
-                break;
-            case IST_VOLT01_RECORD://89:平均電圧1分値
-                break;
-            case IST_SURVEY_WEEK_RECORD://90:24時間統計データ
-                break;
-            case IST_SURVEY_MONTH_RECORD://91:月間統計データ
-                break;
-            case IST_SURVEY_YEAR_RECORD://92:年間統計データ
-                break;
-            case IST_SPECIFICATION://93:計器諸元
-                out.add(data.get(0));
-                out.add(String.format("Serial NO.: %s", data.get(4)));
-                out.add(String.format("Battery Lev: %s", data.get(9)));
-                if (data.size() < 16) {
-                    out.add(String.format("Last status: %s", getBitsStr(data.get(10))));
-                    idx = Integer.parseInt(data.get(11));
-                    out.add(String.format("Last event : %s", PQCODE[idx]));
-                    out.add(String.format("Alert1 Dsc : %s", data.get(13)));
-                    tmp.clear();
-                    getAlert(tmp, data.get(13), alert1);
-                    out.addAll(tmp);
-                    out.add(String.format("Alert2 Dsc : %s", data.get(14)));
-                    tmp.clear();
-                    getAlert(tmp, data.get(14), alert2);
-                    out.addAll(tmp);
-                } else {
-                    out.add(String.format("Potential  : %s", data.get(10)));
-                    out.add(String.format("Last status: %s", getBitsStr(data.get(11))));
-                    idx = Integer.parseInt(data.get(12));
-                    out.add(String.format("Last event : %s", PQCODE[idx]));
-                    out.add(String.format("Alert1 Dsc : %s", data.get(14)));
-                    tmp.clear();
-                    getAlert(tmp, data.get(14), alert1);
-                    out.addAll(tmp);
-                    out.add(String.format("Alert2 Dsc : %s", data.get(15)));
-                    tmp.clear();
-                    getAlert(tmp, data.get(15), alert2);
-                    out.addAll(tmp);
+            case IST_CAL_ENERGY:
+            case IST_CAL_VOLTAMP:
+                for (int i = 0; i < data.size(); i++) {
+                    out.add(String.format("%04X", Long.parseLong(data.get(i))));
                 }
                 break;
-            case IST_CHECK_SETTING://94:設定値一括確認
-                break;
-            case IST_CHECK_STATE://95:計器状態確認
-                break;
-            case IST_CHECK_DEMAND://96:負荷制限確認
-                break;
-            case IST_CHECK_ACT_TIME://97:通電開始時刻確認
-                break;
-            case IST_CHECK_ACT_SINGLE://98:個別通電確認
-                break;
-            case IST_CONF_MEASURE://99:現在値検針
-                break;
-            case IST_CHECK_MEASURE://100:現在値確認
-                if (data.size() < 19) {
-                    out.add(data.get(0));                                                           //0
-                    out.add(String.format("Serial NO.: %s\n", data.get(1)));                         //1
-                    out.add(String.format("IMP: %.3f [kWh]", Float(1000.0, data.get(2))));          //2
-                    out.add(String.format("EXP: %.3f [kWh]", Float(1000.0, data.get(3))));          //3
-                    out.add(String.format("ABS: %.3f [kWh]", Float(1000.0, data.get(4))));          //4
-                    out.add(String.format("NET: %.3f [kWh]", Float(1000.0, data.get(5))));          //5
-                    out.add(String.format("Max Imp : %.3f [kW]", Float(1000.0, data.get(6))));      //6
-                    out.add(String.format("Max Exp : %.3f [kW]", Float(1000.0, data.get(8))));      //7
-                    out.add(String.format("Inst Imp: %.3f [kW]", Float(1000.0, data.get(10))));     //8
-                    out.add(String.format("Inst Exp: %.3f [kW]", Float(1000.0, data.get(11))));     //9
-                    out.add(String.format("V1: %.2f [V]", Float(100.0, data.get(12))));             //10
-                    out.add(String.format("Min V1: %.2f [V]", Float(100.0, data.get(13))));         //11
-                    out.add(String.format("I1: %.2f [A]", Float(100.0, data.get(14))));            //12
-                    out.add(String.format("PF0: %.2f ", Float(100.0, data.get(15))));               //13
-                    out.add(String.format("Imp: %.3f [kW]", Float(1000.0, data.get(16))));          //14
-                    out.add(String.format("Exp: %.3f [kW]", Float(1000.0, data.get(17))));          //15
-                } else {
-                    out.add(data.get(0));
-                    out.add(String.format("Serial NO.: %s", data.get(1)));
-                    out.add(String.format("IMP: %.3f [kWh]", Float(1000.0, data.get(2))));
-                    out.add(String.format("EXP: %.3f [kWh]", Float(1000.0, data.get(3))));
-                    out.add(String.format("ABS: %.3f [kWh]", Float(1000.0, data.get(4))));
-                    out.add(String.format("NET: %.3f [kWh]", Float(1000.0, data.get(5))));
-                    out.add(String.format("Max Imp : %.3f [kW], Exp: %.3f [kW]", Float(1000.0, data.get(6)), Float(1000.0, data.get(8))));
-                    out.add(String.format("Inst Imp: %.3f [kW], Exp: %.3f [kW]", Float(1000.0, data.get(10)), Float(1000.0, data.get(11))));
-                    out.add(String.format("Volt0: %.2f [V], Min: %.2f [V]", Float(100.0, data.get(12)), Float(100.0, data.get(13))));
-                    out.add(String.format("Current L1: %.2f [A], L2: %.2f [A]", Float(100.0, data.get(14)), Float(100.0, data.get(15))));
-                    out.add(String.format("Power factor: %.2f ", Float(100.0, data.get(16))));
-                    out.add(String.format("Block Imp: %.3f [kW], Exp: %.3f [kW]", Float(1000.0, data.get(17)), Float(1000.0, data.get(18))));
-                }
-                break;
-            case IST_CHECK_BREAKER://101:開閉器状態確認
-                break;
-            case IST_AVE_SURVEY://102:週間詳細データ
-                break;
-            case IST_DATETIME_NOW://103:現在日時
-                break;
-            case IST_GLOBAL_RESET://104:統計データリセット
-                break;
-            case IST_ASSO_LN0://105:CurrentAsso
-                break;
-            case IST_ASSO_LN1://106:検定用クライアントAsso
-                break;
-            case IST_ASSO_LN2://107:HT用クライアントAsso
-                break;
-            case IST_ASSO_LN3://108:通信用クライアントAsso
-                break;
-            case IST_SETUP_HDLC://109:HDLC設定
-                break;
-            case IST_SETUP_SECURITY://110:暗号化/認証無しセキュリティ設定
-                break;
-            case IST_SETUP_AUTH://111:暗号化/認証有りセキュリティ設定
-                break;
-             default:
+            default:
                 break;
         }
         return gson;
     }
 
-    private void TimeStamp(){
-        timestamp = System.currentTimeMillis();
-    }
-
-    public String getStampDate(final boolean modeling) {
-        final DateFormat df = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
-        final Date date = new Date(timestamp);
+    public String getNowDate(final boolean modeling) {
+        final Long now = System.currentTimeMillis();
+        final DateFormat df = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss");
+        final Date date = new Date(now);
 
         if (modeling)
             return "==== " + df.format(date) + " ====";
@@ -1991,8 +1928,7 @@ public class DLMS {
                         sec = getUI8(in, io[0]);
                         io[0]++;
                         io[0] += 4;
-//                        data.add(String.format("%02d/%02d/%04d %02d:%02d:%02d", day, mon, year, hour, min, sec));
-                        data.add(String.format("%04d/%02d/%02d %02d:%02d:%02d", year, mon, day, hour, min, sec));
+                        data.add(String.format("%02d/%02d/%04d %02d:%02d:%02d", day, mon, year, hour, min, sec));
                     } else {
                         data.add(setOct2Str(in, io[0], io[1]));
                         io[0] += io[1];
@@ -2049,7 +1985,7 @@ public class DLMS {
                     sec = getUI8(in, io[0]);
                     io[0]++;
                     io[0] += 4;
-                    data.add(String.format("%04d/%02d/%02d %02d:%02d:%02d", year, mon, day, hour, min, sec));
+                    data.add(String.format("%02d/%02d/%04d %02d:%02d:%02d", day, mon, year, hour, min, sec));
                     break;
                 case 26:    //"date"
                     year = getUI16(in, io[0]);
@@ -2105,42 +2041,7 @@ public class DLMS {
         info[11] = (byte) wins;
         info[14] = (byte) winr;
     }
-    public int Rank(){
-        return mRank;
-    }
-    public void Rank(final int rank) {
-        mRank = rank;
-    }
-    byte Addr(){
-        byte ret;
-        switch (mRank) {
-            case RANK_HHU:
-                ret = (byte)0x23;
-                break;
-            case RANK_COM:
-                ret = (byte)0x25;
-                break;
-            default:
-                ret = (byte)0x21;
-                break;
-        }
-        return ret;
-    }
-    final byte [][] title6 = {
-            {'P','U','B','0','0','0','0','0'},
-            {'H','H','U','0','0','0','0','0'},
-            {'C','O','M','0','0','0','0','0'}
-    };
-    byte [] Account(){
-        switch (mRank) {
-            case RANK_HHU:
-                return title6[1];
-            case RANK_COM:
-                return title6[2];
-            default:
-                return title6[0];
-        }
-    }
+
     private byte[] hdlcs(final byte cmd, final byte[] llc) {
         int crc, len, offset;
         byte tmp;
@@ -2160,7 +2061,7 @@ public class DLMS {
         s[offset++] += (byte) (tmp & 0x0f);
         s[offset++] = (byte) (len & 0xff);
         s[offset++] = (byte) adr1[0];
-        s[offset++] = Addr();
+        s[offset++] = (byte) Addr();
         s[offset++] = cmd;
         crc = CRC16(s, offset - 1);
         offset = setUInt16(s, offset, crc);
@@ -2174,7 +2075,6 @@ public class DLMS {
             offset = setUInt16(s, offset, crc);
         }
         s[offset] = (byte) 0x7e;
-        TimeStamp();
         return s;
     }
 
@@ -2192,7 +2092,7 @@ public class DLMS {
             len <<= 8;
             len += getUI8(in, ret[1]++);
             if (in.length == (len + ret[1] - 1)) {
-                if (in[ret[1]++] == Addr()) {
+                if (in[ret[1]++] == (byte) Addr()) {
                     if (in[ret[1]++] == (byte) adr1[0]) {
                         ret[0] = in[ret[1]++];
                         crc = CRC16(in, ret[1] - 1);
@@ -2232,6 +2132,8 @@ public class DLMS {
         return null;
     }
 
+    private byte[] svChallenge = null;
+    private byte[] clChallenge = null;
     private byte[] svAppTitle = null;
     private byte[] clAppTitle = null;
 
@@ -2249,7 +2151,111 @@ public class DLMS {
         }
         this.svAppTitle = new byte[8];
         System.arraycopy(in, offset, svAppTitle, 0, 8);
-        SERIAL_ID = String.format("F%02d%c%06d",svAppTitle[3],svAppTitle[4], (getUI8(svAppTitle,5)*256+getUI8(svAppTitle,6))*256+getUI8(svAppTitle,7));
+    }
+
+    private void setClientChallenge(final byte[] in, final int offset) {
+        if (this.clChallenge != null) {
+            this.clChallenge = null;
+        }
+        this.clChallenge = new byte[31 + 1];
+        System.arraycopy(in, offset, clChallenge, 1, 31);
+    }
+
+    private void setServerChallenge(final byte[] in, final int offset) {
+        if (this.svChallenge != null) {
+            this.svChallenge = null;
+        }
+        this.svChallenge = new byte[31 + 1];
+        System.arraycopy(in, offset, svChallenge, 1, 31);
+    }
+
+    private byte[] encrypt(final byte[] keyData, final byte sc, final byte[] in) {
+
+        byte[] iv;
+        byte[] out;
+
+        out = new byte[5 + in.length + 12];
+        Cipher c = null;
+        SecretKeySpec key = new SecretKeySpec(keyData, "AES");
+        // AESアルゴリズムでCipherオブジェクトを作成
+        try {
+            c = Cipher.getInstance("AES/GCM/NoPadding");
+        } catch (NoSuchAlgorithmException e) {
+            e.printStackTrace();
+        } catch (NoSuchPaddingException e) {
+            e.printStackTrace();
+        }
+        out[0] = sc;
+        FrameCounter(out, 1);
+
+        // Cipherオブジェクトに秘密鍵を設定
+        iv = new byte[clAppTitle.length + 4];
+        System.arraycopy(clAppTitle, 0, iv, 0, clAppTitle.length);
+        System.arraycopy(out, 1, iv, clAppTitle.length, 4);
+        try {
+            c.init(Cipher.ENCRYPT_MODE, key, new GCMParameterSpec(12 * 8, iv));
+        } catch (InvalidKeyException | InvalidAlgorithmParameterException e) {
+            e.printStackTrace();
+        }
+        if (out[0] == 0x10) {
+            svChallenge[0] = out[0];
+            c.updateAAD(svChallenge);
+        } else {
+            clChallenge[0] = out[0];
+            c.updateAAD(clChallenge);
+        }
+        // 暗号化
+        byte[] enc = null;
+        try {
+            enc = c.doFinal(in);
+        } catch (BadPaddingException e) {
+            e.printStackTrace();
+        } catch (IllegalBlockSizeException e) {
+            e.printStackTrace();
+        }
+        System.arraycopy(enc, 0, out, 5, enc.length);
+        return out;
+    }
+
+    private byte[] decrypt(final byte[] keyData, final byte[] in) {
+
+        byte[] iv;
+        Cipher c = null;
+        SecretKeySpec key = new SecretKeySpec(keyData, "AES");
+        // AESアルゴリズムでCipherオブジェクトを作成
+        try {
+            c = Cipher.getInstance("AES/GCM/NoPadding");
+        } catch (NoSuchAlgorithmException e) {
+            e.printStackTrace();
+        } catch (NoSuchPaddingException e) {
+            e.printStackTrace();
+        }
+// Cipherオブジェクトに秘密鍵を設定
+        iv = new byte[svAppTitle.length + 4];
+        System.arraycopy(svAppTitle, 0, iv, 0, svAppTitle.length);
+        System.arraycopy(in, 1, iv, svAppTitle.length, 4);
+        try {
+            c.init(Cipher.DECRYPT_MODE, key, new GCMParameterSpec(12 * 8, iv));
+        } catch (InvalidKeyException | InvalidAlgorithmParameterException e) {
+            e.printStackTrace();
+        }
+        if (in[0] == 0x10) {
+            clChallenge[0] = in[0];
+            c.updateAAD(clChallenge);
+        } else {
+            svChallenge[0] = in[0];
+            c.updateAAD(svChallenge);
+        }
+        //復号
+        byte[] out = null;
+        try {
+            out = c.doFinal(in, 5, in.length - 5);
+        } catch (BadPaddingException e) {
+            e.printStackTrace();
+        } catch (IllegalBlockSizeException e) {
+            e.printStackTrace();
+        }
+        return out;
     }
 
     private int mObj;
@@ -2261,23 +2267,41 @@ public class DLMS {
     private int setApp1() {
 
         int len = def_app1.length;
+
         if (app1 == null) {
             app1 = new byte[def_app1.length];
         }
         System.arraycopy(def_app1, 0, app1, 0, def_app1.length);
-        app1[app1.length - 1] = 1;
+        switch (mRank) {
+            case RANK_SUPER:
+            case RANK_ADMIN:
+                app1[app1.length - 1] = 3;
+                break;
+            default:
+                app1[app1.length - 1] = 1;
+                break;
+        }
         return len;
     }
 
     private int setApp6() {
 
         int len = def_app6.length;
-        byte[] account = Account();
-        if (app6 == null) {
-            app6 = new byte[def_app6.length];
+        byte[] acount = Account(-1).getBytes();
+        switch (mRank) {
+            case RANK_SUPER:
+            case RANK_ADMIN:
+                if (app6 == null) {
+                    app6 = new byte[def_app6.length];
+                }
+                System.arraycopy(def_app6, 0, app6, 0, def_app6.length);
+                System.arraycopy(acount, 0, app6, 4, acount.length);
+                break;
+            default:
+                app6 = null;
+                len = 0;
+                break;
         }
-        System.arraycopy(def_app6, 0, app6, 0, def_app6.length);
-        System.arraycopy(account, 0, app6, 4, account.length);
         return len;
     }
 
@@ -2285,8 +2309,9 @@ public class DLMS {
 
         int len = def_app10.length;
         switch (mRank) {
-            case RANK_HHU:
-            case RANK_COM:
+            case RANK_SUPER:
+            case RANK_ADMIN:
+            case RANK_READER:
                 if (app10 == null) {
                     app10 = new byte[def_app10.length];
                 }
@@ -2305,8 +2330,16 @@ public class DLMS {
         int len = def_app11.length;
 
         switch (mRank) {
-            case RANK_HHU:
-            case RANK_COM:
+            case RANK_SUPER:
+            case RANK_ADMIN:
+                if (app11 == null) {
+                    app11 = new byte[def_app11.length];
+                }
+                System.arraycopy(def_app11, 0, app11, 0, def_app11.length);
+                app11[app11.length - 1] = 5;
+                break;
+            case RANK_POWER:
+            case RANK_READER:
                 if (app11 == null) {
                     app11 = new byte[def_app11.length];
                 }
@@ -2320,19 +2353,37 @@ public class DLMS {
         }
         return len;
     }
-    final byte [] password = {(byte)0x52,(byte)0x45,(byte)0x5a,(byte)0x49,(byte)0x4c,(byte)0x20,(byte)0x50,(byte)0x41,(byte)0x53,(byte)0x53,(byte)0x57,(byte)0x4f,(byte)0x52,(byte)0x44,(byte)0x30,(byte)0x30};
-//    final byte [] password = {(byte)0xff,(byte)0xff,(byte)0xff,(byte)0xff,(byte)0xff,(byte)0xff,(byte)0xff,(byte)0xff,(byte)0xff,(byte)0xff,(byte)0xff,(byte)0xff,(byte)0xff,(byte)0xff,(byte)0xff,(byte)0xff};
+
     private int setApp12() {
 
         int len;
         byte[] octet;
         switch (mRank) {
-            case RANK_HHU:
-            case RANK_COM:
-                octet = setTag((byte) 0x80, password);
+            case RANK_SUPER:
+            case RANK_ADMIN:
+                int remain = challenge0.length;
+                int step = 8;
+                Random random = new Random(seed1);
+                for (int i = 0; i < challenge0.length; i += step) {
+                    if (remain < 8) {
+                        step = remain;
+                    }
+                    remain -= step;
+                    seed1 = random.nextLong();
+                    System.arraycopy(ByteBuffer.allocate(8).putLong(seed1).array(), 0, challenge0, i, step);
+                }
+                octet = setTag((byte) 0x80, challenge0);
                 app12 = setTag(def_app12, octet);
                 len = app12.length;
                 break;
+
+            case RANK_POWER:
+            case RANK_READER:
+                octet = setTag((byte) 0x80, octetPassword());
+                app12 = setTag(def_app12, octet);
+                len = app12.length;
+                break;
+
             default:
                 app12 = null;
                 len = 0;
@@ -2348,13 +2399,46 @@ public class DLMS {
         byte[] octet;
         byte[] userinfo;
 
-        octet = new byte[def_conf.length + 2];
-        octet[0] = 0x01;
-        octet[1] = 0x00;/*ded*/
-        System.arraycopy(def_conf, 0, octet, 2, def_conf.length);
+        switch (mRank) {
+            case RANK_SUPER:
+            case RANK_ADMIN:
+                global = octetPassword();
+                if (dedicate == null) {
+                    dedicate = new byte[global.length];
+                }
+                Random random = new Random(seed2);
+                for (int i = 0; i < dedicate.length; i += 8) {
+                    seed2 = random.nextLong();
+                    System.arraycopy(ByteBuffer.allocate(8).putLong(seed2).array(), 0, dedicate, i, 8);
+                }
+                setClientAppTitle(app6, 4);
+                setClientChallenge(app12, 4);
+                byte[] _initQ = new byte[def_conf.length + dedicate.length + 3];
+                _initQ[0] = 0x01;
+                _initQ[1] = 0x01; /*ded*/
+                _initQ[2] = (byte) dedicate.length;
+                System.arraycopy(dedicate, 0, _initQ, 3, dedicate.length);
+                System.arraycopy(def_conf, 0, _initQ, 3 + dedicate.length, def_conf.length);
+                byte[] initQ = encrypt(global, (byte) 0x30, _initQ);
+                octet = setTag(glo_iniQ, initQ);
+                break;
+
+            default:
+                octet = new byte[def_conf.length + 2];
+                octet[0] = 0x01;
+                octet[1] = 0x00;/*ded*/
+                System.arraycopy(def_conf, 0, octet, 2, def_conf.length);
+                break;
+        }
         userinfo = setTag((byte) 0x04, octet);
         app30 = setTag(def_app30, userinfo);
         return app30.length;
+    }
+
+    private void FrameCounter(byte[] out, final int offset) {
+        Random random = new Random(seed0);
+        seed0 = random.nextInt();
+        System.arraycopy(ByteBuffer.allocate(4).putInt(seed0).array(), 0, out, offset, 4);
     }
 
     public byte[] Release() {
@@ -2391,6 +2475,7 @@ public class DLMS {
     public byte[] Open() {
         ns = 0;
         nr = 0;
+        mRank = Rank();
         if (info != null) {
             info = null;
         }
@@ -2455,6 +2540,9 @@ public class DLMS {
             return null;
         }
         boolean ok = true;
+        boolean hls = false;
+        boolean title = false;
+        boolean value = false;
         ret[0] = 0;
         ret[1] = 0;
         llc = getTag(ret, llc);
@@ -2472,6 +2560,7 @@ public class DLMS {
                 switch (id) {
                     case (byte) 0xa1:
                         if (app.length == 9) {
+                            hls = app[8] == 0x03;
                             ok = true;
                         }
                         break;
@@ -2482,12 +2571,17 @@ public class DLMS {
                         break;
                     case (byte) 0xa3:
                         if (app.length == 5) {
-                            ok = app[4] == 0x00;
+                            if (hls) {
+                                ok = app[4] == 0x0e;
+                            } else {
+                                ok = app[4] == 0x00;
+                            }
                         }
                         break;
                     case (byte) 0xa4:
                         if (app.length == 10) {
                             setServerAppTitle(app, 2);
+                            title = true;
                             ok = true;
                         }
                         break;
@@ -2503,16 +2597,30 @@ public class DLMS {
                         break;
                     case (byte) 0xaa:
                         if (app.length == 0x21) {
+                            setServerChallenge(app, 2);
+                            value = true;
                             ok = true;
                         }
                         break;
                     case (byte) 0xbe:
                         if (app.length > 0) {
                             int[] inf = new int[2];
-                            inf[0] = 0;
-                            inf[1] = 0;
-                            initR = getTag(inf, app);
-                            ok = initR[0] == 0x08;
+                            if (hls) {
+                                inf[0] = 0;
+                                inf[1] = 2;
+                                if (title && value) {
+                                    byte[] _initR = getTag(inf, app);
+                                    if (inf[0] == 0x28) {
+                                        initR = decrypt(global, _initR);
+                                        ok = initR[0] == 0x08;
+                                    }
+                                }
+                            } else {
+                                inf[0] = 0;
+                                inf[1] = 0;
+                                initR = getTag(inf, app);
+                                ok = initR[0] == 0x08;
+                            }
                         }
                         break;
                     default:
@@ -2526,7 +2634,70 @@ public class DLMS {
         } else {
             ret[0] = 1;
         }
+        if (hls) {
+            byte[] gmac = new byte[0];
+            gmac = encrypt(global, (byte) 0x10, gmac);
+
+            byte[] actQ = new byte[ACTRQ.length + 3 + gmac.length];/*010911 + SC + FC + GMAC*/
+            System.arraycopy(ACTRQ, 0, actQ, 0, ACTRQ.length);
+            System.arraycopy(g_ist[IST_ASSO_LN2], 0, actQ, 4, 7);
+            actQ[11] = 0x01;  /*method*/
+            actQ[12] = 0x01;  /*data = true*/
+            actQ[13] = 0x09;  /*octet*/
+            actQ[14] = 0x11;  /*length*/
+            System.arraycopy(gmac, 0, actQ, 15, gmac.length);
+            byte[] data = encrypt(global, (byte) 0x30, actQ);
+            return hdlcs((byte) 0x13, setTag(glo_actQ, data));
+        } else {
+            return null;
+        }
+    }
+
+    public byte[] Confirm(int[] ret, final byte[] res) {
+
+        byte[] llc = hdlcr(ret, res);
+        if (0 == ret[0]) {
+            ret[1] = -2;
+            return null;
+        }
+
+        if (llc[0] == (byte) 0xcf) {
+            ret[0] = 0;
+            ret[1] = 0;
+            byte[] actQ = getTag(ret, llc);
+            actQ = decrypt(global, actQ);
+            if (actQ != null) {
+                ret[0] = 1;
+                return null;
+            }
+        }
         return null;
+    }
+
+    private class BillingData {
+        public String Date;
+        public String IMP;
+        public String EXP;
+        public String ABS;
+        public String NET;
+        public String Max_Imp;
+        public String Max_Exp;
+        public String Min_Volt0;
+        public String Alert1_Dsc;
+        public String Alert2_Dsc;
+
+        BillingData(final String a, final String b, final String c, final String d, final String e, final String f, final String g, final String h, final String i, final String j) {
+            Date = a;
+            IMP = b;
+            EXP = c;
+            ABS = d;
+            NET = e;
+            Max_Imp = f;
+            Max_Exp = g;
+            Min_Volt0 = h;
+            Alert1_Dsc = i;
+            Alert2_Dsc = j;
+        }
     }
 
     public byte[] getReq(final int idx, final byte atr, final byte sel, final String attach, final byte pos) {
@@ -2577,7 +2748,14 @@ public class DLMS {
             System.arraycopy(GTNRQ, 0, getQ, 0, len);
             setUInt32(getQ, len - 4, mBlockNo);
         }
-        return hdlcs((byte) 0x13, getQ);
+        byte[] data;
+        if (mRank == RANK_ADMIN || mRank == RANK_SUPER) {
+            data = encrypt(dedicate, (byte) 0x30, getQ);
+            data = hdlcs((byte) 0x13, setTag(ded_getQ, data));
+        } else {
+            data = hdlcs((byte) 0x13, getQ);
+        }
+        return data;
     }
 
     public byte[] setReq(final int idx, final byte atr, final byte sel, final String attach, final byte pos) {
@@ -2617,11 +2795,18 @@ public class DLMS {
         if (param.length > 0) {
             System.arraycopy(param, 0, setQ, offset, param.length);
         }
+        byte[] data;
+        if (mRank == RANK_ADMIN || mRank == RANK_SUPER) {
+            data = encrypt(dedicate, (byte) 0x30, setQ);
+            data = hdlcs((byte) 0x13, setTag(ded_setQ, data));
+        } else {
+            data = hdlcs((byte) 0x13, setQ);
+        }
         mObj = idx;
         mMode = 1;
         mAtr = atr;
         mSel = sel;
-        return hdlcs((byte) 0x13, setQ);
+        return data;
     }
 
     public byte[] actReq(final int idx, final byte mth, final String attach, final byte pos) {
@@ -2653,11 +2838,18 @@ public class DLMS {
             actQ[offset++] = (byte) 0x01;
             System.arraycopy(param, 0, actQ, offset, param.length);
         }
+        byte[] data;
+        if (mRank == RANK_ADMIN || mRank == RANK_SUPER) {
+            data = encrypt(dedicate, (byte) 0x30, actQ);
+            data = hdlcs((byte) 0x13, setTag(ded_actQ, data));
+        } else {
+            data = hdlcs((byte) 0x13, actQ);
+        }
         mObj = idx;
         mMode = 3;
         mAtr = mth;
         mSel = 0;
-        return hdlcs((byte) 0x13, actQ);
+        return data;
     }
 
     public ArrayList<String> DataRes(int[] ret, final byte[] in, final boolean modeling) {
@@ -2682,7 +2874,21 @@ public class DLMS {
 //            out.add(String.format("Confirm service error: %d,%d,%d", getUI8(llc, 1), getUI8(llc, 2), getUI8(llc, 3)));
             return out;
         }
-        byte[] _res = llc;
+        byte[] _res;
+        if (mRank == RANK_ADMIN || mRank == RANK_SUPER) {
+            len[0] = 0;
+            len[1] = 0;
+            _res = getTag(len, llc);
+            _res = decrypt(dedicate, _res);
+            if (_res == null) {
+                ret[1] = -1;
+                mBlockNo = 0;
+//                out.add(String.format("Fatal error: fail to Decrypt frame: %s", setOct2Str(in, 0, in.length)));
+                return out;
+            }
+        } else {
+            _res = llc;
+        }
         switch (mMode) {
             case 0: /*get*/
                 if (_res.length > 3) {
@@ -2690,7 +2896,7 @@ public class DLMS {
                     if (_res[1] == 1) {    /*normal*/
                         /*get:3, 4*/
                         if (_res[3] == 0x00) {
-                            out.add(getStampDate(modeling));
+                            out.add(getNowDate(modeling));
                             io[0] = 0;
                             io[1] = 0;
                             byte app[] = new byte[_res.length - 4];
@@ -2717,7 +2923,7 @@ public class DLMS {
                             getCount(len, _res); /*raw size*/
                             size = len[1];
                             if (mBlockNo == 0) {
-                                out.add(getStampDate(modeling));
+                                out.add(getNowDate(modeling));
                                 len[0]++;/* ARRAY */
                                 getCount(len, _res); /*record count*/
                             }
@@ -2748,11 +2954,11 @@ public class DLMS {
                 }
                 break;
             case 1:/*set*/
-                out.add(getStampDate(modeling));
+                out.add(getNowDate(modeling));
                 out.add(dataAccessResult(_res, 3));
                 break;
             case 3:/*act*/
-                out.add(getStampDate(modeling));
+                out.add(getNowDate(modeling));
                 out.add(dataAccessResult(_res, 3));
                 ret[1] = _res[3];
                 mBlockNo = 0;

@@ -827,7 +827,7 @@ public class MainActivity extends AppCompatActivity implements
                         public void run() {
                             String name = device.getName();
                             if (name != null) {
-                                if (name.contains("FMC")) {
+                                if (name.contains("F5")) {
                                     mDeviceTemp.addDevice(device, rssi);
                                 }
                             }
@@ -1119,7 +1119,6 @@ public class MainActivity extends AppCompatActivity implements
 
         switch (mStep) {
             case 0:
-                d.Rank(d.RANK_COM);
                 send = d.Open();
                 if (send != null) {
                     mStep++;
@@ -1150,16 +1149,40 @@ public class MainActivity extends AppCompatActivity implements
             case 4:
                 send = d.Challenge(res, mData);
                 if (res[0] != 0) {
-                    if (d.Rank() == d.RANK_HHU || d.Rank() == d.RANK_COM || d.Rank() == d.RANK_PUB) {
-                        Log.i(TAG, "Established NON/LLS session.");
-                        ret = 2;
-                    } else {
-                        ret = -1;
-                        Log.i(TAG, "Fail to connect AARQ.");
+                    if (send != null) {
+//                        mItemFragment.Progress("Challenge...", mTimer, 0);
+                        mStep++;
+                        mTimer = 0;
+                        mBluetoothLeService.write(send);
+                        ret = 1;
+                        Log.i(TAG, String.format("Challenge:%d", send.length));
+                    } else {/*チャレンジ不要*/
+                        if (d.Rank() == d.RANK_POWER || d.Rank() == d.RANK_READER || d.Rank() == d.RANK_PUBLIC) {
+//                            mItemFragment.Progress("Established NON/LLS session.", 0, 0);
+                            ret = 2;
+                        } else {
+                            ret = -1;
+//                            mItemFragment.Progress("Fail to connect AARQ.", mTimer, 0);
+                        }
                     }
                 } else {
                     ret = -1;
-                    Log.i(TAG, "Fail to establish session.");
+//                    mItemFragment.Progress("Fail to establish session.", mTimer, 0);
+                }
+                break;
+            case 6:
+                send = d.Confirm(res, mData);
+                if (res[0] != 0) {
+                    if (d.Rank() == d.RANK_ADMIN || d.Rank() == d.RANK_SUPER) {
+//                        mItemFragment.Progress("Established HLS session.", 0, 0);
+                        ret = 2;
+                        Log.i(TAG, "Confirm");
+                    } else {
+
+                    }
+                } else {
+                    ret = -1;
+//                    mItemFragment.Progress("Fail to challenge.", mTimer, 0);
                 }
                 break;
             case 1:
@@ -1765,18 +1788,18 @@ public class MainActivity extends AppCompatActivity implements
                 break;
             case MSG_MEASURE1:
             case MSG_MEASURE2:
-                ret = accessData(0, DLMS.IST_ACTIVE30_RECORD, 2, false);
+//                ret = accessData(0, DLMS.IST_ACTIVE30_RECORD, 2, false);
                 break;
             case MSG_BREAKER:
                 switch (mSubStage) {
                     case 2:
-                        ret = accessData(0, DLMS.IST_BREAKER, 2, false);
+//                        ret = accessData(0, DLMS.IST_BREAKER, 2, false);
                         if (ret == 0) {
                             ret = 5;
                         }
                         break;
                     case 4:
-                        ret = accessData(1, DLMS.IST_BREAKER, 2, false);
+//                        ret = accessData(1, DLMS.IST_BREAKER, 2, false);
                         break;
                     default:
                         break;
@@ -1786,7 +1809,7 @@ public class MainActivity extends AppCompatActivity implements
             case MSG_ALERT_CLEAR:
                 switch (mSubStage) {
                     case 2:
-                        ret = accessData(0, DLMS.IST_FLICKER_STATE, 2, false);
+//                        ret = accessData(0, DLMS.IST_FLICKER_STATE, 2, false);
                         if (ret == 0) {
                             ret = 5;
                         }
@@ -1795,7 +1818,7 @@ public class MainActivity extends AppCompatActivity implements
                         }
                         break;
                     case 4:
-                        ret = accessData(1, DLMS.IST_ENABLE_FLICKER, 2, false);
+//                        ret = accessData(1, DLMS.IST_ENABLE_FLICKER, 2, false);
                         if (ret == 0) {
                             ret = 3;
                         }
@@ -1811,13 +1834,13 @@ public class MainActivity extends AppCompatActivity implements
                 ret = accessData(1, DLMS.IST_DATETIME_NOW, 2, false);
                 break;
             case MSG_EVENT_RECORD:
-                ret = accessData(0, DLMS.IST_EVENT_RECORD, mAttr, false);
+//                ret = accessData(0, DLMS.IST_EVENT_RECORD, mAttr, false);
                 if (ret == 0) {
                     ret = 3;
                 }
                 break;
             case MSG_ENERGY_RECORD:
-                ret = accessData(0, DLMS.IST_ACTIVE30_RECORD, mAttr, false);
+//                ret = accessData(0, DLMS.IST_ACTIVE30_RECORD, mAttr, false);
                 if (ret == 0) {
                     ret = 3;
                 }
@@ -1825,7 +1848,7 @@ public class MainActivity extends AppCompatActivity implements
             case MSG_READER:
                 switch (mSubStage) {
                     case 2:
-                        ret = accessData(0, DLMS.IST_ACTIVE30_RECORD, 2, false);
+//                        ret = accessData(0, DLMS.IST_ACTIVE30_RECORD, 2, false);
                         if (ret == 0) {
                             ret = 5;
                         }
@@ -1843,7 +1866,7 @@ public class MainActivity extends AppCompatActivity implements
                         }
                         break;
                     case 8:
-                        ret = accessData(0, DLMS.IST_EVENT_RECORD, 2, false);
+//                        ret = accessData(0, DLMS.IST_EVENT_RECORD, 2, false);
                         break;
                     default:
                         break;
@@ -1852,13 +1875,13 @@ public class MainActivity extends AppCompatActivity implements
             case MSG_TESTER:
                 switch (mSubStage) {
                     case 2:
-                        ret = accessData(0, DLMS.IST_APPROVAL_MODE, 2, false);
+ //                       ret = accessData(0, DLMS.IST_APPROVAL_MODE, 2, false);
                         if (ret == 0) {
                             ret = 5;
                         }
                         break;
                     case 4:
-                        ret = accessData(0, DLMS.IST_BREAKER, 2, false);
+//                        ret = accessData(0, DLMS.IST_BREAKER, 2, false);
                         if (ret == 0) {
                             ret = 5;
                         }
@@ -1870,7 +1893,7 @@ public class MainActivity extends AppCompatActivity implements
                         }
                         break;
                     case 8:
-                        ret = accessData(0, DLMS.IST_EVENT_RECORD, 2, false);
+//                        ret = accessData(0, DLMS.IST_EVENT_RECORD, 2, false);
                         break;
                     default:
                         break;
@@ -1880,13 +1903,13 @@ public class MainActivity extends AppCompatActivity implements
             case MSG_CHECKER:
                 switch (mSubStage) {
                     case 2:
-                        ret = accessData(1, DLMS.IST_ENABLE_FLICKER, 2, false);
+//                        ret = accessData(1, DLMS.IST_ENABLE_FLICKER, 2, false);
                         if (ret == 0) {
                             ret = 5;
                         }
                         break;
                     case 4:
-                        ret = accessData(0, DLMS.IST_ACTIVE30_RECORD, 2, false);
+//                        ret = accessData(0, DLMS.IST_ACTIVE30_RECORD, 2, false);
                         if (ret == 0) {
                             ret = 5;
                         }
@@ -1899,19 +1922,19 @@ public class MainActivity extends AppCompatActivity implements
             case MSG_SETUP:
                 switch (mSubStage) {
                     case 2:
-                        ret = accessData(0, DLMS.IST_APPROVAL_MODE, 2, false);
+//                        ret = accessData(0, DLMS.IST_APPROVAL_MODE, 2, false);
                         if (ret == 0) {
                             ret = 5;
                         }
                         break;
                     case 4:
-                        ret = accessData(0, DLMS.IST_BREAKER, 2, false);
+//                        ret = accessData(0, DLMS.IST_BREAKER, 2, false);
                         if (ret == 0) {
                             ret = 5;
                         }
                         break;
                     case 6:
-                        ret = accessData(1, DLMS.IST_ENABLE_FLICKER, 2, false);
+//                        ret = accessData(1, DLMS.IST_ENABLE_FLICKER, 2, false);
                         if (ret == 0) {
                             ret = 5;
                         }
@@ -1929,7 +1952,7 @@ public class MainActivity extends AppCompatActivity implements
                         }
                         break;
                     case 12:
-                        ret = accessData(2, DLMS.IST_EVENT_RECORD, 1, false);
+//                        ret = accessData(2, DLMS.IST_EVENT_RECORD, 1, false);
                         break;
                     default:
                         break;
