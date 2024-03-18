@@ -39,11 +39,11 @@ public class CSVParser {
     CSVParser(final String csvFile, final File folder) {
         mLabel = null;
         mKey = -1;
-        mCsv = csvFile;
         mCol = new ArrayList<String>();
         mRow = new ArrayList<row>();
+        mCsv = csvFile;
         mFolder = folder;
-        readFile(null);
+        readFile(csvFile);
     }
 
     ArrayList<String> Columns() {
@@ -61,6 +61,11 @@ public class CSVParser {
         }
     }
 
+    public void Reset() {
+        mLabel = null;
+        mKey = -1;
+    }
+
     public void clear() {
         mCol.clear();
         mRow.clear();
@@ -71,6 +76,14 @@ public class CSVParser {
         clear();
         mCol.addAll(from.Columns());
         mRow.addAll(from.Rows());
+    }
+
+    void Copy(CSVParser from, final String csvFile, final File folder) {
+        clear();
+        mCol.addAll(from.Columns());
+        mRow.addAll(from.Rows());
+        mCsv = csvFile;
+        mFolder = folder;
     }
 
     public String Present() {
@@ -100,11 +113,6 @@ public class CSVParser {
             }
         }
         return ret;
-    }
-
-    public void Reset() {
-        mLabel = null;
-        mKey = -1;
     }
 
     public String Row(final String label) {
@@ -254,10 +262,11 @@ public class CSVParser {
     }
 
     public void Add(final ArrayList<String> list) {
-        boolean ret;
-        String dat;
 
-        mRow.add(new row(list, mCol.size()));
+        int offset;
+        for (offset = 0; offset < list.size(); offset += mCol.size()){
+            mRow.add(new row(list, mCol.size(), offset));
+        }
         mCur = mRow.size() - 1;
     }
 
@@ -310,28 +319,39 @@ public class CSVParser {
             }
         }
         if (mCsv != null) {
-            clear();
             File file = new File(mFolder, mCsv);
-            try (BufferedReader br = new BufferedReader(new InputStreamReader(new FileInputStream(file), "Shift-JIS"))) {
-                while (true) {
-                    String read = br.readLine();
-                    if (read != null) {
-                        if (mCol.isEmpty()) {
-                            String[] data = read.split(",");
-                            for (int i = 0; i < data.length; i++) {
-                                mCol.add(data[i]);
+            if (file.exists()) {
+                clear();
+                try (BufferedReader br = new BufferedReader(new InputStreamReader(new FileInputStream(file), "Shift-JIS"))) {
+                    while (true) {
+                        String read = br.readLine();
+                        if (read != null) {
+                            if (mCol.isEmpty()) {
+                                String[] data = read.split(",");
+                                for (int i = 0; i < data.length; i++) {
+                                    mCol.add(data[i]);
+                                }
+                            } else {
+                                mRow.add(new row(read, mCol.size()));
                             }
                         } else {
-                            mRow.add(new row(read, mCol.size()));
+                            ret = true;
+                            break;
                         }
-                    } else {
-                        ret = true;
-                        break;
                     }
+                } catch (IOException e) {
+                    e.printStackTrace();
                 }
-            } catch (IOException e) {
-                e.printStackTrace();
             }
+        }
+        return ret;
+    }
+    public boolean exist(final String csvFile) {
+
+        boolean ret = false;
+        File file = new File(mFolder, csvFile);
+        if (file.exists()) {
+            ret = true;
         }
         return ret;
     }

@@ -86,8 +86,8 @@ public class ThirdFragment extends ItemFragment {
                     handler.postDelayed(this, 500);
                 } else {
                     Log.i(TAG,"Third to Fourth");
-                    NavHostFragment.findNavController(ThirdFragment.this)
-                            .navigate(R.id.action_ThirdFragment_to_FourthFragment);
+//                    NavHostFragment.findNavController(ThirdFragment.this)
+//                            .navigate(R.id.action_ThirdFragment_to_FourthFragment);
                 }
             }
         };

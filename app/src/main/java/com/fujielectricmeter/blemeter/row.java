@@ -20,7 +20,12 @@ public class row {
         }
     }
     row(final ArrayList<String> list, final int column) {
-         value.addAll(0,list);
+        value = new ArrayList<String>();
+        value.addAll(0,list.subList(0,column));
+    }
+    row(final ArrayList<String> list, final int column, final int offset) {
+        value = new ArrayList<String>();
+        value.addAll(0,list.subList(offset,offset+column));
     }
     String[] get() {
         String[] ret = new String[value.size()];

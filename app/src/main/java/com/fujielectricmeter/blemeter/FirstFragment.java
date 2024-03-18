@@ -54,7 +54,6 @@ public class FirstFragment extends ItemFragment {
         mCallback.fragmentOrder(MainActivity.ODR_SCAN_OFF);
         MainActivity.mfirstName = null;
         MainActivity.mfirstKey = null;
-        MainActivity.d.setCurrentLevel(0);//仮
 
         ArrayList<SampleListItem> listItems = new ArrayList<>();
         MainActivity.firstcsv = new CSVParser("building.csv", MainActivity.folderExternal);
@@ -94,8 +93,8 @@ public class FirstFragment extends ItemFragment {
             MainActivity.mfirstKey = MainActivity.firstcsv.Cell(position, getString(R.string.table1_key));
             MainActivity.mfirstName = MainActivity.firstcsv.Cell(position, getString(R.string.table1_col2));
             MainActivity.trail.operation(MainActivity.mfirstKey + "," + MainActivity.mfirstName);
-            NavHostFragment.findNavController(FirstFragment.this)
-                    .navigate(R.id.action_FirstFragment_to_SecondFragment);
+//            NavHostFragment.findNavController(FirstFragment.this)
+//                    .navigate(R.id.action_FirstFragment_to_SecondFragment);
         }
     };
 

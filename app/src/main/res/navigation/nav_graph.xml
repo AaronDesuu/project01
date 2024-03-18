@@ -3,32 +3,23 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/nav_graph"
-    app:startDestination="@id/FirstFragment">
+    app:startDestination="@id/LoginFragment">
 
     <fragment
         android:id="@+id/LoginFragment"
         android:name="com.fujielectricmeter.blemeter.LoginFragment"
         android:label="@string/account_fragment_label"
         tools:layout="@layout/fragment_login">
-
         <action
-            android:id="@+id/action_AccountFragment_to_FirstFragment"
-            app:destination="@id/FirstFragment" />
+            android:id="@+id/action_LoginFragment_to_SecondFragment"
+            app:destination="@id/SecondFragment" />
     </fragment>
 
     <fragment
         android:id="@+id/FirstFragment"
         android:name="com.fujielectricmeter.blemeter.FirstFragment"
         android:label="@string/first_fragment_label"
-        tools:layout="@layout/fragment_first">
-
-        <action
-            android:id="@+id/action_FirstFragment_to_SecondFragment"
-            app:destination="@id/SecondFragment" />
-        <action
-            android:id="@+id/action_FirstFragment_to_AccountFragment"
-            app:destination="@id/LoginFragment" />
-    </fragment>
+        tools:layout="@layout/fragment_first"/>
 
     <fragment
         android:id="@+id/SecondFragment"
@@ -37,28 +28,18 @@
         tools:layout="@layout/fragment_second">
 
         <action
-            android:id="@+id/action_SecondFragment_to_FirstFragment"
-            app:destination="@id/FirstFragment" />
-        <action
-            android:id="@+id/action_SecondFragment_to_ThirdFragment"
-            app:destination="@id/ThirdFragment" />
-        <action
             android:id="@+id/action_SecondFragment_to_FourthFragment"
             app:destination="@id/FourthFragment" />
+        <action
+            android:id="@+id/action_SecondFragment_to_LoginFragment"
+            app:destination="@id/LoginFragment" />
     </fragment>
 
     <fragment
         android:id="@+id/ThirdFragment"
         android:name="com.fujielectricmeter.blemeter.ThirdFragment"
         android:label="@string/third_fragment_label"
-        tools:layout="@layout/fragment_third">
-        <action
-            android:id="@+id/action_ThirdFragment_to_FourthFragment"
-            app:destination="@id/FourthFragment" />
-        <action
-            android:id="@+id/action_ThirdFragment_to_SecondFragment"
-            app:destination="@id/SecondFragment" />
-    </fragment>
+        tools:layout="@layout/fragment_third"/>
 
     <fragment
         android:id="@+id/FourthFragment"

@@ -376,10 +376,10 @@ public class DLMS {
             365,    //31
     };
 
-    public long DatetimeToSec(String datetime) {    /*yyyy/mm/dd hh:mm:ss*/
-        int y = Integer.parseInt(datetime.substring(0, 4));
-        int m = Integer.parseInt(datetime.substring(5, 7));
-        int d = Integer.parseInt(datetime.substring(8, 10));
+    public long DatetimeToSec(String datetime) {    /*dd/mm/yyyy hh:mm:ss*/
+        int y = Integer.parseInt(datetime.substring(6, 10));
+        int m = Integer.parseInt(datetime.substring(3, 5));
+        int d = Integer.parseInt(datetime.substring(0, 2));
         int h = Integer.parseInt(datetime.substring(11, 13));
         int k = Integer.parseInt(datetime.substring(14, 16));
         int s = Integer.parseInt(datetime.substring(17, 19));
@@ -427,27 +427,23 @@ public class DLMS {
         s %= 3600;
         k = s / 60;
         s %= 60;
-        return String.format("%04d/%02d/%02d %02d:%02d:%02d", y + 2010, m + 1, d, h, k, s);
+        return String.format("%02d/%02d/%04d %02d:%02d:%02d", d, m + 1, y + 2010, h, k, s);
     }
     public long CurrentDatetimeSec() {    /*yyyy/mm/dd hh:mm:ss*/
 
         long sec;
         String datetime;
-        android.icu.text.SimpleDateFormat sdf = new android.icu.text.SimpleDateFormat("yyyyMMddHHmmss", Locale.getDefault());
+        android.icu.text.SimpleDateFormat sdf = new android.icu.text.SimpleDateFormat("dd/MM/yyyy HH:mm:ss", Locale.getDefault());
         Date date = new Date();
-        datetime = sdf.format(date);
-        sec = MainActivity.d.DatetimeToSec(
-                String.format("%04d/%02d/%02d %02d:%02d:%02d",
-                        Integer.parseInt(datetime.substring(0, 4)),
-                        Integer.parseInt(datetime.substring(4, 6)),
-                        Integer.parseInt(datetime.substring(6, 8)),
-                        Integer.parseInt(datetime.substring(8, 10)),
-                        Integer.parseInt(datetime.substring(10, 12)),
-                        Integer.parseInt(datetime.substring(12, 14))
-                ));
+        sec = MainActivity.d.DatetimeToSec(sdf.format(date));
         return sec;
     }
 
+    public String CurrentYearMonth() {    /*yyyy/mm/dd hh:mm:ss*/
+
+        android.icu.text.SimpleDateFormat sdf = new android.icu.text.SimpleDateFormat("MMyyyy", Locale.getDefault());
+        return sdf.format(new Date());
+    }
     public String SecToRawDatetime(final long sec) {
 
         int d;
@@ -479,7 +475,12 @@ public class DLMS {
         s %= 60;
         return String.format("%04x%02x%02xff%02x%02x%02xff800000", y + 2010, m + 1, d, h, k, s);
     }
-
+    public String TimeStampFilename(final String datetime){
+        String timestamp = datetime.replace("/","");
+        timestamp = timestamp.replace(":","");
+        timestamp = timestamp.replace(" ","_");
+        return timestamp;
+    }
 
     private int getUI8(final byte[] in, final int offset) {
         int ret;
@@ -673,7 +674,6 @@ public class DLMS {
             return t;
         }
     }
-
 
     private void writeFile(String data, File file) {
         // try-with-resources

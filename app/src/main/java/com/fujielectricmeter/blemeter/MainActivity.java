@@ -66,8 +66,6 @@ public class MainActivity extends AppCompatActivity implements
 
     private final String TAG = MainActivity.class.getSimpleName();
     public static StringBuffer CounterParameter = new StringBuffer();
-    public static StringBuffer CounterParameter1 = new StringBuffer();
-    public static StringBuffer CounterParameter2 = new StringBuffer();
     private AppBarConfiguration appBarConfiguration;
     private ActivityMainBinding binding;
     private ItemFragment mItemFragment;
@@ -127,9 +125,65 @@ public class MainActivity extends AppCompatActivity implements
     public static CSVParser rootcsv;
     public static CSVParser firstcsv;
     public static CSVParser secondcsv;
+    public static CSVParser fourthcsv;
     public static Trail trail;
     public static ArrayList<SampleListItem> mListItems = new ArrayList<>();
+    private boolean mPermission = false;
 
+    final static String root_column = "UID,Activate,Serial NO.,Bluetooth ID,Fixed date,Imp [kWh],Exp [kWh],ImpMaxDemand [kW],ExpMaxDemand [kW],MinVolt [V],Alert,Last read date";
+    final static String[] root_row = {
+            "1,0,2401000001,48:23:35:0E:2B:BE,,,,,,,,",
+            "2,0,2401000002,48:23:35:0E:2B:E4,,,,,,,,",
+            "3,0,2401000003,48:23:35:0E:2B:BF,,,,,,,,",
+            "4,0,2401000004,48:23:35:0E:2B:E9,,,,,,,,",
+            "5,0,2401000005,48:23:35:0E:2A:F7,,,,,,,,",
+            "6,0,2401000006,48:23:35:0E:2A:73,,,,,,,,",
+            "7,0,2401000007,48:23:35:0E:2B:C8,,,,,,,,",
+            "8,0,2401000008,48:23:35:0E:2B:C6,,,,,,,,",
+            "9,0,2401000009,48:23:35:0E:2A:44,,,,,,,,",
+            "10,0,2401000010,48:23:35:0E:2C:6F,,,,,,,,",
+            "11,0,2401000011,48:23:35:0E:2B:C7,,,,,,,,",
+            "12,0,2401000012,48:23:35:0E:2B:C1,,,,,,,,",
+            "13,0,2401000013,48:23:35:0E:2B:E3,,,,,,,,",
+            "14,0,2401000014,48:23:35:0E:2C:6D,,,,,,,,",
+            "15,0,2401000015,48:23:35:0E:2B:C5,,,,,,,,",
+            "16,0,2401000016,48:23:35:0E:2C:7B,,,,,,,,",
+            "17,0,2401000017,48:23:35:0E:2B:F6,,,,,,,,",
+            "18,0,2401000018,48:23:35:0E:2C:6E,,,,,,,,",
+            "19,0,2401000019,48:23:35:0E:2C:77,,,,,,,,",
+            "20,0,2401000020,48:23:35:0E:2B:49,,,,,,,,",
+            "21,0,2401000021,48:23:35:0E:2B:E5,,,,,,,,",
+            "22,0,2401000022,48:23:35:0E:2C:78,,,,,,,,",
+            "23,0,2401000023,48:23:35:0E:2B:E6,,,,,,,,",
+            "24,0,2401000024,48:23:35:0E:2B:F4,,,,,,,,",
+            "25,0,2401000025,48:23:35:0E:2B:BD,,,,,,,,",
+            "26,0,2401000026,48:23:35:0E:2B:E2,,,,,,,,",
+            "27,0,2401000027,48:23:35:0E:2B:EA,,,,,,,,",
+            "28,0,2401000028,48:23:35:0E:2C:05,,,,,,,,",
+            "29,0,2401000029,48:23:35:0E:2B:E1,,,,,,,,",
+            "30,0,2401000030,48:23:35:0E:2B:C9,,,,,,,,",
+            "31,0,2401000031,48:23:35:0E:2B:DE,,,,,,,,",
+            "32,0,2401000032,48:23:35:0E:2A:42,,,,,,,,",
+            "33,0,2401000033,48:23:35:0E:2C:76,,,,,,,,",
+            "34,0,2401000034,48:23:35:0E:2A:FA,,,,,,,,",
+            "35,0,2401000035,48:23:35:0E:2B:F7,,,,,,,,",
+            "36,0,2401000036,48:23:35:0E:2B:EE,,,,,,,,",
+            "37,0,2401000037,48:23:35:0E:2C:F8,,,,,,,,",
+            "38,0,2401000038,48:23:35:0E:2B:E8,,,,,,,,",
+            "39,0,2401000039,48:23:35:0E:2B:CC,,,,,,,,",
+            "40,0,2401000040,48:23:35:0E:2C:7A,,,,,,,,",
+            "41,0,2401000041,48:23:35:0E:2B:CA,,,,,,,,",
+            "42,0,2401000042,48:23:35:0E:2B:C0,,,,,,,,",
+            "43,0,2401000043,48:23:35:0E:2B:F0,,,,,,,,",
+            "44,0,2401000044,48:23:35:0E:2B:EB,,,,,,,,",
+            "45,0,2401000045,48:23:35:0E:2C:71,,,,,,,,",
+            "46,0,2401000046,48:23:35:0E:2B:CB,,,,,,,,",
+            "47,0,2401000047,48:23:35:0E:2B:DF,,,,,,,,",
+            "48,0,2401000048,48:23:35:0E:2B:C2,,,,,,,,",
+            "49,0,2401000049,48:23:35:0E:2A:3D,,,,,,,,",
+            "50,0,2401000050,48:23:35:0E:2B:E0,,,,,,,,",
+            "51,0,2401000000,48:23:35:10:4B:AD,,,,,,,,"
+    };
     public static String SerialID() {
         if (mSerialID != null) {
             return String.format("%s, %s", mSerialID, mAddress);
@@ -213,7 +267,9 @@ public class MainActivity extends AppCompatActivity implements
                                 Manifest.permission.BLUETOOTH_CONNECT,
                                 Manifest.permission.ACCESS_COARSE_LOCATION}, 1000);
             }
-
+            else{
+                mPermission = true;
+            }
         } else {
             if ((ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) ||
                     (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED)
@@ -268,7 +324,18 @@ public class MainActivity extends AppCompatActivity implements
             d.writeScan("1000");
         }
 
-        rootcsv = new CSVParser("root.csv", folderExternal);
+        setLevel(0);    //仮
+        d.setCurrentLevel(MainActivity.getLevel());//仮
+
+        rootcsv = new CSVParser("meter.csv", folderFiles);
+        if(!rootcsv.exist("meter.csv")){
+            rootcsv.New(root_column);
+            for(int i = 0; i < root_row.length;i++){
+                rootcsv.Add(root_row[i]);
+            }
+            rootcsv.writeFile();
+        }
+
 
         mAddressShort = "UnknownMeter";
         mInterval = 0;
@@ -324,7 +391,7 @@ public class MainActivity extends AppCompatActivity implements
         mStep = 0;
         mPrmState = 0;
         mConnect = null;
-        mScan = 0;
+        mScan = 1;
 
         myService = new Handler();
         r = new Runnable() {
@@ -335,7 +402,9 @@ public class MainActivity extends AppCompatActivity implements
                         myService.postDelayed(this, 500);
                         break;
                     case 1:
-                        scanLeDevice();
+                        if(mPermission) {
+                            scanLeDevice();
+                        }
                         myService.postDelayed(this, mScanTick + 500);
                         break;
                     default:
@@ -368,6 +437,7 @@ public class MainActivity extends AppCompatActivity implements
         if (!mBluetoothAdapter.isEnabled()) {
             Intent enableBtIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
             startActivityForResult(enableBtIntent, REQUEST_ENABLE_BT);
+            mPermission = true;
         }
     }
 
@@ -486,25 +556,12 @@ public class MainActivity extends AppCompatActivity implements
 
             case R.id.menu_scan:
                 Disconnect(true);
-//                scanLeDevice();
+//              scanLeDevice();
                 ret = true;
                 break;
             case R.id.menu_load:
-                CSVParser building = new CSVParser("building.csv", folderExternal);
-                rootcsv.Extract(building, getString(R.string.table1_key));
-                building.writeFile();
-                if (mfirstKey != null) {
-                    CSVParser rooms = new CSVParser("building-" + mfirstKey + ".csv", folderExternal);
-                    rootcsv.Extract(rooms, getString(R.string.table2_key));
-                    rooms.writeFile();
-                }
                 break;
             case R.id.menu_save:
-                if (mfirstKey != null) {
-                    CSVParser data = new CSVParser("building-" + mfirstKey + ".csv", folderExternal);
-                    rootcsv.Update(data, getString(R.string.table2_key));
-                    rootcsv.writeFile();
-                }
                 break;
             case R.id.menu_select:
                 final Handler handler;
@@ -593,7 +650,7 @@ public class MainActivity extends AppCompatActivity implements
         } else {
             menu.findItem(R.id.menu_user).setVisible(false);
             menu.findItem(R.id.menu_password).setVisible(false);
-            if(mItemFragment.running()) {
+            if (mItemFragment.running()) {
                 menu.findItem(R.id.menu_stop).setVisible(true);
                 menu.findItem(R.id.menu_batch).setVisible(false);
             } else {
@@ -639,6 +696,11 @@ public class MainActivity extends AppCompatActivity implements
             return;
         }
         super.onActivityResult(requestCode, resultCode, data);
+    }
+
+    public static void setLevel(final int level) {
+
+        Level = String.format("%d", level);
     }
 
     public static int getLevel() {
@@ -915,8 +977,8 @@ public class MainActivity extends AppCompatActivity implements
             Log.i(TAG, "Release - Timeout");
             mTimer = 0;
             AlertDialog.Builder builder = new AlertDialog.Builder(this);
-            builder.setTitle("通信失敗");
-            builder.setMessage("メーターから応答がありませんでした。\nもう一度、操作してください。");
+            builder.setTitle("Detect timeout");
+            builder.setMessage("No data receive from meter\nPlease try again");
             builder.setPositiveButton("OK", new DialogInterface.OnClickListener() {
                 @Override
                 public void onClick(DialogInterface dialogInterface, int i) {
@@ -974,7 +1036,7 @@ public class MainActivity extends AppCompatActivity implements
                         mArrived = 0;
                         mBluetoothLeService.write(send);
                         ret = 1;
-                        Log.i(TAG, String.format("Open:%d", send.length));
+                        Log.i(TAG, String.format("Close:%d", send.length));
                     }
                 }
                 break;
@@ -1333,434 +1395,76 @@ public class MainActivity extends AppCompatActivity implements
     public final static int MSG_ENERGY_RECORD = MSG_EVENT_RECORD + 1;
     public final static int MSG_BREAKER = MSG_ENERGY_RECORD + 1;
     public final static int MSG_ALERT_CLEAR = MSG_BREAKER + 1;
-    private int mYear;
-    private int mMonth;
-    private int mDay;
-    private int mHour;
-    private int mMinute;
-    private long mSearch;
 
     private int Parameter(final int message_id) {
-        Date date;
-        String datetime;
-        SimpleDateFormat sdf;
         int ret = 0;
-        AlertDialog.Builder builder = null;
-
+        long sec;
         switch (message_id) {
-            case MSG_INSTANT:
-            case MSG_MEASURE3:
+            case MSG_SET_CLOCK:
                 mSel = 0;
-                mParameter.setLength(0);
+                sec = d.CurrentDatetimeSec()+1;
+                mParameter.append("090c" + d.SecToRawDatetime(sec));
                 ret = 3;
                 break;
             case MSG_EVENT_RECORD:
             case MSG_ENERGY_RECORD:
-            case MSG_ALERT_CLEAR:
+                mSel = 0;
                 mParameter.setLength(0);
-                if (CounterParameter1.length() != 0) {
-                    mParameter.append(CounterParameter1.toString());
+                if (CounterParameter.length() != 0) {
+                    mParameter.append(CounterParameter.toString());
+                    CounterParameter.setLength(0);
                 }
                 ret = 3;
                 break;
-
-            case MSG_MEASURE1:
-                switch (mStep) {
-                    case 0:
-                        mSel = 0;
-                        sdf = new SimpleDateFormat("yyyyMMddHHmmss", Locale.getDefault());
-                        date = new Date();
-                        datetime = sdf.format(date);
-                        mYear = Integer.parseInt(datetime.substring(0, 4));
-                        mMonth = Integer.parseInt(datetime.substring(4, 6));
-                        mDay = 1;
-                        mSearch = d.DatetimeToSec(String.format("%04d/%02d/01 00:00:00", mYear, mMonth));
-                        mStep++;
-                        ret = 1;
-                        break;
-                    case 1:
-                        mSel = 1;
-                        String to = d.SecToRawDatetime(mSearch);
-                        String from = d.SecToRawDatetime(mSearch - 3600);
-                        mParameter.append("0204020412000809060000010000ff0f02120000");
-                        mParameter.append("19" + from);
-                        mParameter.append("19" + to);
-                        mParameter.append("0100");
-                        ret = 3;
-                        break;
-                    default:
-                        break;
-                }
-                break;
-            case MSG_MEASURE2:
-                switch (mStep) {
-                    case 1:
-                    case 3:
-                        ret = 1;
-                        break;
-                    case 0:
-                        mSel = 0;
-                        sdf = new SimpleDateFormat("yyyyMMddHHmmss", Locale.getDefault());
-                        date = new Date();
-                        datetime = sdf.format(date);
-                        mYear = Integer.parseInt(datetime.substring(0, 4));
-                        mMonth = Integer.parseInt(datetime.substring(4, 6)) - 1;
-                        mDay = Integer.parseInt(datetime.substring(6, 8));
-                        mHour = Integer.parseInt(datetime.substring(8, 10));
-                        mMinute = Integer.parseInt(datetime.substring(10, 12));
-                        DatePickerDialog dialog1 = new DatePickerDialog(this, new DatePickerDialog.OnDateSetListener() {
-                            @Override
-                            public void onDateSet(DatePicker datePicker, int i, int i1, int i2) {
-                                mYear = i;
-                                mMonth = i1;
-                                mDay = i2;
-                                Log.i(TAG, " onDateSet");
-                                mStep++;
-                            }
-                        }, mYear, mMonth, mDay);
-                        dialog1.setOnCancelListener(new DialogInterface.OnCancelListener() {
-                            @Override
-                            public void onCancel(DialogInterface dialogInterface) {
-                                Log.i(TAG, " onCancel");
-                                mStep = 5;
-                            }
-                        });
-                        dialog1.setOnDismissListener(new DialogInterface.OnDismissListener() {
-                            @Override
-                            public void onDismiss(DialogInterface dialogInterface) {
-                                if (mStep == 1) {
-                                    Log.i(TAG, " onDismiss");
-                                    mStep = 5;
-                                }
-                            }
-                        });
-                        dialog1.show();
-                        mStep++;
-                        ret = 1;
-                        break;
-                    case 2:
-                        TimePickerDialog dialog2 = new TimePickerDialog(this, new TimePickerDialog.OnTimeSetListener() {
-                            @Override
-                            public void onTimeSet(TimePicker timePicker, int i, int i1) {
-                                mHour = i;
-                                mMinute = i1;
-                                mSearch = d.DatetimeToSec(
-                                        String.format("%04d/%02d/%02d %02d:%02d:00",
-                                                mYear, mMonth + 1, mDay, mHour, mMinute));
-                                mStep++;
-                            }
-                        }, mHour, mMinute, true);
-                        dialog2.setOnCancelListener(new DialogInterface.OnCancelListener() {
-                            @Override
-                            public void onCancel(DialogInterface dialogInterface) {
-                                mStep = 5;
-                            }
-                        });
-                        dialog2.setOnDismissListener(new DialogInterface.OnDismissListener() {
-                            @Override
-                            public void onDismiss(DialogInterface dialogInterface) {
-                                if (mStep == 3) {
-                                    Log.i(TAG, " onDismiss");
-                                    mStep = 5;
-                                }
-                            }
-                        });
-                        dialog2.show();
-                        ret = 1;
-                        mStep++;
-                        break;
-                    case 4:
-                        mSel = 1;
-                        String to = d.SecToRawDatetime(mSearch);
-                        String from = d.SecToRawDatetime(mSearch - 3600);
-                        mParameter.append("0204020412000809060000010000ff0f02120000");
-                        mParameter.append("19" + from);
-                        mParameter.append("19" + to);
-                        mParameter.append("0100");
-                        ret = 3;
-                        break;
-                    default:
-                    case 5:
-                        mPrmState = 0;
-                        break;
-                }
-                break;
-            case MSG_BREAKER:
-                switch (mSubStage) {
-                    case 1:
-                        mSel = 0;
-                        mParameter.setLength(0);
-                        ret = 3;
-                        break;
-                    case 3:
-                        mParameter.setLength(0);
-                        if (CounterParameter.length() == 0) {
-                            mParameter.append("1101");
-                        } else {
-                            mParameter.append(CounterParameter.toString());
-                        }
-                        ret = 3;
-                        break;
-                    default:
-                        break;
-                }
-                break;
-            case MSG_SET_CLOCK:
-                switch (mStep) {
-                    case 0:
-                        mSel = 0;
-                        mParameter.setLength(0);
-                        builder = new AlertDialog.Builder(this);
-                        builder.setTitle("Meter clock setting");
-                        builder.setMessage("Do you set clock by system?");
-                        builder.setPositiveButton("Yes", new DialogInterface.OnClickListener() {
-                            @Override
-                            public void onClick(DialogInterface dialogInterface, int i) {
-                                mPrmState = 0;
-                                mStep++;
-                            }
-                        });
-                        builder.setNegativeButton("Manual", new DialogInterface.OnClickListener() {
-                            @Override
-                            public void onClick(DialogInterface dialogInterface, int i) {
-                                mPrmState = 1;
-                                mStep++;
-                            }
-                        });
-                        builder.setOnDismissListener(new DialogInterface.OnDismissListener() {
-                            @Override
-                            public void onDismiss(DialogInterface dialogInterface) {
-                                if (mStep == 1) {
-                                    mStep = 5;
-                                }
-                            }
-                        });
-                        builder.show();
-                        ret = 1;
-                        mStep++;
-                        break;
-                    case 1:
-                    case 3:
-                        ret = 1;
-                        break;
-                    case 2:
-                        sdf = new SimpleDateFormat("yyyyMMddHHmmss", Locale.getDefault());
-                        date = new Date();
-                        datetime = sdf.format(date);
-                        if (mPrmState == 1) {
-                            final LinearLayout layout = new LinearLayout(this);
-
-                            final EditText edYear = new EditText(this);
-                            final EditText edMon = new EditText(this);
-                            final EditText edDay = new EditText(this);
-                            final EditText edHour = new EditText(this);
-                            final EditText edMin = new EditText(this);
-                            final EditText edSec = new EditText(this);
-
-                            TextView sep1 = new TextView(this);
-                            TextView sep2 = new TextView(this);
-                            TextView sep3 = new TextView(this);
-                            TextView sep4 = new TextView(this);
-                            TextView sep5 = new TextView(this);
-
-                            sep1.setText("/");
-                            sep2.setText("/");
-                            sep3.setText(" ");
-                            sep4.setText(":");
-                            sep5.setText(":");
-                            edYear.setInputType(InputType.TYPE_CLASS_NUMBER);
-                            edMon.setInputType(InputType.TYPE_CLASS_NUMBER);
-                            edDay.setInputType(InputType.TYPE_CLASS_NUMBER);
-                            edHour.setInputType(InputType.TYPE_CLASS_NUMBER);
-                            edMin.setInputType(InputType.TYPE_CLASS_NUMBER);
-                            edSec.setInputType(InputType.TYPE_CLASS_NUMBER);
-                            edYear.setHint("yyyy");
-                            edMon.setHint("MM");
-                            edDay.setHint("dd");
-                            edHour.setHint("HH");
-                            edMin.setHint("mm");
-                            edMin.setHint("ss");
-
-                            layout.setOrientation(LinearLayout.HORIZONTAL);
-                            layout.addView(edYear);
-                            layout.addView(sep1);
-                            layout.addView(edMon);
-                            layout.addView(sep2);
-                            layout.addView(edDay);
-                            layout.addView(sep3);
-                            layout.addView(edHour);
-                            layout.addView(sep4);
-                            layout.addView(edMin);
-                            layout.addView(sep5);
-                            layout.addView(edSec);
-
-                            edYear.setText(datetime.substring(0, 4));
-                            edMon.setText(datetime.substring(4, 6));
-                            edDay.setText(datetime.substring(6, 8));
-                            edHour.setText(datetime.substring(8, 10));
-                            edMin.setText(datetime.substring(10, 12));
-                            edSec.setText(datetime.substring(12, 14));
-                            builder = new AlertDialog.Builder(this);
-                            builder.setTitle("Input datetime");
-                            builder.setView(layout);
-                            builder.setPositiveButton("OK", new DialogInterface.OnClickListener() {
-                                @Override
-                                public void onClick(DialogInterface dialog, int which) {
-
-                                    mParameter.append(String.format("19%04x%02x%02xff%02x%02x%02xff800000",
-                                            Integer.parseInt(edYear.getText().toString()),
-                                            Integer.parseInt(edMon.getText().toString()),
-                                            Integer.parseInt(edDay.getText().toString()),
-                                            Integer.parseInt(edHour.getText().toString()),
-                                            Integer.parseInt(edMin.getText().toString()),
-                                            Integer.parseInt(edSec.getText().toString())));
-                                    mStep++;
-                                }
-                            });
-                            builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
-                                public void onClick(DialogInterface dialog, int whichButton) {
-                                    mStep = 5;
-                                }
-                            });
-                            builder.setOnDismissListener(new DialogInterface.OnDismissListener() {
-                                @Override
-                                public void onDismiss(DialogInterface dialogInterface) {
-                                    if (mStep == 3) {
-                                        mStep = 5;
-                                    }
-                                }
-                            });
-                            builder.show();
-                            mStep++;
-                        } else {
-                            long sec = d.DatetimeToSec(
-                                    String.format("%04d/%02d/%02d %02d:%02d:%02d",
-                                            Integer.parseInt(datetime.substring(0, 4)),
-                                            Integer.parseInt(datetime.substring(4, 6)),
-                                            Integer.parseInt(datetime.substring(6, 8)),
-                                            Integer.parseInt(datetime.substring(8, 10)),
-                                            Integer.parseInt(datetime.substring(10, 12)),
-                                            Integer.parseInt(datetime.substring(12, 14))
-                                    ));
-                            sec += 1;
-                            mParameter.append("19" + d.SecToRawDatetime(sec));
-                            mStep = 4;
-                        }
-                        ret = 1;
-                        break;
-                    case 4:
-                        ret = 3;
-                    case 5:
-                        mPrmState = 0;
-                        break;
-                }
-                break;
-
-            case MSG_TESTER:
-                switch (mSubStage) {
-                    case 1:
-                    case 3:
-                    case 5:
-                        mSel = 0;
-                        mParameter.setLength(0);
-                        ret = 3;
-                        break;
-                    case 7:
-                        mSel = 2;
-                        mParameter.setLength(0);
-                        mParameter.append("02020406000000010600000000120002120003");
-                        break;
-                    default:
-                        break;
-                }
-                break;
-            case MSG_CHECKER:
-                mParameter.setLength(0);
-                switch (mSubStage) {
-                    case 1:
-                        mSel = 0;
-                        mParameter.append("0300");
-                        ret = 3;
-                        break;
-                    case 3:
-                        mSel = 1;
-                        if (CounterParameter.length() == 0) {
-                            mParameter.append("0204020412000809060000010000ff0f021200001907e80306ff000000ff8000001907e80306ff171e00ff8000000102020412000809060000010000ff0f02120000020412000309060100010800ff0f02120000");
-                        } else {
-                            mParameter.append(CounterParameter.toString());
-                        }
-                        ret = 3;
-                        break;
-                    case 5:
-                        mSel = 0;
-                        ret = 3;
-                        break;
-                    default:
-                        break;
-                }
-                break;
-            case MSG_READER:
-                switch (mSubStage) {
-                    case 1:
-                        mSel = 1;
-                        if (CounterParameter.length() == 0) {
-                            mParameter.append("0204020412000809060000010000ff0f021200001907e80306ff000000ff8000001907e80306ff171e00ff8000000102020412000809060000010000ff0f02120000020412000309060100010800ff0f02120000");
-                        } else {
-                            mParameter.append(CounterParameter.toString());
-                        }
-                        ret = 3;
-                        break;
-                    case 3:
-                    case 7:
-                        mSel = 0;
-                        mParameter.setLength(0);
-                        ret = 3;
-                        break;
-                    case 5:
-                        mSel = 0;
-                        long sec = d.CurrentDatetimeSec()+1;
-                        mParameter.setLength(0);
-                        mParameter.append("19" + d.SecToRawDatetime(sec));
-                        ret = 3;
-                        break;
-                    default:
-                        break;
-                }
-                break;
-
             case MSG_SETUP:
                 mSel = 0;
                 mParameter.setLength(0);
                 switch (mSubStage) {
                     case 1:
+                        sec = d.CurrentDatetimeSec()+1;
+                        mParameter.append("090c" + d.SecToRawDatetime(sec));
+                        ret = 3;
+                        break;
                     case 3:
-                    case 9:
+                        mParameter.append("120001");
+                        ret = 3;
+                        break;
+                    case 5:
+                        ret = 3;
+                        break;
+                    case 7:
+                        mSel = 2;
+                        if (CounterParameter.length() != 0) {
+                            mParameter.append(CounterParameter.toString());
+                            CounterParameter.setLength(0);
+                        }
+                        ret = 3;
+                        break;
+                    default:
+                        break;
+                }
+                break;
+
+            case MSG_READER:
+                switch (mSubStage) {
+                    case 1:
+                        mSel = 0;
+                        mParameter.setLength(0);
+                        mParameter.append("120001");
+                        ret = 3;
+                        break;
+                    case 3:
+                        mSel = 0;
                         mParameter.setLength(0);
                         ret = 3;
                         break;
                     case 5:
-                        mParameter.append("0301");
-                        ret = 3;
-                        break;
-                    case 7:
-                        sdf = new SimpleDateFormat("yyyyMMddHHmmss", Locale.getDefault());
-                        date = new Date();
-                        datetime = sdf.format(date);
-                        long sec = d.DatetimeToSec(
-                                String.format("%04d/%02d/%02d %02d:%02d:%02d",
-                                        Integer.parseInt(datetime.substring(0, 4)),
-                                        Integer.parseInt(datetime.substring(4, 6)),
-                                        Integer.parseInt(datetime.substring(6, 8)),
-                                        Integer.parseInt(datetime.substring(8, 10)),
-                                        Integer.parseInt(datetime.substring(10, 12)),
-                                        Integer.parseInt(datetime.substring(12, 14))
-                                ));
-                        sec += 1;
-                        mParameter.append("19" + d.SecToRawDatetime(sec));
-                        ret = 3;
-                        break;
-                    case 11:
-                        mParameter.append("0f00");
+                        mSel = 2;
+                        mParameter.setLength(0);
+                        if (CounterParameter.length() != 0) {
+                            mParameter.append(CounterParameter.toString());
+                            CounterParameter.setLength(0);
+                        }
                         ret = 3;
                         break;
                     default:
@@ -1782,182 +1486,69 @@ public class MainActivity extends AppCompatActivity implements
         switch (message_id) {
             case MSG_CONNECT:/*接続のみ*/
                 break;
-            case MSG_INSTANT:
-            case MSG_MEASURE3:
-                ret = accessData(0, DLMS.IST_CHECK_MEASURE, 2, false);
-                break;
-            case MSG_MEASURE1:
-            case MSG_MEASURE2:
-//                ret = accessData(0, DLMS.IST_ACTIVE30_RECORD, 2, false);
-                break;
-            case MSG_BREAKER:
-                switch (mSubStage) {
-                    case 2:
-//                        ret = accessData(0, DLMS.IST_BREAKER, 2, false);
-                        if (ret == 0) {
-                            ret = 5;
-                        }
-                        break;
-                    case 4:
-//                        ret = accessData(1, DLMS.IST_BREAKER, 2, false);
-                        break;
-                    default:
-                        break;
-                }
-                break;
 
-            case MSG_ALERT_CLEAR:
-                switch (mSubStage) {
-                    case 2:
-//                        ret = accessData(0, DLMS.IST_FLICKER_STATE, 2, false);
-                        if (ret == 0) {
-                            ret = 5;
-                        }
-                        if (ret == 4) {
-                            ret = 0;
-                        }
-                        break;
-                    case 4:
-//                        ret = accessData(1, DLMS.IST_ENABLE_FLICKER, 2, false);
-                        if (ret == 0) {
-                            ret = 3;
-                        }
-                        if (ret == 4) {
-                            ret = 0;
-                        }
-                        break;
-                    default:
-                        break;
-                }
-                break;
             case MSG_SET_CLOCK:
                 ret = accessData(1, DLMS.IST_DATETIME_NOW, 2, false);
                 break;
+
             case MSG_EVENT_RECORD:
-//                ret = accessData(0, DLMS.IST_EVENT_RECORD, mAttr, false);
-                if (ret == 0) {
-                    ret = 3;
-                }
+                ret = accessData(0, DLMS.IST_POWER_QUALITY, 2, false);
                 break;
+
             case MSG_ENERGY_RECORD:
-//                ret = accessData(0, DLMS.IST_ACTIVE30_RECORD, mAttr, false);
-                if (ret == 0) {
-                    ret = 3;
-                }
+                ret = accessData(0, DLMS.IST_LOAD_PROFILE, 2, false);
                 break;
-            case MSG_READER:
+
+            case MSG_SETUP:
                 switch (mSubStage) {
                     case 2:
-//                        ret = accessData(0, DLMS.IST_ACTIVE30_RECORD, 2, false);
-                        if (ret == 0) {
-                            ret = 5;
-                        }
-                        break;
-                    case 4:
-                        ret = accessData(0, DLMS.IST_CHECK_MEASURE, 2, false);
-                        if (ret == 0) {
-                            ret = 5;
-                        }
-                        break;
-                    case 6:
                         ret = accessData(1, DLMS.IST_DATETIME_NOW, 2, false);
                         if (ret == 0) {
                             ret = 5;
                         }
                         break;
-                    case 8:
-//                        ret = accessData(0, DLMS.IST_EVENT_RECORD, 2, false);
-                        break;
-                    default:
-                        break;
-                }
-                break;
-            case MSG_TESTER:
-                switch (mSubStage) {
-                    case 2:
- //                       ret = accessData(0, DLMS.IST_APPROVAL_MODE, 2, false);
-                        if (ret == 0) {
-                            ret = 5;
-                        }
-                        break;
                     case 4:
-//                        ret = accessData(0, DLMS.IST_BREAKER, 2, false);
+                        ret = accessData(2, DLMS.IST_DEMAND_RESET, 1, false);
                         if (ret == 0) {
                             ret = 5;
                         }
                         break;
                     case 6:
-                        ret = accessData(0, DLMS.IST_CHECK_MEASURE, 2, false);
+                        ret = accessData(0, DLMS.IST_BILLING_PARAMS, 7, false);
                         if (ret == 0) {
                             ret = 5;
                         }
                         break;
                     case 8:
-//                        ret = accessData(0, DLMS.IST_EVENT_RECORD, 2, false);
+                        ret = accessData(0, DLMS.IST_BILLING_PARAMS, 2, false);
                         break;
                     default:
                         break;
                 }
                 break;
 
-            case MSG_CHECKER:
+            case MSG_READER:
                 switch (mSubStage) {
                     case 2:
-//                        ret = accessData(1, DLMS.IST_ENABLE_FLICKER, 2, false);
+                        ret = accessData(2, DLMS.IST_DEMAND_RESET, 1, false);
                         if (ret == 0) {
                             ret = 5;
                         }
                         break;
                     case 4:
-//                        ret = accessData(0, DLMS.IST_ACTIVE30_RECORD, 2, false);
+                        ret = accessData(0, DLMS.IST_BILLING_PARAMS, 7, false);
                         if (ret == 0) {
                             ret = 5;
                         }
                         break;
                     case 6:
-                        ret = accessData(0, DLMS.IST_CHECK_MEASURE, 2, false);
-                        break;
-                }
-                break;
-            case MSG_SETUP:
-                switch (mSubStage) {
-                    case 2:
-//                        ret = accessData(0, DLMS.IST_APPROVAL_MODE, 2, false);
-                        if (ret == 0) {
-                            ret = 5;
-                        }
-                        break;
-                    case 4:
-//                        ret = accessData(0, DLMS.IST_BREAKER, 2, false);
-                        if (ret == 0) {
-                            ret = 5;
-                        }
-                        break;
-                    case 6:
-//                        ret = accessData(1, DLMS.IST_ENABLE_FLICKER, 2, false);
-                        if (ret == 0) {
-                            ret = 5;
-                        }
-                        break;
-                    case 8:
-                        ret = accessData(1, DLMS.IST_DATETIME_NOW, 2, false);
-                        if (ret == 0) {
-                            ret = 5;
-                        }
-                        break;
-                    case 10:
-                        ret = accessData(0, DLMS.IST_CHECK_MEASURE, 2, false);
-                        if (ret == 0) {
-                            ret = 5;
-                        }
-                        break;
-                    case 12:
-//                        ret = accessData(2, DLMS.IST_EVENT_RECORD, 1, false);
+                        ret = accessData(0, DLMS.IST_BILLING_PARAMS, 2, false);
                         break;
                     default:
                         break;
                 }
                 break;
+
             default:
                 Log.i(TAG, "Not implemented function...");
                 break;
@@ -1991,8 +1582,6 @@ public class MainActivity extends AppCompatActivity implements
     }
 
 
-
-
     private boolean mProgressing = false;
 
     @Override
@@ -2017,8 +1606,8 @@ public class MainActivity extends AppCompatActivity implements
             mTimer = 0;
             Log.i(TAG, "fragmentMessage - Timeout");
             AlertDialog.Builder builder = new AlertDialog.Builder(this);
-            builder.setTitle("通信失敗");
-            builder.setMessage("メーターから応答がありませんでした。\nもう一度、操作してください。");
+            builder.setTitle("Detect timeout");
+            builder.setMessage("No data receive from meter\nPlease try again");
             builder.setPositiveButton("OK", null);
             builder.show();
             ret = -1;
@@ -2104,7 +1693,8 @@ public class MainActivity extends AppCompatActivity implements
                             mSubStage = 0;
                             break;
                     }
-                    if (ret < 0 || ret == -5) {
+                    Log.i(TAG, String.format("fragmentMessage :%d", ret));
+                    if (ret <= 0 || ret == -5) {
                         ret = 2;
                         mStage++;
                     }

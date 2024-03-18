@@ -48,7 +48,7 @@ public class LoginFragment extends ItemFragment {
                     "login.csv",
                     MainActivity.folderFiles);
             MainActivity.login.readFile("login.csv");
-            MainActivity.login.Add("Super,Super,0");
+            MainActivity.login.Add("Super,BleMeter,0");
             MainActivity.login.Add("Admin,Admin,1");
             MainActivity.login.Add("Power,Power,2");
             MainActivity.login.Add("Reader,Reader,3");
@@ -82,7 +82,7 @@ public class LoginFragment extends ItemFragment {
                                     find = true;
                                     MainActivity.Login = account;
                                     MainActivity.Level = MainActivity.login.Column(getString(R.string.authenticate));
-                                    MainActivity.d.setCurrentLevel(Integer.parseInt(MainActivity.Level));
+                                    MainActivity.d.setCurrentLevel(MainActivity.getLevel());//仮
                                 }
                             } else {
                                 MainActivity.Login = account;
@@ -96,9 +96,9 @@ public class LoginFragment extends ItemFragment {
                     InputMethodManager imm = (InputMethodManager)getContext().getSystemService(Context.INPUT_METHOD_SERVICE);
                     imm.hideSoftInputFromWindow(v.getWindowToken(), InputMethodManager.HIDE_NOT_ALWAYS);
                     NavHostFragment.findNavController(LoginFragment.this)
-                            .navigate(R.id.action_AccountFragment_to_FirstFragment);
+                            .navigate(R.id.action_LoginFragment_to_SecondFragment);
                 } else {
-                    binding.textView3.setText("正しいログイン名とパスワードを入力してください。");
+                    binding.textView3.setText("Please input correct user or password");
                 }
             }
         });
