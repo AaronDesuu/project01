@@ -5,7 +5,7 @@
     <string name="login">Login</string>
     <string name="login_name">Login name</string>
     <string name="password">Password</string>
-    <string name="authenticate">権限</string>
+    <string name="authenticate">Authenticate</string>
     <string name="building_name">建物名</string>
     <string name="room_name">部屋名</string>
     <string name="datetime">日時</string>
@@ -48,7 +48,7 @@
     <string name="voltage">電圧</string>
     <string name="get">取得</string>
     <string name="auto_read">検針</string>
-    <string name="demand_reset">Registration</string>
+    <string name="registration">Registration</string>
     <string name="manual_read">面前検針</string>
     <string name="min_voltage">最小電圧</string>
     <string name="max_demand">最大デマンド</string>
@@ -72,6 +72,7 @@
     <string name="current_read">現在値検針</string>
     <string name="setting_check">施工確認</string>
     <string name="elapsed_time">経過時間</string>
+    <string name="print">Print</string>
     <string name="event_record">Event log</string>
     <string name="load_record">Load profile</string>
     <string name="energy_record">Import energy</string>
@@ -91,7 +92,7 @@
     <string name="table2_col8">ExpMaxDemand [kW]</string>
     <string name="table2_col9">MinVolt [V]</string>
     <string name="table2_col10">Alert</string>
-    <string name="table2_col11">Last read date</string>
+    <string name="table2_col11">Read date</string>
     <string name="btn_breaker">開閉器</string>
     <string name="btn_register">登録</string>
     <string name="set_clock">Set Clock</string>

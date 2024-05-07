@@ -3,7 +3,6 @@ package com.fujielectricmeter.blemeter;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.Context;
-import android.content.DialogInterface;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.os.Handler;
@@ -27,6 +26,7 @@ public class SecondFragment extends ItemFragment {
     private int mPosition;
     private int mState;
     private int mRecordCount;
+    private boolean abort = false;
 
     @Override
     public void onAttach(Context context) {
@@ -54,22 +54,28 @@ public class SecondFragment extends ItemFragment {
         return binding.getRoot();
     }
 
-    private void updateList(final boolean create) {
+    private void updateList() {
 
         int i = 0, activate;
-        int color;
-        String UID, sid, now, date ;
+        int color, current;
+        String UID, now, mac, date, serial;
 
-        if (create) {
-            MainActivity.mListItems.clear();
-        }
-        if (mPosition < 0) {
+        current = mPosition;
+        if (current < 0) {
+            if(binding.secondlist.getCount()>0) {
+                if (MainActivity.Selection != binding.secondlist.getFirstVisiblePosition()) {
+                    MainActivity.Selection = binding.secondlist.getFirstVisiblePosition();
+                    return;
+                }
+            }
+            Log.i(TAG, String.format("First position %d", MainActivity.Selection));
             while (true) {
                 UID = MainActivity.secondcsv.Row(getString(R.string.table2_key));
                 if (UID == null) {
                     break;
                 }
                 activate = Integer.parseInt(MainActivity.secondcsv.Column(getString(R.string.table2_col1)));
+                serial = MainActivity.secondcsv.Column(getString(R.string.table2_col2));
                 now = MainActivity.secondcsv.Column(getString(R.string.table2_col5));
                 date = MainActivity.secondcsv.Column(getString(R.string.table2_col11));
                 if (activate == 0) {
@@ -87,55 +93,70 @@ public class SecondFragment extends ItemFragment {
                 String b = String.format("%s:%s\n%s:%s",
                         getString(R.string.table2_col5), now,
                         getString(R.string.table2_col11), date);
-                if (create) {
-                    sid = MainActivity.secondcsv.Column(getString(R.string.table2_col2));
+                if (MainActivity.mListItems.size() <= i) {
+                    mac = MainActivity.secondcsv.Column(getString(R.string.table2_col3));
+                    Integer position = mCallback.Position(mac);
+                    String a = String.format("%s(rssi:%d)", serial, mCallback.Rssi(position));
                     SampleListItem item;
                     item = new SampleListItem(
-                            sid,
+                            a,
                             b,
-                            UID,
+                            position.toString(),
                             color);
                     MainActivity.mListItems.add(item);
                 } else {
-                    MainActivity.mListItems.get(i).setColor(color);
+                    Integer position = Integer.parseInt(MainActivity.mListItems.get(i).getKey());
+                    if (position < 0) {
+                        mac = MainActivity.secondcsv.Column(getString(R.string.table2_col3));
+                        position = mCallback.Position(mac);
+                        MainActivity.mListItems.get(i).setKey(position.toString());
+                    }
+                    String a = String.format("%s(rssi:%d)", serial, mCallback.Rssi(position));
+                    MainActivity.mListItems.get(i).setTitle(a);
                     MainActivity.mListItems.get(i).setContents(b);
+                    MainActivity.mListItems.get(i).setColor(color);
                 }
                 i++;
             }
-            if (MainActivity.getLevel() < 3) {
-                binding.secondlist.setOnItemClickListener(onItemClickListener);
-            }
+            binding.secondlist.setOnItemClickListener(onItemClickListener);
         } else {
-            now = MainActivity.secondcsv.Cell(mPosition, getString(R.string.table2_col5));
-            date = MainActivity.secondcsv.Column(getString(R.string.table2_col11));
-            if (now.isEmpty()) {
-                if (mState > 0) {
-                    color = Color.MAGENTA;
-                    now = "Reading from meter...";
+            if (current < MainActivity.mListItems.size()) {
+                serial = MainActivity.secondcsv.Column(getString(R.string.table2_col2));
+                now = MainActivity.secondcsv.Cell(current, getString(R.string.table2_col5));
+                date = MainActivity.secondcsv.Column(getString(R.string.table2_col11));
+                if (now.isEmpty()) {
+                    if (mState > 0) {
+                        color = Color.MAGENTA;
+                        now = "Reading from meter...";
+                    } else {
+                        color = Color.RED;
+                        now = "------";
+                    }
                 } else {
-                    color = Color.RED;
-                    now = "------";
+                    color = Color.BLUE;
+                    now = String.format("%010.3f", Float.parseFloat(now));
                 }
-            } else {
-                color = Color.BLUE;
-                now = String.format("%010.3f", Float.parseFloat(now));
+                Integer position = Integer.parseInt(MainActivity.mListItems.get(current).getKey());
+                String a = String.format("%s(rssi:%d)", serial, mCallback.Rssi(position));
+                String b = String.format("%s:%s\n%s:%s",
+                        getString(R.string.table2_col5), now,
+                        getString(R.string.table2_col11), date);
+                MainActivity.mListItems.get(current).setColor(color);
+                MainActivity.mListItems.get(current).setTitle(a);
+                MainActivity.mListItems.get(current).setContents(b);
             }
-            String b = String.format("%s:%s\n%s:%s",
-                    getString(R.string.table2_col5), now,
-                    getString(R.string.table2_col11), date);
-            MainActivity.mListItems.get(mPosition).setColor(color);
-            MainActivity.mListItems.get(mPosition).setContents(b);
         }
         // レイアウトからリストビューを取得
         SampleListAdapter adapter = new SampleListAdapter(getActivity(), R.layout.custom_list, MainActivity.mListItems);
         binding.secondlist.setAdapter(adapter);
+        Log.i(TAG, String.format("Selection %d", MainActivity.Selection));
         binding.secondlist.setSelection(MainActivity.Selection);
+        binding.secondlist.invalidate();
     }
 
     public void onViewCreated(@NonNull View view, Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
-        boolean create = true;
         Log.i(TAG, TAG + "- onViewCreated");
         MainActivity.mFragmentid = 2;
         mCallback.fragmentOrder(MainActivity.ODR_UPDATE);
@@ -155,7 +176,6 @@ public class SecondFragment extends ItemFragment {
                 MainActivity.Selection = 0;
             } else {
                 MainActivity.secondcsv.Reset();
-                create = false;
             }
         } else {
             MainActivity.secondcsv = new CSVParser(MainActivity.folderExternal);
@@ -168,14 +188,12 @@ public class SecondFragment extends ItemFragment {
             }
             MainActivity.Selection = 0;
         }
-        updateList(create);
+        updateList();
     }
 
     @Override
     public void invalidate() {
-        super.invalidate();
-        updateList(false);
-        binding.secondlist.invalidate();
+        updateList();
     }
 
     private AdapterView.OnItemClickListener onItemClickListener = new AdapterView.OnItemClickListener() {
@@ -202,7 +220,6 @@ public class SecondFragment extends ItemFragment {
     public void batch() {
         if (stopper) {
             binding.secondlist.setOnItemClickListener(null);
-            mCallback.fragmentOrder(MainActivity.ODR_SCAN_OFF);
             final Handler handler = new Handler();
             final Runnable r = new Runnable() {
                 @Override
@@ -211,13 +228,13 @@ public class SecondFragment extends ItemFragment {
                     switch (mState) {
                         case -1:
                             mCallback.showToast("Start!");
-                            mPosition = 0;
+                            mPosition = -1;
                             handler.postDelayed(this, MainActivity.mTick);
                             mState++;
                             break;
                         case 0:
-                            while (!stopper) {
-                                if (mPosition < MainActivity.secondcsv.size()) {
+                            while (!abort) {
+                                if (++mPosition < MainActivity.secondcsv.size()) {
                                     if (mPosition > 3) {
                                         MainActivity.Selection = mPosition - 3;
                                     } else {
@@ -235,21 +252,18 @@ public class SecondFragment extends ItemFragment {
                                             MainActivity.trail.operation(MainActivity.msecondKey + "," + MainActivity.mSerialID);
                                             handler.postDelayed(this, MainActivity.mTick);
                                             mState++;
-                                            invalidate();
                                             break;
                                         } else {
-                                            mPosition++;
                                             Log.i(TAG, String.format("Batch Skip %d", mPosition));
                                         }
                                     } else {
-                                        mPosition++;
                                         Log.i(TAG, String.format("Batch Skip %d", mPosition));
                                     }
                                 } else {
-                                    stopper = true;
+                                    abort = true;
                                 }
                             }
-                            if (stopper) {
+                            if (abort) {
                                 MainActivity.secondcsv.writeFile();
                                 if (mPosition < MainActivity.secondcsv.size()) {
                                     mCallback.showToast("Batch Abort!");
@@ -258,47 +272,58 @@ public class SecondFragment extends ItemFragment {
                                     mCallback.showToast("Batch Finish!");
                                     Log.i(TAG, "Batch Finish");
                                 }
-                                MainActivity.msecondKey = null;
-                                MainActivity.mSerialID = null;
-                                MainActivity.mAddress = null;
                                 mState = -1;
                                 mPosition = -1;
                                 mCallback.fragmentOrder(MainActivity.ODR_UPDATE);
                                 mCallback.fragmentOrder(MainActivity.ODR_SCAN_ON);
                                 mCallback.fragmentMessage(-1);
-                                invalidate();
                             }
                             break;
                         case 1:
                             ret = mCallback.fragmentMessage(MainActivity.MSG_READER);
+                            if(stopper){
+                                mCallback.fragmentOrder(MainActivity.ODR_DISCONNECT);
+                                ret = -3;
+                            }
                             switch (ret) {
+                                case 1:
+                                case 2:
+                                case 5:
+                                    handler.postDelayed(this, MainActivity.mTick);
+                                    break;
                                 case 0:
-                                    mCallback.showToast(MainActivity.mSerialID + " reading end.");
-                                case -100:
                                     mState = 0;
-                                    invalidate();
-                                    Log.i(TAG, "Batch next");
-                                    mPosition++;
+                                    mCallback.showToast(MainActivity.mSerialID + " finish to read");
+                                    updateList();
+                                    handler.postDelayed(this, 1000);
+                                    break;
+                                case -6: /*Skip*/
+                                case -50:
+                                case -99:
+                                    mState = 0;
+                                    Log.i(TAG, String.format("Batch next %d",ret));
+                                    updateList();
+                                    handler.postDelayed(this, MainActivity.mTick);
                                     break;
                                 case -1:
                                 case -2:
+                                case -3:
                                 case -5: /*abort*/
-                                    Log.i(TAG, "Batch abort");
-                                    mState = 0;
-                                    stopper = true;
-                                    break;
                                 default:
+                                    mState = 0;
+                                    handler.postDelayed(this, MainActivity.mTick);
+                                    abort = true;
                                     break;
                             }
-                            handler.postDelayed(this, MainActivity.mTick);
                             break;
                         default:
                             break;
                     }
                 }
             };
+            mCallback.fragmentOrder(MainActivity.ODR_SCAN_OFF);
             mCallback.fragmentOrder(MainActivity.ODR_UPDATE);
-            mCallback.setInterval(false);
+            abort = false;
             stopper = false;
             handler.post(r);
         }
@@ -315,7 +340,9 @@ public class SecondFragment extends ItemFragment {
             switch (MainActivity.mSubStage) {
                 case 2:
                     if (mTemp.size() > 1) {
-
+                        if(!mTemp.get(1).equals("success (0)")){
+                            ret = -5;
+                        }
                     } else {
                         ret = -5;
                     }

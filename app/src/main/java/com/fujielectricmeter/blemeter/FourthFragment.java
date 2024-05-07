@@ -36,10 +36,10 @@ public class FourthFragment extends ItemFragment {
                 final Runnable r = new Runnable() {
                     @Override
                     public void run() {
-                        int ret = 0;
+                        Integer ret = 0;
                         ret = mCallback.fragmentMessage(mSelectButton);
                         if (stopper) {
-                            ret = -2;
+                            ret = -3;
                         }
                         if (ret > 0) {
                             handler.postDelayed(this, MainActivity.mTick);
@@ -48,28 +48,28 @@ public class FourthFragment extends ItemFragment {
                             mSelectButton = -1;
                             mCallback.fragmentMessage(-1);
                             switch (ret) {
-                                case -100:
+                                case -99:
                                     binding.textView.setText("Can't communicate with meter\nPlease check Power supply");
+                                    break;
+                                case -50:
+                                    binding.textView.setText("Detect timeout");
                                     break;
                                 case -5: /*abort*/
                                     break;
                                 case -1:
-                                    MainActivity.mTemp.add("No data");
-                                    MainActivity.mTemp.add("0");
-                                    MainActivity.mTemp.add("0");
                                     binding.textView.setText("Fail!");
                                     break;
                                 case 0:
                                     break;
+                                case -3:
                                 case -2:
                                 default:
-                                    binding.textView.setText("Abort!");
+                                    binding.textView.setText("Abort!(" + ret.toString() + ")");
                                     break;
                             }
                         }
                     }
                 };
-                mCallback.setInterval(false);
                 stopper = false;
                 mSelectButton = msg;
                 handler.post(r);
@@ -79,6 +79,30 @@ public class FourthFragment extends ItemFragment {
         } else {
             stopper = true;
         }
+    }
+
+    private String CreateData() {
+        String data1, data2, data3, data4, data5, data6, data7, data8, data9;
+        data1 = MainActivity.secondcsv.Column(getString(R.string.table2_col2));
+        data2 = MainActivity.secondcsv.Column(getString(R.string.table2_col4));
+        data3 = MainActivity.secondcsv.Column(getString(R.string.table2_col5));
+        data4 = MainActivity.secondcsv.Column(getString(R.string.table2_col6));
+        data5 = MainActivity.secondcsv.Column(getString(R.string.table2_col7));
+        data6 = MainActivity.secondcsv.Column(getString(R.string.table2_col8));
+        data7 = MainActivity.secondcsv.Column(getString(R.string.table2_col9));
+        data8 = MainActivity.secondcsv.Column(getString(R.string.table2_col10));
+        data9 = MainActivity.secondcsv.Column(getString(R.string.table2_col11));
+        return new String(
+                getString(R.string.table2_col2) + ":" + data1 + "\n" +
+                        getString(R.string.table2_col4) + ":" + data2 + "\n" +
+                        getString(R.string.table2_col5) + ":" + data3 + "\n" +
+                        getString(R.string.table2_col6) + ":" + data4 + "\n" +
+                        getString(R.string.table2_col7) + ":" + data5 + "\n" +
+                        getString(R.string.table2_col8) + ":" + data6 + "\n" +
+                        getString(R.string.table2_col9) + ":" + data7 + "\n" +
+                        getString(R.string.table2_col10) + ":" + data8 + "\n" +
+                        getString(R.string.table2_col11) + ":" + data9 + "\n"
+        );
     }
 
     @Override
@@ -122,10 +146,10 @@ public class FourthFragment extends ItemFragment {
             if (MainActivity.fourthcsv != null) {
                 if (!MainActivity.fourthcsv.Present().equals(csvfile)) {
                     MainActivity.fourthcsv.readFile(csvfile);
-                    MainActivity.Selection = 0;
                 } else {
                     MainActivity.fourthcsv.Reset();
                 }
+                MainActivity.Selection = 0;
             } else {
                 MainActivity.fourthcsv = new CSVParser(MainActivity.folderExternal);
                 if (MainActivity.fourthcsv.exist(csvfile)) {
@@ -136,52 +160,82 @@ public class FourthFragment extends ItemFragment {
                     MainActivity.fourthcsv.writeFile();
                 }
             }
-            MainActivity.fourthcsv.Find(getString(R.string.table2_col2),MainActivity.mSerialID);
+            MainActivity.fourthcsv.Find(getString(R.string.table2_key), MainActivity.msecondKey);
+
             mCnt = 0;
             mSelectButton = -1;
             stopper = true;
-
-            binding.button1.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View view) {
-                    binding.textView.setText("Communicating...");
-                    setAnime(binding.button1);
-                    buttonFunction(MainActivity.MSG_SETUP);
-                    MainActivity.trail.operation("MSG_CHECKER button");
+            if (MainActivity.getLevel() < 3) {
+                binding.button1.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View view) {
+                        binding.textView.setText("Communicating...");
+                        setAnime(binding.button1);
+                        buttonFunction(MainActivity.MSG_SETUP);
+                        MainActivity.trail.operation("MSG_CHECKER button");
+                    }
+                });
+                binding.button2.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View view) {
+                        binding.textView.setText("Communicating...");
+                        setAnime(binding.button2);
+                        buttonFunction(MainActivity.MSG_ENERGY_RECORD);
+                        MainActivity.trail.operation("MSG_CHECKER button");
+                    }
+                });
+                binding.button3.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View view) {
+                        binding.textView.setText("Communicating...");
+                        setAnime(binding.button3);
+                        buttonFunction(MainActivity.MSG_EVENT_RECORD);
+                        MainActivity.trail.operation("MSG_SETUP button");
+                    }
+                });
+                binding.button4.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View view) {
+                        binding.textView.setText("Communicating...");
+                        setAnime(binding.button4);
+                        buttonFunction(MainActivity.MSG_SET_CLOCK);
+                        MainActivity.trail.operation("MSG_SETUP button");
+                    }
+                });
+                binding.button5.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View view) {
+                        setAnime(binding.button5);
+                        String data = CreateData();
+                        mCallback.Print(data + "\n\n");
+                        binding.textView.setText("Printed....\n" + data);
+                    }
+                });
+                if (Integer.parseInt(MainActivity.rootcsv.Column(getString(R.string.table2_col1))) > 0) {
+                    binding.button1.setEnabled(false);
                 }
-            });
-            binding.button2.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View view) {
-                    binding.textView.setText("Communicating...");
-                    setAnime(binding.button2);
-                    buttonFunction(MainActivity.MSG_ENERGY_RECORD);
-                    MainActivity.trail.operation("MSG_CHECKER button");
-                }
-            });
-            binding.button3.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View view) {
-                    binding.textView.setText("Communicating...");
-                    setAnime(binding.button3);
-                    buttonFunction(MainActivity.MSG_EVENT_RECORD);
-                    MainActivity.trail.operation("MSG_SETUP button");
-                }
-            });
-            binding.button4.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View view) {
-                    binding.textView.setText("Communicating...");
-                    setAnime(binding.button4);
-                    buttonFunction(MainActivity.MSG_SET_CLOCK);
-                    MainActivity.trail.operation("MSG_SETUP button");
-                }
-            });
-            if(Integer.parseInt(MainActivity.rootcsv.Column(getString(R.string.table2_col1)))>0){
-                binding.button1.setEnabled(false);
+            } else {
+                binding.button1.setText(R.string.print);
+                binding.button1.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View view) {
+                        setAnime(binding.button1);
+                        String data = CreateData();
+                        mCallback.Print(data + "\n\n");
+                        binding.textView.setText("Printed....\n" + data);
+                    }
+                });
+                binding.button2.setVisibility(View.INVISIBLE);
+                binding.button3.setVisibility(View.INVISIBLE);
+                binding.button4.setVisibility(View.INVISIBLE);
+                binding.button5.setVisibility(View.INVISIBLE);
             }
         }
+    }
 
+    @Override
+    public void invalidate() {
+        super.invalidate();
     }
 
     @Override
@@ -203,11 +257,10 @@ public class FourthFragment extends ItemFragment {
                     switch (MainActivity.mSubStage) {
                         case 2:
                             if (mTemp.size() > 1) {
-                                if(!mTemp.get(1).equals("success (0)")){
+                                if (!mTemp.get(1).equals("success (0)")) {
                                     binding.textView.setText("Fail to set clock");
                                     ret = -5;
-                                }
-                                else{
+                                } else {
                                     binding.textView.setText("Success to set clock");
                                 }
                             } else {
@@ -217,11 +270,10 @@ public class FourthFragment extends ItemFragment {
                             break;
                         case 4:
                             if (mTemp.size() > 1) {
-                                if(!mTemp.get(1).equals("success (0)")){
-                                    binding.textView.append("\nFail to call demand reset");
+                                if (!mTemp.get(1).equals("success (0)")) {
+                                    binding.textView.append("\nF9ail to call demand reset");
                                     ret = -5;
-                                }
-                                else{
+                                } else {
                                     binding.textView.append("\nSuccess to call demand reset");
                                 }
                             } else {
@@ -241,22 +293,22 @@ public class FourthFragment extends ItemFragment {
                             break;
                         case 8:
                             if (mTemp.size() > 9) {
-                                MainActivity.fourthcsv.Update(mTemp.get(1),getString(R.string.table2_col4));
-                                MainActivity.fourthcsv.Update(String.format("%.3f",MainActivity.d.Float(1000.0, mTemp.get(2))),getString(R.string.table2_col5));
-                                MainActivity.fourthcsv.Update(String.format("%.3f",MainActivity.d.Float(1000.0, mTemp.get(3))),getString(R.string.table2_col6));
-                                MainActivity.fourthcsv.Update(String.format("%.3f",MainActivity.d.Float(1000.0, mTemp.get(6))),getString(R.string.table2_col7));
-                                MainActivity.fourthcsv.Update(String.format("%.3f",MainActivity.d.Float(1000.0, mTemp.get(7))),getString(R.string.table2_col8));
-                                MainActivity.fourthcsv.Update(String.format("%.3f",MainActivity.d.Float(100.0, mTemp.get(8))),getString(R.string.table2_col9));
-                                MainActivity.fourthcsv.Update(mTemp.get(9),getString(R.string.table2_col10));
-                                MainActivity.fourthcsv.Update(mTemp.get(0),getString(R.string.table2_col11));
-                                MainActivity.rootcsv.Update("1",getString(R.string.table2_col1));
-                                MainActivity.secondcsv.Update("1",getString(R.string.table2_col1));
+                                MainActivity.fourthcsv.Update(mTemp.get(1), getString(R.string.table2_col4));
+                                MainActivity.fourthcsv.Update(String.format("%.3f", MainActivity.d.Float(1000.0, mTemp.get(2))), getString(R.string.table2_col5));
+                                MainActivity.fourthcsv.Update(String.format("%.3f", MainActivity.d.Float(1000.0, mTemp.get(3))), getString(R.string.table2_col6));
+                                MainActivity.fourthcsv.Update(String.format("%.3f", MainActivity.d.Float(1000.0, mTemp.get(6))), getString(R.string.table2_col7));
+                                MainActivity.fourthcsv.Update(String.format("%.3f", MainActivity.d.Float(1000.0, mTemp.get(7))), getString(R.string.table2_col8));
+                                MainActivity.fourthcsv.Update(String.format("%.3f", MainActivity.d.Float(100.0, mTemp.get(8))), getString(R.string.table2_col9));
+                                MainActivity.fourthcsv.Update(mTemp.get(9), getString(R.string.table2_col10));
+                                MainActivity.fourthcsv.Update(mTemp.get(0), getString(R.string.table2_col11));
+                                MainActivity.rootcsv.Update("1", getString(R.string.table2_col1));
+                                MainActivity.secondcsv.Update("1", getString(R.string.table2_col1));
                                 MainActivity.rootcsv.writeFile();
                                 MainActivity.secondcsv.writeFile();
                                 MainActivity.fourthcsv.writeFile();
-                                binding.textView.append("\nSuccess to register meter");
+                                binding.textView.append("\nSuccess to register meter\nFinish!");
                             } else {
-                                binding.textView.append("\nFail to register meter");
+                                binding.textView.append("\nFail to register meter\nFinish!");
                                 ret = -5;
                             }
                             break;
@@ -264,10 +316,10 @@ public class FourthFragment extends ItemFragment {
                     break;
                 case MainActivity.MSG_ENERGY_RECORD:
                     if (mTemp.size() > 5) {
-                        String timestamp = mTemp.get(0).replace("/","");
-                        timestamp = timestamp.replace(":","");
-                        timestamp = timestamp.replace(" ","_");
-                        String filename = MainActivity.mSerialID + "_LP_"+ timestamp + ".csv";
+                        String timestamp = mTemp.get(0).replace("/", "");
+                        timestamp = timestamp.replace(":", "");
+                        timestamp = timestamp.replace(" ", "_");
+                        String filename = MainActivity.mSerialID + "_LP_" + timestamp + ".csv";
                         mTemp.remove(0);
                         CSVParser csv = new CSVParser(filename, MainActivity.folderExternal);
                         csv.New("Clock,Status,AveVolt[V],BlockImp[kW],BlockExp[kW]");
@@ -281,10 +333,10 @@ public class FourthFragment extends ItemFragment {
                     break;
                 case MainActivity.MSG_EVENT_RECORD:
                     if (mTemp.size() > 3) {
-                        String timestamp = mTemp.get(0).replace("/","");
-                        timestamp = timestamp.replace(":","");
-                        timestamp = timestamp.replace(" ","_");
-                        String filename = MainActivity.mSerialID + "_EV_"+ timestamp + ".csv";
+                        String timestamp = mTemp.get(0).replace("/", "");
+                        timestamp = timestamp.replace(":", "");
+                        timestamp = timestamp.replace(" ", "_");
+                        String filename = MainActivity.mSerialID + "_EV_" + timestamp + ".csv";
                         mTemp.remove(0);
                         CSVParser csv = new CSVParser(filename, MainActivity.folderExternal);
                         csv.New("Clock,Event,Volt[V]");
@@ -298,11 +350,10 @@ public class FourthFragment extends ItemFragment {
                     break;
                 case MainActivity.MSG_SET_CLOCK:
                     if (mTemp.size() > 1) {
-                        if(!mTemp.get(1).equals("success (0)")){
+                        if (!mTemp.get(1).equals("success (0)")) {
                             binding.textView.setText("Fail to set clock");
                             ret = -5;
-                        }
-                        else{
+                        } else {
                             binding.textView.setText("Success to set clock");
                         }
                     } else {

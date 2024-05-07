@@ -1,25 +1,22 @@
 package com.fujielectricmeter.blemeter;
 
-import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.io.OutputStreamWriter;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
 public class Trail {
     private File mOperation;
-    private File mError;
+    private File mInformation;
     private File mResult;
     private File mSystem;
     private DateFormat mdf;
     Trail() {
         mOperation = new File(MainActivity.folderExternal, "operation.txt");
-        mError = new File(MainActivity.folderExternal, "error.txt");
-        mResult = new File(MainActivity.folderExternal, "result.txt");
+        mInformation = new File(MainActivity.folderExternal, "information.txt");
+        mResult = new File(MainActivity.folderDocument, "result.txt");
         mSystem = new File(MainActivity.folderCache, "system.txt");
         mdf = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss.SSS");
     }
@@ -33,7 +30,7 @@ public class Trail {
         }
     }
 
-    public void system(final String message) {
+    private void system(final String message) {
         writeFile(message, mSystem);
     }
 
@@ -47,8 +44,8 @@ public class Trail {
         system(message);
     }
 
-    public void error(final String message) {
-        writeFile(message, mError);
+    public void information(final String message) {
+        writeFile(message, mInformation);
         system(message);
     }
 }

@@ -262,7 +262,9 @@ public class BluetoothLeService extends Service {
             }
             mBluetoothDeviceAddress = null;
             if (mBluetoothGatt != null) {
+                mBluetoothGatt.disconnect();
                 mBluetoothGatt.close();
+                Log.d(TAG, "mBluetoothGatt.disconnect()");
                 mBluetoothGatt = null;
             }
             mConnectionState = STATE_INITIALIZE;
@@ -295,6 +297,7 @@ public class BluetoothLeService extends Service {
         }
         if(mConnectionState>=STATE_CONNECTED) {
             mBluetoothGatt.disconnect();
+            mBluetoothGatt.close();
         }
     }
 }

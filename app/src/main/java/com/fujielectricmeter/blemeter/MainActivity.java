@@ -55,11 +55,14 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStreamWriter;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.Locale;
-
+import com.seikoinstruments.sdk.thermalprinter.PrinterException;
+import com.seikoinstruments.sdk.thermalprinter.PrinterManager;
+import static com.seikoinstruments.sdk.thermalprinter.PrinterManager.PRINTER_MODEL_MP_B20;
 
 public class MainActivity extends AppCompatActivity implements
         ItemFragment.messageManager {
@@ -74,7 +77,8 @@ public class MainActivity extends AppCompatActivity implements
     public static int mScanTick = 2000;
     public static int mTick = 100;
     public static int mInterval = 0;
-    private static final int timeout = 200;
+    private static final int timeout = 60;
+    private int mRetry;
     private ArrayList<String> mReceive;
     private String mAddressShort = null;
     public static byte mAttr, mMode, mSel;
@@ -94,6 +98,7 @@ public class MainActivity extends AppCompatActivity implements
     public static int Selection;
     public static String mSerialID;
     public static String mAddress;
+    private static int mPosition;
     public static int mFragmentid;
     private BluetoothAdapter mBluetoothAdapter;
     private int mArrived;
@@ -129,8 +134,14 @@ public class MainActivity extends AppCompatActivity implements
     public static Trail trail;
     public static ArrayList<SampleListItem> mListItems = new ArrayList<>();
     private boolean mPermission = false;
+    private final String defaultAccount[] = {
+            "Super,Reader,0",
+            "Admin,Admin,1",
+            "Power,Power,2",
+            "Reader,Reader,3"};
 
-    final static String root_column = "UID,Activate,Serial NO.,Bluetooth ID,Fixed date,Imp [kWh],Exp [kWh],ImpMaxDemand [kW],ExpMaxDemand [kW],MinVolt [V],Alert,Last read date";
+    static String root_column;
+
     final static String[] root_row = {
             "1,0,2401000001,48:23:35:0E:2B:BE,,,,,,,,",
             "2,0,2401000002,48:23:35:0E:2B:E4,,,,,,,,",
@@ -182,14 +193,35 @@ public class MainActivity extends AppCompatActivity implements
             "48,0,2401000048,48:23:35:0E:2B:C2,,,,,,,,",
             "49,0,2401000049,48:23:35:0E:2A:3D,,,,,,,,",
             "50,0,2401000050,48:23:35:0E:2B:E0,,,,,,,,",
-            "51,0,2401000000,48:23:35:10:4B:AD,,,,,,,,"
+            "51,0,2403000000,48:23:35:10:4B:AD,,,,,,,,",
+            "52,0,2403000000,48:23:35:02:64:72,,,,,,,,"
     };
+    final static String PRINTER1 = "68:84:7E:65:A9:BA";
+    private static PrinterManager mPrinterManager;
+    private static String mPrintData = null;
+
+
+    public int Rssi(final int position) {
+        return mDeviceList.Rssi(position);
+    }
+
+    public int Position(final String address) {
+        return mDeviceList.Position(address);
+    }
+
+
     public static String SerialID() {
         if (mSerialID != null) {
             return String.format("%s, %s", mSerialID, mAddress);
         } else {
             return null;
         }
+    }
+
+
+    public static void deleteFile(final String name, final File folder) {
+        File file = new File(folder, name);
+        file.delete();
     }
 
     public static boolean writeFile(String data, String name, File folder) {
@@ -231,27 +263,59 @@ public class MainActivity extends AppCompatActivity implements
         } catch (Exception e) {
         }
     }
+    public void Print(final String data) {
+        try {
+            mPrinterManager.connect(PRINTER_MODEL_MP_B20, PRINTER1, true);
+            mPrinterManager.sendDataFile(folderFiles + "/logo3.jpg");
+            mPrinterManager.sendText("+------------------------------+\n");
+            mPrinterManager.sendText("|        Electric bill         |\n");
+            mPrinterManager.sendText("+------------------------------+\n\n");
+            mPrinterManager.sendText(data);
+            mPrinterManager.disconnect();
+        } catch (PrinterException e) {
+            e.printStackTrace();
+            showToast(e.getMessage());
+            try {
+                mPrinterManager.disconnect();
+            } catch (PrinterException e1) {
+            }
+        }
+    }
+
+    private boolean copyAssetsFile() {
+        try {
+            InputStream inputStream = getAssets().open("logo3.jpg");
+            FileOutputStream fileOutputStream = new FileOutputStream(new File(folderFiles + "/logo3.jpg"), false);
+            byte[] buffer = new byte[1024];
+            int length = 0;
+            while ((length = inputStream.read(buffer)) >= 0) {
+                fileOutputStream.write(buffer, 0, length);
+            }
+            fileOutputStream.close();
+            inputStream.close();
+        } catch (IOException e) {
+            // 何かテキトーに
+            return false;
+        }
+        return true;
+    }
 
     public void Disconnect(final boolean all) {
-
         Log.i(TAG, "Disconnect()");
-        if (mServiceActive) {
+        if (mConnected > 0) {
             Log.i(TAG, "mBluetoothLeService.disconnect()");
             mBluetoothLeService.disconnect();
-            mServiceActive = false;
         }
-        if (mBinding) {
+        if (mServiceActive) {
             Log.i(TAG, "unbindService(mServiceConnection)");
             unbindService(mServiceConnection);
-            mBinding = false;
+            mServiceActive = false;
         }
         if (all) {
             mStage = 0;
             mSubStage = 0;
             mStep = 0;
-            mPrmState = 0;
         }
-        mConnect = null;
     }
 
     private void checkPermission() {
@@ -271,14 +335,20 @@ public class MainActivity extends AppCompatActivity implements
                 mPermission = true;
             }
         } else {
-            if ((ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) ||
+            if (
+                    (ActivityCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH) != PackageManager.PERMISSION_GRANTED) ||
+                    (ActivityCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_ADMIN) != PackageManager.PERMISSION_GRANTED) ||
+                    (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) ||
                     (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED)
             ) {
                 // パーミッションの許可を取得する
                 ActivityCompat.requestPermissions(this,
                         new String[]{
+                                Manifest.permission.BLUETOOTH,
+                                Manifest.permission.BLUETOOTH_ADMIN,
                                 Manifest.permission.ACCESS_FINE_LOCATION,
-                                Manifest.permission.ACCESS_COARSE_LOCATION}, 1000);
+                                Manifest.permission.ACCESS_COARSE_LOCATION
+                        }, 1000);
             }
         }
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
@@ -290,10 +360,20 @@ public class MainActivity extends AppCompatActivity implements
     }
 
     @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        Log.i(TAG, " onActivityResult()");
+        // User chose not to enable Bluetooth.
+        if (requestCode == REQUEST_ENABLE_BT && resultCode == Activity.RESULT_CANCELED) {
+            finish();
+            showToast("You choose disable bluetooth. Exit this app");
+            return;
+        }
+        super.onActivityResult(requestCode, resultCode, data);
+    }
+
+    @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        final Handler myService;
-        final Runnable r;
 
         folderFiles = getFilesDir();
 //        folderFiles = Environment.getExternalStoragePublicDirectory(DIRECTORY_DOWNLOADS);
@@ -309,54 +389,9 @@ public class MainActivity extends AppCompatActivity implements
         } else {
             Log.i(TAG, " reuse d.");
         }
-        int tick = parseInt(d.readTick());
-        if (tick > 10 && tick < 1001) {
-            mTick = tick;
-        } else {
-            mTick = 100;
-            d.writeTick("20");
-        }
-        int scan = parseInt(d.readScan());
-        if (scan > 999 && scan < 10001) {
-            mScanTick = scan;
-        } else {
-            mScanTick = 1000;
-            d.writeScan("1000");
-        }
+        mTick = 100;
 
-        setLevel(0);    //仮
-        d.setCurrentLevel(MainActivity.getLevel());//仮
-
-        rootcsv = new CSVParser("meter.csv", folderFiles);
-        if(!rootcsv.exist("meter.csv")){
-            rootcsv.New(root_column);
-            for(int i = 0; i < root_row.length;i++){
-                rootcsv.Add(root_row[i]);
-            }
-            rootcsv.writeFile();
-        }
-
-
-        mAddressShort = "UnknownMeter";
-        mInterval = 0;
-        mCurrentMessage = -1;
-
-        binding = ActivityMainBinding.inflate(getLayoutInflater());
-        setContentView(binding.getRoot());
-        setSupportActionBar(binding.appBarMain.toolbar);
-
-        NavController navController = Navigation.findNavController(this, R.id.nav_host_fragment_content_main);
-        appBarConfiguration = new AppBarConfiguration.Builder(navController.getGraph()).build();
-        NavigationUI.setupActionBarWithNavController(this, navController, appBarConfiguration);
-        mActionBar = getSupportActionBar();
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S) {
-            requestPermissions(new String[]{Manifest.permission.BLUETOOTH}, 1);
-            requestPermissions(new String[]{Manifest.permission.BLUETOOTH_ADMIN}, 2);
-        }
-        /*
-        requestPermissions(new String[]{Manifest.permission.ACCESS_COARSE_LOCATION}, 3);
-        requestPermissions(new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, 4);
-        */
+        checkPermission();
 
         // Use this check to determine whether BLE is supported on the device.  Then you can
         // selectively disable BLE-related features.
@@ -377,12 +412,117 @@ public class MainActivity extends AppCompatActivity implements
             finish();
             return;
         }
-        if (mHandler == null) {
-            mHandler = new Handler();
-        } else {
-            Log.i(TAG, " reuse mHandler.");
+        copyAssetsFile();
+        mPrinterManager = new PrinterManager(getApplicationContext());
+        mPrintData = null;
+
+        root_column =   getString(R.string.table2_key)+","+
+                getString(R.string.table2_col1)+","+
+                getString(R.string.table2_col2)+","+
+                getString(R.string.table2_col3)+","+
+                getString(R.string.table2_col4)+","+
+                getString(R.string.table2_col5)+","+
+                getString(R.string.table2_col6)+","+
+                getString(R.string.table2_col7)+","+
+                getString(R.string.table2_col8)+","+
+                getString(R.string.table2_col9)+","+
+                getString(R.string.table2_col10)+","+
+                getString(R.string.table2_col11);
+        rootcsv = new CSVParser("meter.csv", folderFiles);
+        if (!rootcsv.exist("meter.csv")) {
+            rootcsv.New(root_column);
+            for (int i = 0; i < root_row.length; i++) {
+                rootcsv.Add(root_row[i]);
+            }
+            rootcsv.writeFile();
         }
 
+        CSVParser csv = new CSVParser(folderExternal);
+        login = new CSVParser(folderFiles);
+        if (!login.readFile("login.csv")) {
+            login.New(getString(R.string.login) + "," + getString(R.string.password) + "," + getString(R.string.authenticate));
+            for (int i = 0; i < defaultAccount.length; i++) {
+                login.Add(defaultAccount[i]);
+            }
+            login.writeFile();
+        }
+        if (csv.readFile("login.csv")) {
+            boolean update = false;
+            boolean find = false;
+            while (!find) {
+                String newAccount = csv.Row("Col1");
+                if (newAccount == null) {
+                    break;
+                }
+                String newPassword = csv.Column("Col2");
+                login.Reset();
+                while (true) {
+                    String account = login.Row(getString(R.string.login));
+                    if (account == null) {
+                        break;
+                    }
+                    if (newAccount.equals(account)) {
+                        if (newPassword.equals(login.Column(getString(R.string.password)))) {
+                            int level = Integer.parseInt(login.Column(getString(R.string.authenticate)));
+                            if (level < 2) {
+                                update = true;
+                            }
+                        }
+                        find = true;
+                        break;
+                    }
+                }
+            }
+            while (update) {
+                String newAccount = csv.Row("Col1");
+                if (newAccount == null) {
+                    break;
+                }
+                String newPassword = csv.Column("Col2");
+                MainActivity.login.Reset();
+                find = false;
+                while (update) {
+                    String account = login.Row(getString(R.string.login));
+                    if (account == null) {
+                        break;
+                    }
+                    if (newAccount.equals(account)) {
+                        login.Update(newPassword, getString(R.string.password));
+                        find = true;
+                        break;
+                    }
+                }
+                if (!find) {
+                    login.Add(newAccount + "," + newPassword + ",3");
+                }
+            }
+            if (update) {
+                login.writeFile();
+                deleteFile("login.csv", folderExternal);
+            }
+        }
+
+        mAddressShort = "UnknownMeter";
+        mInterval = 0;
+        mCurrentMessage = -1;
+
+        binding = ActivityMainBinding.inflate(getLayoutInflater());
+        setContentView(binding.getRoot());
+        setSupportActionBar(binding.appBarMain.toolbar);
+
+        NavController navController = Navigation.findNavController(this, R.id.nav_host_fragment_content_main);
+        appBarConfiguration = new AppBarConfiguration.Builder(navController.getGraph()).build();
+        NavigationUI.setupActionBarWithNavController(this, navController, appBarConfiguration);
+        mActionBar = getSupportActionBar();
+        final Handler handler = new Handler();
+        final Runnable r = new Runnable() {
+            @Override
+            public void run() {
+                mItemFragment.invalidate();
+                handler.postDelayed(this, 3000);
+            }
+        };
+        handler.post(r);
         // Initializes list view adapter.
         mServiceActive = false;
         mBinding = false;
@@ -392,27 +532,6 @@ public class MainActivity extends AppCompatActivity implements
         mPrmState = 0;
         mConnect = null;
         mScan = 1;
-
-        myService = new Handler();
-        r = new Runnable() {
-            @Override
-            public void run() {
-                switch (mScan) {
-                    case 0:
-                        myService.postDelayed(this, 500);
-                        break;
-                    case 1:
-                        if(mPermission) {
-                            scanLeDevice();
-                        }
-                        myService.postDelayed(this, mScanTick + 500);
-                        break;
-                    default:
-                        break;
-                }
-            }
-        };
-        myService.post(r);
     }
 
     @Override
@@ -686,17 +805,6 @@ public class MainActivity extends AppCompatActivity implements
         return intentFilter;
     }
 
-    @Override
-    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        Log.i(TAG, " onActivityResult()");
-        // User chose not to enable Bluetooth.
-        if (requestCode == REQUEST_ENABLE_BT && resultCode == Activity.RESULT_CANCELED) {
-            finish();
-            showToast("You choose disable bluetooth. Exit this app");
-            return;
-        }
-        super.onActivityResult(requestCode, resultCode, data);
-    }
 
     public static void setLevel(final int level) {
 
@@ -714,34 +822,19 @@ public class MainActivity extends AppCompatActivity implements
 
     public class ScanDevice {
         private BluetoothDevice mDev;
-        private int mSample;
-        private int[] mRssi;
-        private boolean mDeactivate;
+        private int mRssi;
         private boolean mChk;
 
         ScanDevice() {
             mDev = null;
-            mDeactivate = true;
             mChk = false;
-            mRssi = new int[3];
-            mSample = 0;
-            mRssi[0] = 0;
-            mRssi[1] = 0;
-            mRssi[2] = 0;
+            mRssi = -200;
         }
 
         ScanDevice(final BluetoothDevice dev, int rssi) {
             mDev = dev;
-            mDeactivate = false;
             mChk = false;
-            mRssi = new int[3];
-            mSample = 0;
-            mRssi[0] = 0;
-            mRssi[1] = 0;
-            mRssi[2] = 0;
-            mRssi[mSample] = rssi;
-            mSample++;
-            mSample %= 3;
+            mRssi = rssi;
         }
 
         public BluetoothDevice Device() {
@@ -757,12 +850,7 @@ public class MainActivity extends AppCompatActivity implements
         }
 
         public int Rssi() {
-            int ret = (mRssi[0] + mRssi[1] + mRssi[2]) / 3;
-            return ret;
-        }
-
-        public boolean Deactivate() {
-            return mDeactivate;
+            return mRssi;
         }
 
         public boolean Check() {
@@ -782,22 +870,11 @@ public class MainActivity extends AppCompatActivity implements
         }
 
         public void Rssi(int rssi) {
-            mRssi[mSample] = rssi;
-            mSample++;
-            mSample %= 3;
-            mDeactivate = false;
-        }
-
-        public void Register(boolean reg) {
-            mDeactivate = reg;
+            mRssi = rssi;
         }
 
         public void Check(boolean chk) {
             mChk = chk;
-        }
-
-        public void Deactivate(boolean act) {
-            mDeactivate = act;
         }
     }
 
@@ -830,15 +907,7 @@ public class MainActivity extends AppCompatActivity implements
 
         public void Deactivate() {
             for (int i = 0; i < mScanDevice.size(); i++) {
-                mScanDevice.get(i).Deactivate(true);
-            }
-        }
-
-        public void Update() {
-            for (int i = 0; i < mScanDevice.size(); i++) {
-                if (mScanDevice.get(i).Deactivate()) {
-                    mScanDevice.get(i).Rssi(-200);
-                }
+                mScanDevice.get(i).Rssi(-200);
             }
         }
 
@@ -846,8 +915,27 @@ public class MainActivity extends AppCompatActivity implements
             return mScanDevice.get(position).Device();
         }
 
-        public int Rssi(int position) {
-            return mScanDevice.get(position).Rssi();
+        public int Rssi(final int position) {
+            if (position >= 0) {
+                if (position < mScanDevice.size()) {
+                    return mScanDevice.get(position).Rssi();
+                } else {
+                    return -200;
+                }
+            } else {
+                return -200;
+            }
+        }
+
+        public int Position(final String Address) {
+            int ret = -1;
+            for (int i = 0; i < mScanDevice.size(); i++) {
+                if (Address.equals(mScanDevice.get(i).Address())) {
+                    ret = i;
+                    break;
+                }
+            }
+            return ret;
         }
 
         public String Address(int position) {
@@ -864,10 +952,6 @@ public class MainActivity extends AppCompatActivity implements
 
         public boolean Activate(int position) {
             return mScanDevice.get(position).Activate();
-        }
-
-        public void Enable(int position) {
-            mScanDevice.get(position).Register(true);
         }
 
         public boolean Check(int position) {
@@ -890,7 +974,8 @@ public class MainActivity extends AppCompatActivity implements
                             String name = device.getName();
                             if (name != null) {
                                 if (name.contains("F5")) {
-                                    mDeviceTemp.addDevice(device, rssi);
+                                    mDeviceList.addDevice(device, rssi);
+                                    Log.i(TAG, String.format("ScanLeDevice %s", device.getAddress()));
                                 }
                             }
                         }
@@ -898,27 +983,6 @@ public class MainActivity extends AppCompatActivity implements
                 }
             };
 
-    public void scanLeDevice() {
-        mScanning = true;
-        mBluetoothAdapter.stopLeScan(mLeScanCallback);
-        // Stops scanning after a pre-defined scan period.
-        mHandler.postDelayed(new Runnable() {
-            @Override
-            public void run() {
-                mBluetoothAdapter.stopLeScan(mLeScanCallback);
-                for (int i = 0; i < mDeviceTemp.size(); i++) {
-                    mDeviceList.addDevice(mDeviceTemp.Device(i), mDeviceTemp.Rssi(i));
-                }
-                Log.i(TAG, String.format("scanLeDevice find %d", mDeviceTemp.size()));
-                mScanning = false;
-            }
-        }, mScanTick);
-        Log.i(TAG, " scanLeDevice - true");
-        mDeviceTemp.clear();
-        mDeviceList.Update();
-        mDeviceList.Deactivate();
-        mBluetoothAdapter.startLeScan(mLeScanCallback);
-    }
 
     private final ServiceConnection mServiceConnection = new ServiceConnection() {
 
@@ -951,17 +1015,21 @@ public class MainActivity extends AppCompatActivity implements
         public void onReceive(Context context, Intent intent) {
             final String action = intent.getAction();
             if (BluetoothLeService.ACTION_GATT_CONNECTED.equals(action)) {
+                mConnected = 1;
                 Log.i(TAG, " ACTION_GATT_CONNECTED");
             } else if (BluetoothLeService.ACTION_GATT_DISCONNECTED.equals(action)) {
                 Log.i(TAG, " ACTION_GATT_DISCONNECTED");
-                mConnected = 1;
-                mConnect = null;
+                mConnected = -1;
+                if (mStage != 0) {
+                    Log.i(TAG, "Restart gatt service");
+                    mStage = 0;
+                    mStep = 0;
+                }
             } else if (BluetoothLeService.ACTION_GATT_SERVICES_DISCOVERED.equals(action)) {
                 Log.i(TAG, " ACTION_GATT_SERVICES_DISCOVERED");
                 mConnected = 2;
                 mArrived = 0;
             } else if (BluetoothLeService.ACTION_GATT_ERROR.equals(action)) {
-                mConnected = -1;
                 Log.i(TAG, " ACTION_GATT_ERROR");
             } else if (BluetoothLeService.ACTION_DATA_AVAILABLE.equals(action)) {
                 Log.i(TAG, " ACTION_DATA_AVAILABLE");
@@ -970,6 +1038,7 @@ public class MainActivity extends AppCompatActivity implements
             }
         }
     };
+
 
     public int Release() {
         int ret = 0;
@@ -1071,67 +1140,73 @@ public class MainActivity extends AppCompatActivity implements
 
         switch (mStep) {
             case 0:
+                d.setCurrentLevel(getLevel());
+                mRetry = 0;
                 mConnect = null;
-                for (int i = 0; i < mDeviceList.size(); i++) {
-                    if (mAddress.equals(mDeviceList.Address(i))) {
-                        mConnect = mAddress;
-                        Log.i(TAG, mAddress);
-                        break;
-                    }
+                mPosition = Position(mAddress);
+                if (mDeviceList.Rssi(mPosition) > -200) {
+                    mConnect = mAddress;
+                    Log.i(TAG, "Try to connect " + mAddress);
                 }
                 if (mConnect != null) {
                     mStep++;
                     ret = 1;
                 } else {
-                    ret = -100;
+                    ret = -99;
                 }
                 break;
             case 1:
                 if (!mServiceActive) {
                     Intent gattServiceIntent = new Intent(this, BluetoothLeService.class);
                     bindService(gattServiceIntent, mServiceConnection, BIND_AUTO_CREATE);
-                    mBinding = true;
                     Log.i(TAG, " bindService");
-                    mStep++;
                     mTimer = 0;
-                } else {
-                    mStep++;
                 }
+                mStep++;
                 ret = 1;
                 break;
             case 2:
                 if (!mServiceActive) {
                     mTimer++;
                 } else {
+                    Log.i(TAG, " mServiceActive true");
                     mStep++;
                     mTimer = 0;
                 }
                 ret = 1;
                 break;
             case 3:
-                if (mConnect != null) {
-                    if (mBluetoothLeService.connect(mConnect)) {
-                        mConnected = 0;
-                        Log.i(TAG, "BLE service connecting...");
-                        mAddressShort = mConnect.replace(":", "");
-                        mStep++;
-                        mTimer = 0;
-                        ret = 1;
-                    } else {
-                        Log.i(TAG, "Fail to connect service");
-                        ret = -1;
-                    }
+                if (mBluetoothLeService.connect(mConnect)) {
+                    mConnected = 0;
+                    Log.i(TAG, "BLE service connecting...");
+                    mStep++;
+                    mTimer = 0;
+                    ret = 1;
                 } else {
-                    ret = -1;
+                    Log.i(TAG, "Fail to connect service");
+                    if (mRetry < 3) {
+                        mRetry++;
+                    } else {
+                        ret = -98;
+                    }
                 }
                 break;
             case 4:
                 ret = 1;
                 switch (mConnected) {
                     case 0:
+                    case 1:
                         mTimer++;   /*20*/
                         break;
-                    case 1:
+                    case -1:
+                        if (mRetry < 3) {
+                            mRetry++;
+                            Log.i(TAG, "Retry connect service");
+                            mStep = 3;
+                        } else {
+                            mStep++;
+                        }
+                        break;
                     case 2:
                         mStep++;
                         break;
@@ -1140,26 +1215,13 @@ public class MainActivity extends AppCompatActivity implements
             case 5:
                 if (mConnected == 2) {
                     mStep++;
-                    mTimer = 0;
                     ret = 2;
                 } else {
-                    if (mConnected == 1) {
-/*
-                        if (mServiceActive) {
-                            Log.i(TAG, "mBluetoothLeService.disconnect()");
-                            mBluetoothLeService.disconnect();
-                            mServiceActive = false;
-                        }
-                        if (mBinding) {
-                            Log.i(TAG, "unbindService(mServiceConnection)");
-                            unbindService(mServiceConnection);
-                            mBinding = false;
-                        }
-*/
-                        ret = -1;
+                    if (mConnected == -1) {
+                        ret = -97;
                     } else {
                         Log.i(TAG, "Reject to connect service...");
-                        ret = -1;
+                        ret = -96;
                     }
                 }
                 break;
@@ -1203,7 +1265,7 @@ public class MainActivity extends AppCompatActivity implements
                         Log.i(TAG, String.format("Session:%d", send.length));
                     }
                 } else {
-                    ret = -1;
+                    ret = -89;
                     Log.i(TAG, "Fail to connect HDLC.");
                 }
                 break;
@@ -1212,7 +1274,6 @@ public class MainActivity extends AppCompatActivity implements
                 send = d.Challenge(res, mData);
                 if (res[0] != 0) {
                     if (send != null) {
-//                        mItemFragment.Progress("Challenge...", mTimer, 0);
                         mStep++;
                         mTimer = 0;
                         mBluetoothLeService.write(send);
@@ -1220,31 +1281,26 @@ public class MainActivity extends AppCompatActivity implements
                         Log.i(TAG, String.format("Challenge:%d", send.length));
                     } else {/*チャレンジ不要*/
                         if (d.Rank() == d.RANK_POWER || d.Rank() == d.RANK_READER || d.Rank() == d.RANK_PUBLIC) {
-//                            mItemFragment.Progress("Established NON/LLS session.", 0, 0);
                             ret = 2;
                         } else {
-                            ret = -1;
-//                            mItemFragment.Progress("Fail to connect AARQ.", mTimer, 0);
+                            ret = -88;
                         }
                     }
                 } else {
-                    ret = -1;
-//                    mItemFragment.Progress("Fail to establish session.", mTimer, 0);
+                    ret = -87;
                 }
                 break;
             case 6:
                 send = d.Confirm(res, mData);
                 if (res[0] != 0) {
                     if (d.Rank() == d.RANK_ADMIN || d.Rank() == d.RANK_SUPER) {
-//                        mItemFragment.Progress("Established HLS session.", 0, 0);
                         ret = 2;
                         Log.i(TAG, "Confirm");
                     } else {
 
                     }
                 } else {
-                    ret = -1;
-//                    mItemFragment.Progress("Fail to challenge.", mTimer, 0);
+                    ret = -86;
                 }
                 break;
             case 1:
@@ -1337,26 +1393,40 @@ public class MainActivity extends AppCompatActivity implements
 
     public final static int ODR_SCAN_ON = 0;
     public final static int ODR_SCAN_OFF = (ODR_SCAN_ON + 1);
-    public final static int ODR_SCAN_QUIT = (ODR_SCAN_OFF + 1);
-    public final static int ODR_UPDATE = (ODR_SCAN_QUIT + 1);
+    public final static int ODR_SCAN_RESET = (ODR_SCAN_OFF + 1);
+    public final static int ODR_UPDATE = (ODR_SCAN_RESET + 1);
     public final static int ODR_LIST_CLEAR = (ODR_UPDATE + 1);
     public final static int ODR_RELEASE = (ODR_LIST_CLEAR + 1);
+    public final static int ODR_DISCONNECT = (ODR_RELEASE + 1);
 
     @Override
     public int fragmentOrder(final int order_id) {
 
         switch (order_id) {
             case ODR_SCAN_ON:
-                mScan = 1;
+                if (!mScanning) {
+                    if (mBluetoothAdapter != null) {
+                        mBluetoothAdapter.startLeScan(mLeScanCallback);
+                        mScanning = true;
+                        Log.i(TAG, "startLeScan");
+                    }
+                }
+                break;
+            case ODR_SCAN_RESET:
+                mDeviceList.Deactivate();
                 break;
             case ODR_SCAN_OFF:
-                mScan = 0;
-                break;
-            case ODR_SCAN_QUIT:
-                mScan = 2;
+                if (mBluetoothAdapter != null) {
+                    mBluetoothAdapter.stopLeScan(mLeScanCallback);
+                    mScanning = false;
+                    Log.i(TAG, "stopLeScan");
+                }
                 break;
             case ODR_UPDATE:
                 invalidateOptionsMenu();
+                break;
+            case ODR_DISCONNECT:
+                Disconnect(true);
                 break;
             case ODR_RELEASE:
                 final Handler handler;
@@ -1402,7 +1472,7 @@ public class MainActivity extends AppCompatActivity implements
         switch (message_id) {
             case MSG_SET_CLOCK:
                 mSel = 0;
-                sec = d.CurrentDatetimeSec()+1;
+                sec = d.CurrentDatetimeSec() + 1;
                 mParameter.append("090c" + d.SecToRawDatetime(sec));
                 ret = 3;
                 break;
@@ -1421,7 +1491,7 @@ public class MainActivity extends AppCompatActivity implements
                 mParameter.setLength(0);
                 switch (mSubStage) {
                     case 1:
-                        sec = d.CurrentDatetimeSec()+1;
+                        sec = d.CurrentDatetimeSec() + 1;
                         mParameter.append("090c" + d.SecToRawDatetime(sec));
                         ret = 3;
                         break;
@@ -1554,21 +1624,9 @@ public class MainActivity extends AppCompatActivity implements
                 break;
         }
         if (ret == 0) {
-            if (mInterval == 0) {
-                Log.i(TAG, "Access - Finish");
-            }
+            Log.i(TAG, "Access - Finish");
         }
         return ret;
-    }
-
-    @Override
-    public int setInterval(final boolean enable) {
-        if (enable) {
-            mInterval = parseInt(MainActivity.d.readInterval());
-        } else {
-            mInterval = 0;
-        }
-        return mInterval;
     }
 
     @Override
@@ -1588,7 +1646,7 @@ public class MainActivity extends AppCompatActivity implements
     public int fragmentMessage(final int message) {
         int ret = 0;
 
-        Log.i(TAG, String.format("Message now:%d, new: %d", mCurrentMessage, message));
+        Log.i(TAG, String.format("Message now:%d, new: %d, Stage:%d", mCurrentMessage, message, mStage));
         mCurrentMessage = message;
         if (message <= 0) {
             if (message == 0) {
@@ -1597,7 +1655,7 @@ public class MainActivity extends AppCompatActivity implements
                 return ret;
             }
         }
-        if (mProgressing || mScanning) {
+        if (mProgressing) {
             Log.i(TAG, String.format("Waiting Process:%b, Scan: %b", mProgressing, mScanning));
             return 1;
         }
@@ -1605,12 +1663,14 @@ public class MainActivity extends AppCompatActivity implements
         if (mTimer > timeout) {
             mTimer = 0;
             Log.i(TAG, "fragmentMessage - Timeout");
-            AlertDialog.Builder builder = new AlertDialog.Builder(this);
-            builder.setTitle("Detect timeout");
-            builder.setMessage("No data receive from meter\nPlease try again");
-            builder.setPositiveButton("OK", null);
-            builder.show();
-            ret = -1;
+            if (false) {
+                AlertDialog.Builder builder = new AlertDialog.Builder(this);
+                builder.setTitle("Detect timeout");
+                builder.setMessage("No data receive from meter\nPlease try again");
+                builder.setPositiveButton("OK", null);
+                builder.show();
+            }
+            ret = -50;
             Disconnect(true);
         } else {
             switch (mStage) {
@@ -1636,7 +1696,6 @@ public class MainActivity extends AppCompatActivity implements
                 case 2:
                     switch (mSubStage) {
                         case 0:
-                            mCount = 0;
                             mTotal = 0;
                             mDataIndex = 0;
                             mkeep = false;
@@ -1667,15 +1726,6 @@ public class MainActivity extends AppCompatActivity implements
                                 if (ret < 0) {
                                     Log.i(TAG, "Detect error...");
 //                                    showToast("Detect error...");
-                                    if (mInterval > 0) {
-                                        ret = -5;    /*異常、初期化継続*/
-                                    }
-                                } else {
-                                    if (mInterval > 0) {
-                                        ret = 4;    /*正常継続*/
-                                    } else {
-                                        /*0*/
-                                    }
                                 }
                                 mSubStage = 0;
                             } else {
@@ -1693,10 +1743,9 @@ public class MainActivity extends AppCompatActivity implements
                             mSubStage = 0;
                             break;
                     }
-                    Log.i(TAG, String.format("fragmentMessage :%d", ret));
-                    if (ret <= 0 || ret == -5) {
-                        ret = 2;
-                        mStage++;
+                    Log.i(TAG, String.format("fragmentMessage - result :%d", ret));
+                    if (ret < 0) {
+                        Disconnect(true);
                     }
                     break;
                 case 3:

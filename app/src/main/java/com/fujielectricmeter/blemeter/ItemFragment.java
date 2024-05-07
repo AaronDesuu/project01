@@ -15,11 +15,20 @@ import java.util.ArrayList;
 public class ItemFragment extends Fragment {
     public interface messageManager {
         void fragment(ItemFragment fragment);
+
         int fragmentMessage(final int message_id);
+
         int fragmentOrder(final int order_id);
+
         int messageID();
-        int setInterval(final boolean enable);
-        void showToast(String text);
+
+        int Position(final String Address);
+
+        int Rssi(final int position);
+
+        void Print(final String data);
+
+        void showToast(final String text);
     }
     public final static String TAG = ItemFragment.class.getSimpleName();
     public boolean stopper = true;

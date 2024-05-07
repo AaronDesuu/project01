@@ -50,7 +50,6 @@ public class LoginFragment extends ItemFragment {
             MainActivity.login.readFile("login.csv");
             MainActivity.login.Add("Super,BleMeter,0");
             MainActivity.login.Add("Admin,Admin,1");
-            MainActivity.login.Add("Power,Power,2");
             MainActivity.login.Add("Reader,Reader,3");
             MainActivity.login.writeFile();
         }
@@ -82,7 +81,7 @@ public class LoginFragment extends ItemFragment {
                                     find = true;
                                     MainActivity.Login = account;
                                     MainActivity.Level = MainActivity.login.Column(getString(R.string.authenticate));
-                                    MainActivity.d.setCurrentLevel(MainActivity.getLevel());//仮
+                                    break;
                                 }
                             } else {
                                 MainActivity.Login = account;
@@ -103,7 +102,9 @@ public class LoginFragment extends ItemFragment {
             }
         });
     }
-
+    @Override
+    public void invalidate() {
+    }
     @Override
     public void onDestroyView() {
         super.onDestroyView();
