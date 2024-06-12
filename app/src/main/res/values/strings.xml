@@ -69,12 +69,13 @@
     <string name="load">負荷容量</string>
     <string name="check_datetime">確認日時</string>
     <string name="meantime">測定時間</string>
-    <string name="current_read">現在値検針</string>
+    <string name="current_read">Read data</string>
     <string name="setting_check">施工確認</string>
     <string name="elapsed_time">経過時間</string>
     <string name="print">Print</string>
     <string name="event_record">Event log</string>
     <string name="load_record">Load profile</string>
+    <string name="billing_data">Billing data</string>
     <string name="energy_record">Import energy</string>
     <string name="min">分</string>
     <string name="sec">秒</string>

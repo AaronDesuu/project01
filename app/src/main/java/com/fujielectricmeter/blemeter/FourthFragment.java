@@ -24,7 +24,7 @@ import java.util.Locale;
 public class FourthFragment extends ItemFragment {
 
     private FragmentFourthBinding binding;
-    private static int mCnt = 0;
+    private static Integer mCnt = 0;
     private int mSelectButton;
     private AlertDialog.Builder builder;
     private int mRecordCount;
@@ -70,6 +70,7 @@ public class FourthFragment extends ItemFragment {
                         }
                     }
                 };
+                mCnt = 0;
                 stopper = false;
                 mSelectButton = msg;
                 handler.post(r);
@@ -162,7 +163,6 @@ public class FourthFragment extends ItemFragment {
             }
             MainActivity.fourthcsv.Find(getString(R.string.table2_key), MainActivity.msecondKey);
 
-            mCnt = 0;
             mSelectButton = -1;
             stopper = true;
             if (MainActivity.getLevel() < 3) {
@@ -172,7 +172,7 @@ public class FourthFragment extends ItemFragment {
                         binding.textView.setText("Communicating...");
                         setAnime(binding.button1);
                         buttonFunction(MainActivity.MSG_SETUP);
-                        MainActivity.trail.operation("MSG_CHECKER button");
+                        MainActivity.trail.operation("MSG_SETUP button");
                     }
                 });
                 binding.button2.setOnClickListener(new View.OnClickListener() {
@@ -180,8 +180,8 @@ public class FourthFragment extends ItemFragment {
                     public void onClick(View view) {
                         binding.textView.setText("Communicating...");
                         setAnime(binding.button2);
-                        buttonFunction(MainActivity.MSG_ENERGY_RECORD);
-                        MainActivity.trail.operation("MSG_CHECKER button");
+                        buttonFunction(MainActivity.MSG_READER);
+                        MainActivity.trail.operation("MSG_READER button");
                     }
                 });
                 binding.button3.setOnClickListener(new View.OnClickListener() {
@@ -189,8 +189,8 @@ public class FourthFragment extends ItemFragment {
                     public void onClick(View view) {
                         binding.textView.setText("Communicating...");
                         setAnime(binding.button3);
-                        buttonFunction(MainActivity.MSG_EVENT_RECORD);
-                        MainActivity.trail.operation("MSG_SETUP button");
+                        buttonFunction(MainActivity.MSG_ENERGY_RECORD);
+                        MainActivity.trail.operation("MSG_ENERGY_RECORD button");
                     }
                 });
                 binding.button4.setOnClickListener(new View.OnClickListener() {
@@ -198,14 +198,32 @@ public class FourthFragment extends ItemFragment {
                     public void onClick(View view) {
                         binding.textView.setText("Communicating...");
                         setAnime(binding.button4);
-                        buttonFunction(MainActivity.MSG_SET_CLOCK);
-                        MainActivity.trail.operation("MSG_SETUP button");
+                        buttonFunction(MainActivity.MSG_EVENT_RECORD);
+                        MainActivity.trail.operation("MSG_EVENT_RECORD button");
                     }
                 });
                 binding.button5.setOnClickListener(new View.OnClickListener() {
                     @Override
                     public void onClick(View view) {
+                        binding.textView.setText("Communicating...");
                         setAnime(binding.button5);
+                        buttonFunction(MainActivity.MSG_BILLING_RECORD);
+                        MainActivity.trail.operation("MSG_EVENT_RECORD button");
+                    }
+                });
+                binding.button6.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View view) {
+                        binding.textView.setText("Communicating...");
+                        setAnime(binding.button6);
+                        buttonFunction(MainActivity.MSG_SET_CLOCK);
+                        MainActivity.trail.operation("MSG_SET_CLOCK button");
+                    }
+                });
+                binding.button7.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View view) {
+                        setAnime(binding.button7);
                         String data = CreateData();
                         mCallback.Print(data + "\n\n");
                         binding.textView.setText("Printed....\n" + data);
@@ -215,20 +233,30 @@ public class FourthFragment extends ItemFragment {
                     binding.button1.setEnabled(false);
                 }
             } else {
-                binding.button1.setText(R.string.print);
+                binding.button2.setText(R.string.current_read);
                 binding.button1.setOnClickListener(new View.OnClickListener() {
                     @Override
                     public void onClick(View view) {
+                        binding.textView.setText("Communicating...");
                         setAnime(binding.button1);
+                        buttonFunction(MainActivity.MSG_READER);
+                        MainActivity.trail.operation("MSG_READER button");
+                    }
+                });
+                binding.button2.setText(R.string.print);
+                binding.button2.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View view) {
+                        setAnime(binding.button2);
                         String data = CreateData();
                         mCallback.Print(data + "\n\n");
                         binding.textView.setText("Printed....\n" + data);
                     }
                 });
-                binding.button2.setVisibility(View.INVISIBLE);
                 binding.button3.setVisibility(View.INVISIBLE);
                 binding.button4.setVisibility(View.INVISIBLE);
                 binding.button5.setVisibility(View.INVISIBLE);
+                binding.button6.setVisibility(View.INVISIBLE);
             }
         }
     }
@@ -253,6 +281,47 @@ public class FourthFragment extends ItemFragment {
         super.DataArrived(in, last);
         if (last) {
             switch (mSelectButton) {
+                case MainActivity.MSG_READER:
+                    switch (MainActivity.mSubStage) {
+                        case 2:
+                            if (mTemp.size() > 1) {
+                                if(!mTemp.get(1).equals("success (0)")){
+                                    ret = -5;
+                                }else {
+                                    binding.textView.setText("Demand reset success");
+                                }
+                            } else {
+                                ret = -5;
+                            }
+                            break;
+                        case 4:
+                            if (mTemp.size() > 1) {
+                                binding.textView.setText("Getting billing data...");
+                                mRecordCount = Integer.parseInt(mTemp.get(1));
+                                MainActivity.CounterParameter.setLength(0);
+                                MainActivity.CounterParameter.append(String.format("020406%08x06%08x120001120000", mRecordCount, mRecordCount));
+                            } else {
+                                ret = -5;
+                            }
+                            break;
+                        case 6:
+                            if (mTemp.size() > 9) {
+                                MainActivity.secondcsv.Update(mTemp.get(1),getString(R.string.table2_col4));
+                                MainActivity.secondcsv.Update(String.format("%.3f",MainActivity.d.Float(1000.0, mTemp.get(2))),getString(R.string.table2_col5));
+                                MainActivity.secondcsv.Update(String.format("%.3f",MainActivity.d.Float(1000.0, mTemp.get(3))),getString(R.string.table2_col6));
+                                MainActivity.secondcsv.Update(String.format("%.3f",MainActivity.d.Float(1000.0, mTemp.get(6))),getString(R.string.table2_col7));
+                                MainActivity.secondcsv.Update(String.format("%.3f",MainActivity.d.Float(1000.0, mTemp.get(7))),getString(R.string.table2_col8));
+                                MainActivity.secondcsv.Update(String.format("%.3f",MainActivity.d.Float(100.0, mTemp.get(8))),getString(R.string.table2_col9));
+                                MainActivity.secondcsv.Update(mTemp.get(9),getString(R.string.table2_col10));
+                                MainActivity.secondcsv.Update(mTemp.get(0),getString(R.string.table2_col11));
+                                MainActivity.secondcsv.writeFile();
+                                binding.textView.setText("Success to get billing data. finish");
+                            } else {
+                                ret = -5;
+                            }
+                            break;
+                    }
+                    break;
                 case MainActivity.MSG_SETUP:
                     switch (MainActivity.mSubStage) {
                         case 2:
@@ -348,6 +417,23 @@ public class FourthFragment extends ItemFragment {
                         ret = -5;
                     }
                     break;
+                case MainActivity.MSG_BILLING_RECORD:
+                    if (mTemp.size() > 9) {
+                        String timestamp = mTemp.get(0).replace("/", "");
+                        timestamp = timestamp.replace(":", "");
+                        timestamp = timestamp.replace(" ", "_");
+                        String filename = MainActivity.mSerialID + "_BL_" + timestamp + ".csv";
+                        mTemp.remove(0);
+                        CSVParser csv = new CSVParser(filename, MainActivity.folderExternal);
+                        csv.New("Clock,Imp[kWh],Exp[kWh],Abs[kWh],Net[kWh],ImpMaxDemand[W],ExpMaxDemand[W],MinVolt[V],Alert");
+                        csv.Add(mTemp);
+                        csv.writeFile();
+                        binding.textView.setText("Success to get and save billing records to file.");
+                    } else {
+                        binding.textView.setText("Fail to get and save billing records");
+                        ret = -5;
+                    }
+                    break;
                 case MainActivity.MSG_SET_CLOCK:
                     if (mTemp.size() > 1) {
                         if (!mTemp.get(1).equals("success (0)")) {
@@ -363,6 +449,9 @@ public class FourthFragment extends ItemFragment {
                     break;
             }
             mTemp.clear();
+        } else {
+            mCnt ++;
+            binding.textView.setText("Getting " + mCnt.toString() + " Blocks");
         }
         return ret;
     }

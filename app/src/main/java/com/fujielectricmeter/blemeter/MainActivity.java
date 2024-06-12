@@ -49,13 +49,16 @@ import androidx.navigation.ui.AppBarConfiguration;
 import androidx.navigation.ui.NavigationUI;
 import com.fujielectricmeter.blemeter.databinding.ActivityMainBinding;
 
+import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
+import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.util.ArrayList;
 import java.util.Date;
@@ -75,7 +78,7 @@ public class MainActivity extends AppCompatActivity implements
     private int mCurrentMessage;
     public static ActionBar mActionBar;
     public static int mScanTick = 2000;
-    public static int mTick = 100;
+    public static int mTick = 200;
     public static int mInterval = 0;
     private static final int timeout = 60;
     private int mRetry;
@@ -235,6 +238,26 @@ public class MainActivity extends AppCompatActivity implements
             e.printStackTrace();
         }
         return ok;
+    }
+
+    public String readFile(final String name, File folder) {
+        StringBuffer buffer = new StringBuffer();
+        File file = new File(folder, name);
+        if (file.exists()) {
+            try (BufferedReader br = new BufferedReader(new InputStreamReader(new FileInputStream(file), "SHIFT_JIS"))) {
+                while (true) {
+                    String read = br.readLine();
+                    if (read != null) {
+                        buffer.append("\n" + read);
+                    } else {
+                        break;
+                    }
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+        return buffer.toString();
     }
 
     public static void writeFile(String data, File file) {
@@ -701,34 +724,16 @@ public class MainActivity extends AppCompatActivity implements
                 break;
 
             case R.id.menu_share:
-                Date date = new Date();
-                SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd_hhmmss");
-                String name = String.format("%s_%s_%s.csv", msecondName, mActionBar.getTitle().toString(), sdf.format(date).toString()).replace(':', '-');
-                if (false) {
-//                Intent intent = new Intent(Intent.ACTION_SENDTO);
+                String csvfile = MainActivity.d.CurrentYearMonth() + "_meter.csv";
+                String data = readFile(csvfile,folderExternal);
+                if(data!=null) {
                     Intent intent = new Intent(Intent.ACTION_SEND);
-//                intent.setData(Uri.parse("mailto:")); // only email apps should handle this
-//                String[] addresses = new String[1];
-//                byte[] b = MainActivity.d.getEmail();
-//                String s = MainActivity.d.setStr2Str(b, 0, b.length);
-//                addresses[0] = s;
-//                intent.putExtra(Intent.EXTRA_EMAIL, addresses);
-                    intent.putExtra(Intent.EXTRA_SUBJECT, name);
-                    intent.putExtra(Intent.EXTRA_TEXT, mItemFragment.getData());
+                    intent.putExtra(Intent.EXTRA_SUBJECT, csvfile);
+                    intent.putExtra(Intent.EXTRA_TEXT, data);
                     intent.setType("text/plain");
-//                Intent shareIntent = Intent.createChooser(intent, null);
                     startActivity(intent);
-//                startActivity(shareIntent);
-                } else {
-                    byte[] bom = {(byte) 0xef, (byte) 0xbb, (byte) 0xbf};
-                    writeBinaryFile(bom, folderExternal + "/" + name);
-                    File file = new File(folderExternal, name);
-                    writeFile(mItemFragment.getData(), file);
-//                       Uri contentUri = FileProvider.getUriForFile(this, "com.fujielectricmeter.blemeter", file);
-//                       Intent shareIntent = new Intent(Intent.ACTION_SEND);
-//                       shareIntent.putExtra(Intent.EXTRA_STREAM, contentUri);
-//                       shareIntent.setType("text/plane; charset=utf-8");
-//                       this.startActivity(Intent.createChooser(shareIntent, "choose"));
+                } else{
+                    showToast("No data!!!");
                 }
                 ret = true;
                 break;
@@ -748,10 +753,10 @@ public class MainActivity extends AppCompatActivity implements
         menu.findItem(R.id.menu_disconnect).setVisible(false);
         menu.findItem(R.id.menu_scan).setVisible(false);
         menu.findItem(R.id.menu_select).setVisible(false);
-        menu.findItem(R.id.menu_share).setVisible(false);
         menu.findItem(R.id.menu_load).setVisible(false);
         menu.findItem(R.id.menu_save).setVisible(false);
         menu.findItem(R.id.menu_user).setVisible(false);
+        menu.findItem(R.id.menu_share).setVisible(true);
         if (mFragmentid < 2) {
             if (Level != null) {
                 if (Integer.parseInt(Level) <= 1) {
@@ -1406,6 +1411,7 @@ public class MainActivity extends AppCompatActivity implements
             case ODR_SCAN_ON:
                 if (!mScanning) {
                     if (mBluetoothAdapter != null) {
+                        mDeviceList.Deactivate();
                         mBluetoothAdapter.startLeScan(mLeScanCallback);
                         mScanning = true;
                         Log.i(TAG, "startLeScan");
@@ -1463,7 +1469,8 @@ public class MainActivity extends AppCompatActivity implements
     public final static int MSG_SET_CLOCK = MSG_MEASURE3 + 1;
     public final static int MSG_EVENT_RECORD = MSG_SET_CLOCK + 1;
     public final static int MSG_ENERGY_RECORD = MSG_EVENT_RECORD + 1;
-    public final static int MSG_BREAKER = MSG_ENERGY_RECORD + 1;
+    public final static int MSG_BILLING_RECORD = MSG_ENERGY_RECORD + 1;
+    public final static int MSG_BREAKER = MSG_BILLING_RECORD + 1;
     public final static int MSG_ALERT_CLEAR = MSG_BREAKER + 1;
 
     private int Parameter(final int message_id) {
@@ -1478,6 +1485,7 @@ public class MainActivity extends AppCompatActivity implements
                 break;
             case MSG_EVENT_RECORD:
             case MSG_ENERGY_RECORD:
+            case MSG_BILLING_RECORD:
                 mSel = 0;
                 mParameter.setLength(0);
                 if (CounterParameter.length() != 0) {
@@ -1567,6 +1575,10 @@ public class MainActivity extends AppCompatActivity implements
 
             case MSG_ENERGY_RECORD:
                 ret = accessData(0, DLMS.IST_LOAD_PROFILE, 2, false);
+                break;
+
+            case MSG_BILLING_RECORD:
+                ret = accessData(0, DLMS.IST_BILLING_PARAMS, 2, false);
                 break;
 
             case MSG_SETUP:
@@ -1744,8 +1756,13 @@ public class MainActivity extends AppCompatActivity implements
                             break;
                     }
                     Log.i(TAG, String.format("fragmentMessage - result :%d", ret));
-                    if (ret < 0) {
-                        Disconnect(true);
+                    if (ret == 0) {
+                        ret = 2;
+                        mStage++;
+                    } else {
+                        if (ret < 0) {
+                            Disconnect(true);
+                        }
                     }
                     break;
                 case 3:

@@ -301,6 +301,7 @@ public class SecondFragment extends ItemFragment {
                                 case -50:
                                 case -99:
                                     mState = 0;
+                                    mCallback.showToast(String.format("Batch next %d",ret));
                                     Log.i(TAG, String.format("Batch next %d",ret));
                                     updateList();
                                     handler.postDelayed(this, MainActivity.mTick);
@@ -311,6 +312,7 @@ public class SecondFragment extends ItemFragment {
                                 case -5: /*abort*/
                                 default:
                                     mState = 0;
+                                    mCallback.showToast(String.format("Detect error %d",ret));
                                     handler.postDelayed(this, MainActivity.mTick);
                                     abort = true;
                                     break;
