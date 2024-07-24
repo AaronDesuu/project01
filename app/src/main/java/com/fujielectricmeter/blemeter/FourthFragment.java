@@ -223,7 +223,16 @@ public class FourthFragment extends ItemFragment {
                 binding.button7.setOnClickListener(new View.OnClickListener() {
                     @Override
                     public void onClick(View view) {
-                        setAnime(binding.button7);
+                        binding.textView.setText("Communicating...");
+                        setAnime(binding.button6);
+                        buttonFunction(MainActivity.MSG_CHANGE_THRESH);
+                        MainActivity.trail.operation("MSG_CHANGE_THRESH button");
+                    }
+                });
+                binding.button8.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View view) {
+                        setAnime(binding.button8);
                         String data = CreateData();
                         mCallback.Print(data + "\n\n");
                         binding.textView.setText("Printed....\n" + data);
@@ -381,6 +390,19 @@ public class FourthFragment extends ItemFragment {
                                 ret = -5;
                             }
                             break;
+                    }
+                    break;
+                case MainActivity.MSG_CHANGE_THRESH:
+                    if (mTemp.size() > 1) {
+                        if(!mTemp.get(1).equals("success (0)")){
+                            binding.textView.setText("Fail to change thresh value1");
+                            ret = -5;
+                        }else {
+                            binding.textView.setText("Success to set thresh value1");
+                        }
+                    } else {
+                        binding.textView.setText("Success to set thresh value1");
+                        ret = -5;
                     }
                     break;
                 case MainActivity.MSG_ENERGY_RECORD:

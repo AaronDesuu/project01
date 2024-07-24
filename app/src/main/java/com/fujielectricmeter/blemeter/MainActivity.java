@@ -1472,6 +1472,7 @@ public class MainActivity extends AppCompatActivity implements
     public final static int MSG_BILLING_RECORD = MSG_ENERGY_RECORD + 1;
     public final static int MSG_BREAKER = MSG_BILLING_RECORD + 1;
     public final static int MSG_ALERT_CLEAR = MSG_BREAKER + 1;
+    public final static int MSG_CHANGE_THRESH = MSG_ALERT_CLEAR + 1;
 
     private int Parameter(final int message_id) {
         int ret = 0;
@@ -1521,6 +1522,12 @@ public class MainActivity extends AppCompatActivity implements
                     default:
                         break;
                 }
+                break;
+            case MSG_CHANGE_THRESH:
+                mSel = 0;
+                mParameter.setLength(0);
+                mParameter.append("01010204128001120032110c1101");
+                ret = 3;
                 break;
 
             case MSG_READER:
@@ -1607,6 +1614,10 @@ public class MainActivity extends AppCompatActivity implements
                     default:
                         break;
                 }
+                break;
+            case MSG_CHANGE_THRESH:
+                mDataIndex = 8;
+                ret = accessData(1, DLMS.IST_DETECT, 2, false);
                 break;
 
             case MSG_READER:
@@ -1740,6 +1751,7 @@ public class MainActivity extends AppCompatActivity implements
 //                                    showToast("Detect error...");
                                 }
                                 mSubStage = 0;
+                                mDataIndex  = 0;
                             } else {
                                 if (ret > 2) {
                                     if (ret == 3) {

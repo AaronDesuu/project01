@@ -97,5 +97,6 @@
     <string name="btn_breaker">開閉器</string>
     <string name="btn_register">登録</string>
     <string name="set_clock">Set Clock</string>
+    <string name="change_threshold">Change Threshold</string>
     <string name="btn_checker">確認</string>
 </resources>
