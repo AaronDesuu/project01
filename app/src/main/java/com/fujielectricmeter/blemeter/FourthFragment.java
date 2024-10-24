@@ -220,24 +220,6 @@ public class FourthFragment extends ItemFragment {
                         MainActivity.trail.operation("MSG_SET_CLOCK button");
                     }
                 });
-                binding.button7.setOnClickListener(new View.OnClickListener() {
-                    @Override
-                    public void onClick(View view) {
-                        binding.textView.setText("Communicating...");
-                        setAnime(binding.button6);
-                        buttonFunction(MainActivity.MSG_CHANGE_THRESH);
-                        MainActivity.trail.operation("MSG_CHANGE_THRESH button");
-                    }
-                });
-                binding.button8.setOnClickListener(new View.OnClickListener() {
-                    @Override
-                    public void onClick(View view) {
-                        setAnime(binding.button8);
-                        String data = CreateData();
-                        mCallback.Print(data + "\n\n");
-                        binding.textView.setText("Printed....\n" + data);
-                    }
-                });
                 if (Integer.parseInt(MainActivity.rootcsv.Column(getString(R.string.table2_col1))) > 0) {
                     binding.button1.setEnabled(false);
                 }
