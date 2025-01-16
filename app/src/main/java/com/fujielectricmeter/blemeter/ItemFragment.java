@@ -26,9 +26,10 @@ public class ItemFragment extends Fragment {
 
         int Rssi(final int position);
 
-        void Print(final String data);
+ //       void Print(final String data);
 
         void showToast(final String text);
+
     }
     public final static String TAG = ItemFragment.class.getSimpleName();
     public boolean stopper = true;

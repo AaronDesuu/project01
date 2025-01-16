@@ -99,4 +99,5 @@
     <string name="set_clock">Set Clock</string>
     <string name="change_threshold">Change Threshold</string>
     <string name="btn_checker">確認</string>
+    <string name="bt_not_enabled_leaving" />
 </resources>

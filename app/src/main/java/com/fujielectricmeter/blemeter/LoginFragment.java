@@ -91,6 +91,8 @@ public class LoginFragment extends ItemFragment {
                     }
                 }
                 if (find) {
+
+
                     setAnime(binding.button);
                     InputMethodManager imm = (InputMethodManager)getContext().getSystemService(Context.INPUT_METHOD_SERVICE);
                     imm.hideSoftInputFromWindow(v.getWindowToken(), InputMethodManager.HIDE_NOT_ALWAYS);

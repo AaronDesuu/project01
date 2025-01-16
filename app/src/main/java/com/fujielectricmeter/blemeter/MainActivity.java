@@ -2,11 +2,10 @@ package com.fujielectricmeter.blemeter;
 
 import static android.os.Environment.DIRECTORY_DOCUMENTS;
 import static android.os.Environment.DIRECTORY_DOWNLOADS;
-import static java.lang.Integer.parseInt;
+
+import android.Manifest;
 import android.app.Activity;
 import android.app.AlertDialog;
-import android.app.DatePickerDialog;
-import android.app.TimePickerDialog;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothManager;
@@ -16,29 +15,22 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.content.pm.PackageManager;
 import android.content.ServiceConnection;
-import android.database.sqlite.*;
-import android.icu.text.SimpleDateFormat;
-import android.Manifest;
+import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
 import android.os.Handler;
 import android.os.IBinder;
-import android.text.InputType;
+import android.os.Message;
 import android.util.Log;
-import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.WindowManager;
-import android.widget.DatePicker;
 import android.widget.EditText;
-import android.widget.LinearLayout;
-import android.widget.TextView;
-import android.widget.TimePicker;
 import android.widget.Toast;
+
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.ActionBar;
 import androidx.appcompat.app.AppCompatActivity;
@@ -47,29 +39,33 @@ import androidx.navigation.NavController;
 import androidx.navigation.Navigation;
 import androidx.navigation.ui.AppBarConfiguration;
 import androidx.navigation.ui.NavigationUI;
+
 import com.fujielectricmeter.blemeter.databinding.ActivityMainBinding;
+import com.woosim.printer.WoosimCmd;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
-import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
+import java.lang.ref.WeakReference;
 import java.util.ArrayList;
-import java.util.Date;
-import java.util.Locale;
-import com.seikoinstruments.sdk.thermalprinter.PrinterException;
-import com.seikoinstruments.sdk.thermalprinter.PrinterManager;
-import static com.seikoinstruments.sdk.thermalprinter.PrinterManager.PRINTER_MODEL_MP_B20;
 
 public class MainActivity extends AppCompatActivity implements
         ItemFragment.messageManager {
 
+    public static final String DEVICE_NAME = null;
+    private static final boolean D = true;
+    public static final int MESSAGE_TOAST = 2;
+    public static final int MESSAGE_READ = 3;
+    private static final int REQUEST_CONNECT_DEVICE_INSECURE = 2;
+
+    public static int MESSAGE_DEVICE_NAME;
     private final String TAG = MainActivity.class.getSimpleName();
     public static StringBuffer CounterParameter = new StringBuffer();
     private AppBarConfiguration appBarConfiguration;
@@ -114,11 +110,11 @@ public class MainActivity extends AppCompatActivity implements
     private int mStep;
     private int mPrmState;
     public static DLMS d;
-    private Handler mHandler;
     private boolean mServiceActive;
     private boolean mBinding;
     private int mScan;
     public static boolean mScanning;
+    protected static BluetoothPrintService mPrintService = null;
     private int mConnected;
     private static final int REQUEST_ENABLE_BT = 1;
     private boolean mkeep = false;
@@ -132,7 +128,9 @@ public class MainActivity extends AppCompatActivity implements
     public static CSVParser login;
     public static CSVParser rootcsv;
     public static CSVParser firstcsv;
+
     public static CSVParser secondcsv;
+    public static CSVParser ratecsv;
     public static CSVParser fourthcsv;
     public static Trail trail;
     public static ArrayList<SampleListItem> mListItems = new ArrayList<>();
@@ -146,7 +144,7 @@ public class MainActivity extends AppCompatActivity implements
     static String root_column;
 
     final static String[] root_row = {
-            "1,0,0000001250,48:23:35:0E:2A:67,,,,,,,,",
+            "1,0,0000001286,48:23:35:0E:47:E3,,,,,,,,",
             "2,0,0000001251,48:23:35:10:57:43,,,,,,,,",
             "3,0,0000001252,48:23:35:10:57:A6,,,,,,,,",
             "4,0,0000001253,48:23:35:10:4D:5C,,,,,,,,",
@@ -163,9 +161,9 @@ public class MainActivity extends AppCompatActivity implements
             "15,0,9999999998,48:23:35:02:68:50,,,,,,,,",
             "16,0,9999999997,48:23:35:0E:33:CF,,,,,,,,",
     };
-    final static String PRINTER1 = "68:84:7E:65:A9:BA";
-    private static PrinterManager mPrinterManager;
-    private static String mPrintData = null;
+    //final static String PRINTER1 = "68:84:7E:65:A9:BA";
+    //private static String mPrintData = null;
+    private String Tag;
 
 
     public int Rssi(final int position) {
@@ -250,23 +248,251 @@ public class MainActivity extends AppCompatActivity implements
         } catch (Exception e) {
         }
     }
-    public void Print(final String data) {
-        try {
-            mPrinterManager.connect(PRINTER_MODEL_MP_B20, PRINTER1, true);
-            mPrinterManager.sendDataFile(folderFiles + "/logo3.jpg");
-            mPrinterManager.sendText("+------------------------------+\n");
-            mPrinterManager.sendText("|        Electric bill         |\n");
-            mPrinterManager.sendText("+------------------------------+\n\n");
-            mPrinterManager.sendText(data);
-            mPrinterManager.disconnect();
-        } catch (PrinterException e) {
-            e.printStackTrace();
-            showToast(e.getMessage());
-            try {
-                mPrinterManager.disconnect();
-            } catch (PrinterException e1) {
-            }
-        }
+    public static void printImageText() {
+        mPrintService.write(WoosimCmd.initPrinter());
+        mPrintService.write(WoosimCmd.setPageMode());
+        mPrintService.write(WoosimCmd.PM_setArea(0, 0, 600, 4500));
+
+        String _str1 =
+                "================================================================\n"+
+                /*期間 月(September) 年　　レートの種類:レート名　　　　*/
+                "Period     :%s %04d       Rate Type     : %-s\n";
+        String str1 =String.format(_str1,4002829,10,2024);
+        String _str2 =
+                /*メーター：シリアル番号/契約番号？     乗数   */
+                "Meter      :%s BK0798     Multiplier    :1.0\n"+
+                /*日時 MM/DD/YYYY 　　　　　　　　　　　　　　　　　　　　　　　　　今回検針値 6.3 */
+                "Period To  :%02tm/%02td/%tY                   Pres Reading  :%6.03f\n";
+        String str2 = String.format(_str2,4002829,10,10,2024,222222.123f);
+        String _str3 =
+                /*日時 MM/DD/YYYY 　　　　　　　　　　　　　　　　　　前回検針値 6.3 */
+                "Period From:%02tm/%02td/%tY                  Prev Reading : %6.03f\n"+
+                /*使用電力の瞬時値:2.3 　　　　　　　　　　　　　　　　　　         使用量 6.3 */
+                "Demand KW : %2.03f                         Total KWH Used : %6.03f\n";
+        String str3 = String.format(_str3,8,25,2024,111111.123f,16.4f,111111f);
+        String str4 =
+                "================================================================\n";
+        String str5 =
+                "CHARGES                 RATE              AMOUNT\n" +
+                "GEN/TRANS CHARGES\n";
+        String _str6 =
+                /*change name          　　　　　　　　　　　charge rate　　　rate*使用電力*/
+                "  Generation System Charge    :       "+"%2.04f"+"/kwh"+" %,6.02f\n"+
+                "  Transmission Demand Charge  :       "+"%4.02f"+"/kwh"+" %,6.02f\n"+
+                "  System Loss Charge          :       "+"%2.03f"+"/kwh"+" %,6.02f\n\n";
+        String str6 = String.format(_str6,1.1111f,111111.11f,100.11f,111111.11f,1.111f,111111.11f);
+        String _str7 =
+                "                                                ----------------\n"+
+                /*　　　　　　　　　　　　　　　　　　　　　　　　 GEN/TRANS CHARGESの小計 */
+                "                                       SUB TOTAL"+" %,6.02f\n\n";
+        String str7 = String.format(_str7,111111.11f);
+        String str8 =
+                "DISTRIBUTION CHARGES\n";
+        String _str9 =
+                /*change name          　　　　　　　　　　　charge rate　　　rate*使用電力*/
+                "  Distribution Demand Charge  :       "+"%.02f"+" /kw "+" %,6.02f\n"+
+                "  Supply Fix Charge           :       "+"%.02f"+" /cst"+" %,6.02f\n"+
+                "  Metering Fix Charge         :       "+"%.02f"+" /cst"+" %,6.02f\n";
+        String str9 = String.format(_str9,11.11f,111111.11f,100.11f,111111.11f,1.01f,111111.11f);
+        String _str10=
+                "                                                ----------------\n"+
+                /*　　　　　　　　　DISTRIBUTION CHARGESの小計 */
+                "                                       SUB TOTAL"+" %,6.02f\n\n";
+        String str10 = String.format(_str10,111111.11f);
+        String str11=
+                "REINVESTMENT FUND FOR\n"+
+                "SUSTAINABLE CAPEX\n";
+        String _str12=
+                /*change name          　　　　　　　charge rate　　　　　　rate*使用電力*/
+                "  Reinvestment Fund for CAPEX :       "+"%.04f"+"/kwh"+" %,6.02f\n"+
+                "  Member's CAPEX Contribution :       "+"%.04f"+"/kwh"+" %,6.02f\n";
+        String str12 = String.format(_str12,11.11f,111111.11f,100.11f,111111.11f);
+        String _str13=
+                "                                                ----------------\n"+
+                /*　　　　　　　　　　　REINVESTMENT FUND FOR SUSTAINABLE CAPEXの小計 */
+                "                                       SUB TOTAL"+" %,6.02f\n\n";
+        String str13 = String.format(_str13,111111.11f);
+        String str14=
+                "OTHER CHARGES\n";
+        String _str15=
+                /*change name          　　　　　　　charge rate　　　　　　rate*使用電力*/
+                "  Lifeline Discount/Subsidy   :      "+"%.04f"+"/kwh"+" %,6.02f\n"+
+                "  Senior Citizen Subsidy      :      "+"%.04f"+"/kwh"+" %,6.02f\n";
+        String str15 = String.format(_str15,11.11f,111111.11f,100.11f,111111.11f);
+        String _str16=
+                "                                                ----------------\n"+
+                /*　　　　　　　　　　　                          OTHER CHARGESの小計 */
+                "                                       SUB TOTAL"+" %,6.02f\n\n";
+        String str16 = String.format(_str16,111111.11f);
+        String str17=
+                "UNIVERSAL CHARGES\n";
+        String _str18=
+                /*change name          　　　　　　　charge rate　　　　　　rate*使用電力*/
+                "  Missionary Elec(NPC-SPUG)   :       "+"%.04f"+"/kwh"+" %,6.02f\n"+
+                "  Missionary Elec(RED)        :       "+"%.04f"+"/kwh"+" %,6.02f\n"+
+                "  Environmental Charge        :       "+"%.04f"+"/kwh"+" %,6.02f\n";
+        String str18 = String.format(_str18,11.11f,111111.11f,100.11f,111111.11f,1.01f,111111.11f);
+        String _str19=
+                /*change name          　　　　　　　charge rate　　　　　　rate*使用電力*/
+                "  Feed In Tariff Allowance    :       "+"%.04f"+"/kwh"+" %,6.02f\n"+
+                "  NPC Stranded Contract       :       "+"%.04f"+"/kwh"+" %,6.02f\n"+
+                "  NPC Stranded Debts          :       "+"%.04f"+"/kwh"+" %,6.02f\n";
+        String str19 = String.format(_str19,11.11f,111111.11f,100.11f,111111.11f,1.01f,111111.11f);
+        String _str20=
+                "                                                ----------------\n"+
+                /*　　　　　　　　　　　UNIVERSAL CHARGESの小計 */
+                "                                      SUB TOTAL"+" %,6.02f\n\n";
+        String str20 = String.format(_str20,111111.11f);
+        String str21=
+                "VALUE ADDED TAX\n";
+        String _str22=
+                /*change name          　　　　　　　charge rate　　　　　　rate*使用電力*/
+                "  Generation VAT              :       "+" %.04f"+"/kwh"+" %,6.02f\n"+
+                "  Transmission VAT            :       "+" %.04f"+"/kwh"+" %,6.02f\n"+
+                "  System Loss VAT             :       "+" %.04f"+"/kwh"+" %,6.02f\n";
+        String str22 = String.format(_str22,11.11f,111111.11f,100.11f,111111.11f,1.01f,111111.11f);
+        String _str23=
+                /*change name          　　　　　　　charge rate　　　　　　rate*使用電力*/
+                "  Distribution VAT            :          "+" %.04f"+"%"+" %,6.02f\n"+
+                "  Other VAT                   :          "+" %.04f"+"%"+" %,6.02f\n";
+        String str23 = String.format(_str23,11.11f,111111.11f,100.11f,111111.11f);
+        String _str24=
+                "                                                ----------------\n"+
+                /*　　　　　　　　　　  　VALUE ADDED TAXの小計 */
+                "                                      SUB TOTAL"+" %,6.02f\n\n";
+        String str24 = String.format(_str24,111111.11f);
+
+
+        String str25=
+                "----------------------------------------------------------------\n";
+        String _str26=
+                /*現在の請求額*/
+                "CURRENT BILL                                       Php"+" %,6.02f\n";
+        String str26 = String.format(_str26,111111.11f);
+        String _str27=
+                /*各小計の合計の請求額*/
+                "TOTAL AMOUNT                       Php"+" %,6.02f\n";
+        String str27 = String.format(_str27,111111.11f);
+        String str28=
+                "================================================================\n";
+        String _str29=
+                /*値引額*/
+                "Discount                               "+" %,6.02f\n\n";
+        String str29 = String.format(_str29,111111.11f);
+        String _str30=
+                /*合計の請求額から値引きされた金額*/
+                "Amount Before Due                      "+" %,6.02f\n\n";
+        String str30 = String.format(_str30,111111.11f);
+        String _str31=
+                /*利息額*/
+                "Interest                               "+" %,6.02f\n\n";
+        String str31 = String.format(_str31,111111.11f);
+        String _str32=
+                /*合計の請求額から利息額が追加された金額*/
+                "Amount After Due                       "+" %,6.02f\n\n";
+        String str32 = String.format(_str32,111111.11f);
+
+        String str33=
+                /*支払い期日　           月(Oct)　dd,yyyy　*/
+                "DUE DATE:           "+"%s　%td,%tY\n"+
+                "DISCO DATE:         "+"%s　%td,%tY\n\n";
+
+        String str34=
+                "NOTE:Please pay this electric bill on or before DUE DATE otherwise,\n"+
+                "     we will be forced to discontinue serving your electric needs.\n\n";
+        String str35=
+                "This is not an Official Receipt.\n"+
+                "Payment of this bill does not mean payment of previous delinquencies if any.\n\n";
+        String str36=
+                "             **PLEASE PRESENT THIS STATEMENT UPON PAYMENT**\n\n"+
+                /*検針担当：名前 　　　　　　　　　　検診日時 曜日(Thu) dd 月(Oct) yyyy　HH:mm:ss */
+                "Reader:%s                   "+"Thu 10 Oct 2024 11:39:33\n\n";
+        String str37=
+                /*フォーマットのバージョン*/
+                "Version : v1.00.1";
+
+        mPrintService.write(WoosimCmd.PM_setPosition(0, 0));
+        mPrintService.write(WoosimCmd.setCodeTable(WoosimCmd.MCU_RX, WoosimCmd.CT_CP437, WoosimCmd.FONT_MEDIUM));
+        mPrintService.write(str1.getBytes());
+        mPrintService.write(str2.getBytes());
+        mPrintService.write(str3.getBytes());
+        mPrintService.write(str4.getBytes());
+
+
+        mPrintService.write(WoosimCmd.setCodeTable(WoosimCmd.MCU_RX, WoosimCmd.CT_CP437, WoosimCmd.FONT_LARGE));
+        mPrintService.write(str5.getBytes());
+
+        mPrintService.write(WoosimCmd.setCodeTable(WoosimCmd.MCU_RX, WoosimCmd.CT_CP437, WoosimCmd.FONT_MEDIUM));
+        mPrintService.write(str6.getBytes());
+        mPrintService.write(str7.getBytes());
+
+        mPrintService.write(WoosimCmd.setCodeTable(WoosimCmd.MCU_RX, WoosimCmd.CT_CP437, WoosimCmd.FONT_LARGE));
+        mPrintService.write(str8.getBytes());
+
+        mPrintService.write(WoosimCmd.setCodeTable(WoosimCmd.MCU_RX, WoosimCmd.CT_CP437, WoosimCmd.FONT_MEDIUM));
+        mPrintService.write(str9.getBytes());
+        mPrintService.write(str10.getBytes());
+
+
+        mPrintService.write(WoosimCmd.setCodeTable(WoosimCmd.MCU_RX, WoosimCmd.CT_CP437, WoosimCmd.FONT_LARGE));
+        mPrintService.write(str11.getBytes());
+
+        mPrintService.write(WoosimCmd.setCodeTable(WoosimCmd.MCU_RX, WoosimCmd.CT_CP437, WoosimCmd.FONT_MEDIUM));
+        mPrintService.write(str12.getBytes());
+        mPrintService.write(str13.getBytes());
+
+
+        mPrintService.write(WoosimCmd.setCodeTable(WoosimCmd.MCU_RX, WoosimCmd.CT_CP437, WoosimCmd.FONT_LARGE));
+        mPrintService.write(str14.getBytes());
+
+        mPrintService.write(WoosimCmd.setCodeTable(WoosimCmd.MCU_RX, WoosimCmd.CT_CP437, WoosimCmd.FONT_MEDIUM));
+        mPrintService.write(str15.getBytes());
+        mPrintService.write(str16.getBytes());
+
+
+        mPrintService.write(WoosimCmd.setCodeTable(WoosimCmd.MCU_RX, WoosimCmd.CT_CP437, WoosimCmd.FONT_LARGE));
+        mPrintService.write(str17.getBytes());
+
+        mPrintService.write(WoosimCmd.setCodeTable(WoosimCmd.MCU_RX, WoosimCmd.CT_CP437, WoosimCmd.FONT_MEDIUM));
+        mPrintService.write(str18.getBytes());
+        mPrintService.write(str19.getBytes());
+        mPrintService.write(str20.getBytes());
+
+
+        mPrintService.write(WoosimCmd.setCodeTable(WoosimCmd.MCU_RX, WoosimCmd.CT_CP437, WoosimCmd.FONT_LARGE));
+        mPrintService.write(str21.getBytes());
+
+        mPrintService.write(WoosimCmd.setCodeTable(WoosimCmd.MCU_RX, WoosimCmd.CT_CP437, WoosimCmd.FONT_MEDIUM));
+        mPrintService.write(str22.getBytes());
+        mPrintService.write(str23.getBytes());
+        mPrintService.write(str24.getBytes());
+        mPrintService.write(str25.getBytes());
+        mPrintService.write(str26.getBytes());
+
+        mPrintService.write(WoosimCmd.setCodeTable(WoosimCmd.MCU_RX, WoosimCmd.CT_CP437, WoosimCmd.FONT_LARGE));
+        mPrintService.write(str27.getBytes());
+
+        mPrintService.write(WoosimCmd.setCodeTable(WoosimCmd.MCU_RX, WoosimCmd.CT_CP437, WoosimCmd.FONT_MEDIUM));
+        mPrintService.write(str28.getBytes());
+
+
+        mPrintService.write(WoosimCmd.setCodeTable(WoosimCmd.MCU_RX, WoosimCmd.CT_CP437, WoosimCmd.FONT_LARGE));
+        mPrintService.write(str29.getBytes());
+        mPrintService.write(str30.getBytes());
+        mPrintService.write(str31.getBytes());
+        mPrintService.write(str32.getBytes());
+
+
+        mPrintService.write(WoosimCmd.setCodeTable(WoosimCmd.MCU_RX, WoosimCmd.CT_CP437, WoosimCmd.FONT_LARGE));
+        mPrintService.write(str33.getBytes());
+
+        mPrintService.write(WoosimCmd.setCodeTable(WoosimCmd.MCU_RX, WoosimCmd.CT_CP437, WoosimCmd.FONT_SMALL));
+        mPrintService.write(str34.getBytes());
+        mPrintService.write(str35.getBytes());
+        mPrintService.write(str36.getBytes());
+        mPrintService.write(str37.getBytes());
+
+        mPrintService.write(WoosimCmd.PM_printStdMode());
     }
 
     private boolean copyAssetsFile() {
@@ -355,7 +581,36 @@ public class MainActivity extends AppCompatActivity implements
             showToast("You choose disable bluetooth. Exit this app");
             return;
         }
+        switch (requestCode) {
+            case REQUEST_CONNECT_DEVICE_INSECURE:
+                if (resultCode == Activity.RESULT_OK) {
+                    connectDevice(data, false);
+                }
+                break;
+            case REQUEST_ENABLE_BT:
+                if (resultCode == Activity.RESULT_OK) {
+                    mPrintService = new BluetoothPrintService(mHandler);
+                } else {
+                    if (D) {
+                        int btIsNotEnabled = Log.e(Tag, "BT is not enabled");
+                    }
+                    Toast.makeText(this, R.string.bt_not_enabled_leaving, Toast.LENGTH_SHORT).show();
+                    finish();
+                }
+                break;
+        }
         super.onActivityResult(requestCode, resultCode, data);
+    }
+
+    private void connectDevice(Intent data, boolean secure) {
+        String address = "1C:B8:57:50:01:D9";
+        // Get the device MAC address
+      //if (data.getExtras() != null)
+       //address = data.getExtras().getString(DeviceList.EXTRA_DEVICE_ADDRESS);
+        // Get the BluetoothDevice object
+        BluetoothDevice device = mBluetoothAdapter.getRemoteDevice(address);
+        // Attempt to connect to the device
+        mPrintService.connect(device, secure);
     }
 
     @Override
@@ -400,20 +655,20 @@ public class MainActivity extends AppCompatActivity implements
             return;
         }
         copyAssetsFile();
-        mPrinterManager = new PrinterManager(getApplicationContext());
-        mPrintData = null;
 
-        root_column =   getString(R.string.table2_key)+","+
-                getString(R.string.table2_col1)+","+
-                getString(R.string.table2_col2)+","+
-                getString(R.string.table2_col3)+","+
-                getString(R.string.table2_col4)+","+
-                getString(R.string.table2_col5)+","+
-                getString(R.string.table2_col6)+","+
-                getString(R.string.table2_col7)+","+
-                getString(R.string.table2_col8)+","+
-                getString(R.string.table2_col9)+","+
-                getString(R.string.table2_col10)+","+
+ //       mPrintData = null;
+
+        root_column = getString(R.string.table2_key) + "," +
+                getString(R.string.table2_col1) + "," +
+                getString(R.string.table2_col2) + "," +
+                getString(R.string.table2_col3) + "," +
+                getString(R.string.table2_col4) + "," +
+                getString(R.string.table2_col5) + "," +
+                getString(R.string.table2_col6) + "," +
+                getString(R.string.table2_col7) + "," +
+                getString(R.string.table2_col8) + "," +
+                getString(R.string.table2_col9) + "," +
+                getString(R.string.table2_col10) + "," +
                 getString(R.string.table2_col11);
         rootcsv = new CSVParser("meter.csv", folderFiles);
         if (!rootcsv.exist("meter.csv")) {
@@ -432,6 +687,11 @@ public class MainActivity extends AppCompatActivity implements
                 login.Add(defaultAccount[i]);
             }
             login.writeFile();
+        }
+        CSVParser Rate = new CSVParser(folderExternal);
+        if (!Rate.readFile("rate.csv")) {
+            Rate.New(getString(R.string.login) + "," + getString(R.string.password) + "," + getString(R.string.authenticate));
+            Rate.writeFile();
         }
         if (csv.readFile("login.csv")) {
             boolean update = false;
@@ -520,6 +780,40 @@ public class MainActivity extends AppCompatActivity implements
         mConnect = null;
         mScan = 1;
     }
+    // The handler that gets information back from the BluetoothPrintService
+    private final MyHandler mHandler = new MyHandler(this);
+
+    private static class MyHandler extends Handler {
+        private final WeakReference<MainActivity> mActivity;
+
+        MyHandler(MainActivity activity) {
+            mActivity = new WeakReference<>(activity);
+        }
+
+        @Override
+        public void handleMessage(Message msg) {
+            MainActivity activity = mActivity.get();
+            if (activity != null) {
+                activity.handleMessage(msg);
+            }
+        }
+    }
+
+    private void handleMessage(Message msg) {
+
+    }
+
+    @Override
+    public void onStart(){
+        super.onStart();
+        Log.i(TAG, " onStart.");
+        mPrintService=new BluetoothPrintService(mHandler);
+
+        String address = "1C:B8:57:50:01:D9";
+        BluetoothDevice device = mBluetoothAdapter.getRemoteDevice(address);
+        mPrintService.connect(device, true);
+//        mPrintService.start();
+    }
 
     @Override
     public boolean onSupportNavigateUp() {
@@ -533,6 +827,7 @@ public class MainActivity extends AppCompatActivity implements
     protected void onResume() {
         super.onResume();
 
+
         checkPermission();
         Log.i(TAG, " onResume.");
         registerReceiver(mGattUpdateReceiver, makeGattUpdateIntentFilter());
@@ -545,6 +840,11 @@ public class MainActivity extends AppCompatActivity implements
             startActivityForResult(enableBtIntent, REQUEST_ENABLE_BT);
             mPermission = true;
         }
+        if (mPrintService != null) {
+            if (mPrintService.getState() == BluetoothPrintService.STATE_NONE) {
+//                mPrintService.start();
+            }
+        }
     }
 
     @Override
@@ -555,6 +855,7 @@ public class MainActivity extends AppCompatActivity implements
 
     @Override
     protected void onDestroy() {
+        if(mPrintService != null) mPrintService.stop();
         super.onDestroy();
         Log.i(TAG, " onDestroy");
     }
@@ -686,7 +987,6 @@ public class MainActivity extends AppCompatActivity implements
                 handler.post(r);
                 ret = true;
                 break;
-
             case R.id.menu_share:
                 String csvfile = MainActivity.d.CurrentYearMonth() + "_meter.csv";
                 String data = readFile(csvfile,folderExternal);
@@ -705,7 +1005,6 @@ public class MainActivity extends AppCompatActivity implements
                 ret = super.onOptionsItemSelected(item);
                 break;
         }
-
         return ret;
     }
 
@@ -849,6 +1148,7 @@ public class MainActivity extends AppCompatActivity implements
 
     // Adapter for holding devices found through scanning.
     public class DeviceList {
+
         private ArrayList<ScanDevice> mScanDevice;
 
         public DeviceList() {
@@ -1715,7 +2015,7 @@ public class MainActivity extends AppCompatActivity implements
 //                                    showToast("Detect error...");
                                 }
                                 mSubStage = 0;
-                                mDataIndex  = 0;
+                                mDataIndex = 0;
                             } else {
                                 if (ret > 2) {
                                     if (ret == 3) {

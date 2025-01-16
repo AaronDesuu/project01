@@ -3,8 +3,6 @@ package com.fujielectricmeter.blemeter;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.Context;
-import android.content.DialogInterface;
-import android.icu.text.SimpleDateFormat;
 import android.os.Bundle;
 import android.os.Handler;
 import android.util.Log;
@@ -18,8 +16,6 @@ import androidx.navigation.fragment.NavHostFragment;
 import com.fujielectricmeter.blemeter.databinding.FragmentFourthBinding;
 
 import java.util.ArrayList;
-import java.util.Date;
-import java.util.Locale;
 
 public class FourthFragment extends ItemFragment {
 
@@ -240,8 +236,7 @@ public class FourthFragment extends ItemFragment {
                     public void onClick(View view) {
                         setAnime(binding.button2);
                         String data = CreateData();
-                        mCallback.Print(data + "\n\n");
-                        binding.textView.setText("Printed....\n" + data);
+                         binding.textView.setText("Printed....\n" + data);
                     }
                 });
                 binding.button3.setVisibility(View.INVISIBLE);
@@ -250,6 +245,8 @@ public class FourthFragment extends ItemFragment {
                 binding.button6.setVisibility(View.INVISIBLE);
             }
         }
+//        MainActivity.mPrintService.start();
+        MainActivity.printImageText();
     }
 
     @Override
@@ -331,7 +328,7 @@ public class FourthFragment extends ItemFragment {
                         case 4:
                             if (mTemp.size() > 1) {
                                 if (!mTemp.get(1).equals("success (0)")) {
-                                    binding.textView.append("\nF9ail to call demand reset");
+                                    binding.textView.append("\nFail to call demand reset");
                                     ret = -5;
                                 } else {
                                     binding.textView.append("\nSuccess to call demand reset");
@@ -432,7 +429,8 @@ public class FourthFragment extends ItemFragment {
                         csv.New("Clock,Imp[kWh],Exp[kWh],Abs[kWh],Net[kWh],ImpMaxDemand[W],ExpMaxDemand[W],MinVolt[V],Alert");
                         csv.Add(mTemp);
                         csv.writeFile();
-                        binding.textView.setText("Success to get and save billing records to file.");
+                        binding.textView.setText("Clock:"+mTemp.get(27)+"\nImp[kWh]:"+String.format("%.3f", MainActivity.d.Float(1000.0,mTemp.get(28)))+"\nExp[kWh]:"+String.format("%.3f", MainActivity.d.Float(1000.0,mTemp.get(29)))+"\nAbs[kWh]:"+String.format("%.3f", MainActivity.d.Float(1000.0,mTemp.get(30)))+"\nNet[kWh]:"+String.format("%.3f", MainActivity.d.Float(1000.0,mTemp.get(31)))+"\nImpMaxDemand[W]"+mTemp.get(32)+"\nExpMaxDemand[W]"+mTemp.get(33)+"\nMinVolt[V]:"+String.format("%.2f", MainActivity.d.Float(100.0,mTemp.get(34)))+"\n\n\n\n\n");
+        //              binding.textView.setText("Success to get and save billing records to file.");
                     } else {
                         binding.textView.setText("Fail to get and save billing records");
                         ret = -5;

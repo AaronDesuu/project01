@@ -51,7 +51,10 @@ dependencies {
     implementation "androidx.camera:camera-lifecycle:1.2.0-rc01"
     implementation "androidx.camera:camera-view:1.2.0-rc01"
     implementation 'com.google.mlkit:barcode-scanning:17.0.2'
-    implementation files('libs\\SiiAndroidSDK.jar')
+
+    implementation fileTree(dir: 'libs', include: ['*.jar'])
+    implementation files('libs/WoosimLib261.jar')
+
     testImplementation 'junit:junit:4.13.2'
     androidTestImplementation 'com.android.support.test:runner:1.0.2'
     androidTestImplementation 'com.android.support.test.espresso:espresso-core:3.0.2'
