@@ -439,10 +439,22 @@ public class DLMS {
         return sec;
     }
 
-    public String CurrentYearMonth() {    /*yyyy/mm/dd hh:mm:ss*/
+    public String CurrentYearMonth() {    /*MMyyyy*/
 
         android.icu.text.SimpleDateFormat sdf = new android.icu.text.SimpleDateFormat("MMyyyy", Locale.getDefault());
         return sdf.format(new Date());
+    }
+    public String PreviousYearMonth() {    /*MMyyyy*/
+
+        android.icu.text.SimpleDateFormat sdf = new android.icu.text.SimpleDateFormat("MMyyyy", Locale.getDefault());
+        return sdf.format(new Date());
+        int diff = (today.get(Calendar.DATE)) - 1;
+        start.setTime(today.getTime());
+        start.add(Calendar.DATE, -diff);
+        start.add(Calendar.MONTH, -1);
+        end.setTime(start.getTime());
+        end.add(Calendar.MONTH, 1);
+        end.add(Calendar.DATE, -1);
     }
     public String SecToRawDatetime(final long sec) {
 

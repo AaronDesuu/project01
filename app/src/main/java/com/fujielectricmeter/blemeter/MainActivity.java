@@ -37,6 +37,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.navigation.NavController;
 import androidx.navigation.Navigation;
+import androidx.navigation.fragment.NavHostFragment;
 import androidx.navigation.ui.AppBarConfiguration;
 import androidx.navigation.ui.NavigationUI;
 
@@ -64,7 +65,9 @@ public class MainActivity extends AppCompatActivity implements
     public static final int MESSAGE_TOAST = 2;
     public static final int MESSAGE_READ = 3;
     private static final int REQUEST_CONNECT_DEVICE_INSECURE = 2;
-
+    private static float [] ratio = {0.0f,0.0f,0.0f,0.0f,0.0f,0.0f,0.0f,0.0f,0.0f,0.0f,0.0f,0.0f,0.0f,0.0f,0.0f,0.0f,0.0f,0.0f,0.0f,0.0f,};
+    public static String [] now_value = {"","","","","","","","","","","","","","","","","","","","","","","","","","","","","",};
+    public static String [] old_value = {"","","","","","","","","","","","","","","","","","","","","","","","","","","","","",};
     public static int MESSAGE_DEVICE_NAME;
     private final String TAG = MainActivity.class.getSimpleName();
     public static StringBuffer CounterParameter = new StringBuffer();
@@ -131,6 +134,8 @@ public class MainActivity extends AppCompatActivity implements
 
     public static CSVParser secondcsv;
     public static CSVParser ratecsv;
+    public static CSVParser oldcsv;
+
     public static CSVParser fourthcsv;
     public static Trail trail;
     public static ArrayList<SampleListItem> mListItems = new ArrayList<>();
@@ -257,13 +262,13 @@ public class MainActivity extends AppCompatActivity implements
                 "================================================================\n"+
                 /*期間 月(September) 年　　レートの種類:レート名　　　　*/
                 "Period     :%s %04d       Rate Type     : %-s\n";
-        String str1 =String.format(_str1,4002829,10,2024);
+        String str1 =String.format(_str1,9,10,2024,"typA");
         String _str2 =
                 /*メーター：シリアル番号/契約番号？     乗数   */
-                "Meter      :%s BK0798     Multiplier    :1.0\n"+
+                "Meter      :%d %s     Multiplier    :1.0\n"+
                 /*日時 MM/DD/YYYY 　　　　　　　　　　　　　　　　　　　　　　　　　今回検針値 6.3 */
                 "Period To  :%02tm/%02td/%tY                   Pres Reading  :%6.03f\n";
-        String str2 = String.format(_str2,4002829,10,10,2024,222222.123f);
+        String str2 = String.format(_str2,4002829,"BK0798",10,10,2024,222222.123f);
         String _str3 =
                 /*日時 MM/DD/YYYY 　　　　　　　　　　　　　　　　　　前回検針値 6.3 */
                 "Period From:%02tm/%02td/%tY                  Prev Reading : %6.03f\n"+
@@ -280,7 +285,7 @@ public class MainActivity extends AppCompatActivity implements
                 "  Generation System Charge    :       "+"%2.04f"+"/kwh"+" %,6.02f\n"+
                 "  Transmission Demand Charge  :       "+"%4.02f"+"/kwh"+" %,6.02f\n"+
                 "  System Loss Charge          :       "+"%2.03f"+"/kwh"+" %,6.02f\n\n";
-        String str6 = String.format(_str6,1.1111f,111111.11f,100.11f,111111.11f,1.111f,111111.11f);
+        String str6 = String.format(_str6,ratio[0] ,value[0]*ratio[0],ratio[1],111111.11f*ratio[1],ratio[2],111111.11f*ratio[2]);
         String _str7 =
                 "                                                ----------------\n"+
                 /*　　　　　　　　　　　　　　　　　　　　　　　　 GEN/TRANS CHARGESの小計 */
@@ -293,7 +298,7 @@ public class MainActivity extends AppCompatActivity implements
                 "  Distribution Demand Charge  :       "+"%.02f"+" /kw "+" %,6.02f\n"+
                 "  Supply Fix Charge           :       "+"%.02f"+" /cst"+" %,6.02f\n"+
                 "  Metering Fix Charge         :       "+"%.02f"+" /cst"+" %,6.02f\n";
-        String str9 = String.format(_str9,11.11f,111111.11f,100.11f,111111.11f,1.01f,111111.11f);
+        String str9 = String.format(_str9,ratio[3] ,value[3]*ratio[3],ratio[4] ,value[4]*ratio[4],ratio[5] ,value[5]*ratio[5]);
         String _str10=
                 "                                                ----------------\n"+
                 /*　　　　　　　　　DISTRIBUTION CHARGESの小計 */
@@ -495,6 +500,7 @@ public class MainActivity extends AppCompatActivity implements
         mPrintService.write(WoosimCmd.PM_printStdMode());
     }
 
+
     private boolean copyAssetsFile() {
         try {
             InputStream inputStream = getAssets().open("logo3.jpg");
@@ -688,11 +694,7 @@ public class MainActivity extends AppCompatActivity implements
             }
             login.writeFile();
         }
-        CSVParser Rate = new CSVParser(folderExternal);
-        if (!Rate.readFile("rate.csv")) {
-            Rate.New(getString(R.string.login) + "," + getString(R.string.password) + "," + getString(R.string.authenticate));
-            Rate.writeFile();
-        }
+
         if (csv.readFile("login.csv")) {
             boolean update = false;
             boolean find = false;
@@ -748,6 +750,33 @@ public class MainActivity extends AppCompatActivity implements
                 deleteFile("login.csv", folderExternal);
             }
         }
+
+        ratecsv = new CSVParser(folderExternal);
+        if (!ratecsv.readFile("rate.csv")) {
+          //ファイルがなかった場合の処理を後で考える。
+        }
+
+        ratio[0] = Float.parseFloat(ratecsv.Column(getString(R.string.table3_col1)));
+        ratio[1] = Float.parseFloat(ratecsv.Column(getString(R.string.table3_col2)));
+        ratio[2] = Float.parseFloat(ratecsv.Column(getString(R.string.table3_col3)));
+        ratio[3] = Float.parseFloat(ratecsv.Column(getString(R.string.table3_col4)));
+        ratio[4] = Float.parseFloat(ratecsv.Column(getString(R.string.table3_col5)));
+        ratio[5] = Float.parseFloat(ratecsv.Column(getString(R.string.table3_col6)));
+        ratio[6] = Float.parseFloat(ratecsv.Column(getString(R.string.table3_col7)));
+        ratio[7] = Float.parseFloat(ratecsv.Column(getString(R.string.table3_col8)));
+        ratio[8] = Float.parseFloat(ratecsv.Column(getString(R.string.table3_col9)));
+        ratio[9] = Float.parseFloat(ratecsv.Column(getString(R.string.table3_col10)));
+        ratio[10] = Float.parseFloat(ratecsv.Column(getString(R.string.table3_col11)));
+        ratio[11] = Float.parseFloat(ratecsv.Column(getString(R.string.table3_col12)));
+        ratio[12] = Float.parseFloat(ratecsv.Column(getString(R.string.table3_col13)));
+//        ratio[13] = Float.parseFloat(ratecsv.Column(getString(R.string.table3_col14)));
+        ratio[14] = Float.parseFloat(ratecsv.Column(getString(R.string.table3_col15)));
+        ratio[15] = Float.parseFloat(ratecsv.Column(getString(R.string.table3_col16)));
+        ratio[16] = Float.parseFloat(ratecsv.Column(getString(R.string.table3_col17)));
+        ratio[17] = Float.parseFloat(ratecsv.Column(getString(R.string.table3_col18)));
+        ratio[18] = Float.parseFloat(ratecsv.Column(getString(R.string.table3_col19)));
+        ratio[19] = Float.parseFloat(ratecsv.Column(getString(R.string.table3_col20)));
+        ratio[20] = Float.parseFloat(ratecsv.Column(getString(R.string.table3_col21)));
 
         mAddressShort = "UnknownMeter";
         mInterval = 0;
@@ -826,7 +855,6 @@ public class MainActivity extends AppCompatActivity implements
     @Override
     protected void onResume() {
         super.onResume();
-
 
         checkPermission();
         Log.i(TAG, " onResume.");

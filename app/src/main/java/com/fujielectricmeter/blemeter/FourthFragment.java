@@ -139,7 +139,7 @@ public class FourthFragment extends ItemFragment {
                     .navigate(R.id.action_FourthFragment_to_SecondFragment);
         } else {
             mCallback.fragmentOrder(MainActivity.ODR_SCAN_OFF);
-            String csvfile = MainActivity.d.CurrentYearMonth() + "_registration.csv";
+            String csvfile = "registration.csv";
             if (MainActivity.fourthcsv != null) {
                 if (!MainActivity.fourthcsv.Present().equals(csvfile)) {
                     MainActivity.fourthcsv.readFile(csvfile);
@@ -158,6 +158,10 @@ public class FourthFragment extends ItemFragment {
                 }
             }
             MainActivity.fourthcsv.Find(getString(R.string.table2_key), MainActivity.msecondKey);
+            MainActivity.oldcsv = new CSVParser( MainActivity.folderExternal);
+            if(!MainActivity.oldcsv.exist(MainActivity.d.PreviousYearMonth() + "_meter.csv")){
+                MainActivity.oldcsv.exist("registration.csv");
+            }
 
             mSelectButton = -1;
             stopper = true;
@@ -304,6 +308,13 @@ public class FourthFragment extends ItemFragment {
                                 MainActivity.secondcsv.Update(mTemp.get(0),getString(R.string.table2_col11));
                                 MainActivity.secondcsv.writeFile();
                                 binding.textView.setText("Success to get billing data. finish");
+                                MainActivity.now_value[0] = mTemp.get(0);  /*read date*/
+                                MainActivity.now_value[0] = mTemp.get(1);  /*fixed date*/
+                                MainActivity.now_value[1] = mTemp.get(2);  /*Imp*/
+                                MainActivity.now_value[2] = mTemp.get(3);  /*Exp*/
+                                MainActivity.now_value[3] = mTemp.get(6);  /**/
+                                MainActivity.now_value[4] = mTemp.get(7);  /**/
+                                MainActivity.now_value[5] = mTemp.get(8);  /**/
                             } else {
                                 ret = -5;
                             }
@@ -429,7 +440,8 @@ public class FourthFragment extends ItemFragment {
                         csv.New("Clock,Imp[kWh],Exp[kWh],Abs[kWh],Net[kWh],ImpMaxDemand[W],ExpMaxDemand[W],MinVolt[V],Alert");
                         csv.Add(mTemp);
                         csv.writeFile();
-                        binding.textView.setText("Clock:"+mTemp.get(27)+"\nImp[kWh]:"+String.format("%.3f", MainActivity.d.Float(1000.0,mTemp.get(28)))+"\nExp[kWh]:"+String.format("%.3f", MainActivity.d.Float(1000.0,mTemp.get(29)))+"\nAbs[kWh]:"+String.format("%.3f", MainActivity.d.Float(1000.0,mTemp.get(30)))+"\nNet[kWh]:"+String.format("%.3f", MainActivity.d.Float(1000.0,mTemp.get(31)))+"\nImpMaxDemand[W]"+mTemp.get(32)+"\nExpMaxDemand[W]"+mTemp.get(33)+"\nMinVolt[V]:"+String.format("%.2f", MainActivity.d.Float(100.0,mTemp.get(34)))+"\n\n\n\n\n");
+//                        binding.textView.setText("Clock:"+mTemp.get(27)+"\nImp[kWh]:"+String.format("%.3f", MainActivity.d.Float(1000.0,mTemp.get(28)))+"\nExp[kWh]:"+String.format("%.3f", MainActivity.d.Float(1000.0,mTemp.get(29)))+"\nAbs[kWh]:"+String.format("%.3f", MainActivity.d.Float(1000.0,mTemp.get(30)))+"\nNet[kWh]:"+String.format("%.3f", MainActivity.d.Float(1000.0,mTemp.get(31)))+"\nImpMaxDemand[W]"+mTemp.get(32)+"\nExpMaxDemand[W]"+mTemp.get(33)+"\nMinVolt[V]:"+String.format("%.2f", MainActivity.d.Float(100.0,mTemp.get(34)))+"\n\n\n\n\n");
+
         //              binding.textView.setText("Success to get and save billing records to file.");
                     } else {
                         binding.textView.setText("Fail to get and save billing records");
