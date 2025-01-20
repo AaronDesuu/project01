@@ -103,12 +103,12 @@
     <string name="table3_col6">Metering Fix Charge</string>
     <string name="table3_col7">Reinvestment Fund for CAPEX</string>
     <string name="table3_col8">Member CAPEX Contribution</string>
-    <string name="table3_col9">Lifeline Discount/Subsidy</string>
+    <string name="table3_col9">Lifeline Discount Subsidy</string>
     <string name="table3_col10">Senior Citizen Subsidy</string>
     <string name="table3_col11">Missionary Elec(NPC-SPUG)</string>
     <string name="table3_col12">Missionary Elec(RED)</string>
     <string name="table3_col13">Environmetal Charge</string>
-    <string name="table3_col14">RFeed In Tariff Allowance</string>
+    <string name="table3_col14">Feed In Tariff Allowance</string>
     <string name="table3_col15">NPC Stranded Contract</string>
     <string name="table3_col16">NPC Stranded Debts</string>
     <string name="table3_col17">Generation VAT</string>

@@ -1,5 +1,7 @@
 package com.fujielectricmeter.blemeter;
 
+import static com.fujielectricmeter.blemeter.MainActivity.oldcsv;
+
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.Context;
@@ -158,9 +160,9 @@ public class FourthFragment extends ItemFragment {
                 }
             }
             MainActivity.fourthcsv.Find(getString(R.string.table2_key), MainActivity.msecondKey);
-            MainActivity.oldcsv = new CSVParser( MainActivity.folderExternal);
-            if(!MainActivity.oldcsv.exist(MainActivity.d.PreviousYearMonth() + "_meter.csv")){
-                MainActivity.oldcsv.exist("registration.csv");
+            oldcsv = new CSVParser( MainActivity.folderExternal);
+            if(!oldcsv.exist(MainActivity.d.PreviousYearMonth() + "_meter.csv")){
+                oldcsv.exist("registration.csv");
             }
 
             mSelectButton = -1;
@@ -250,7 +252,7 @@ public class FourthFragment extends ItemFragment {
             }
         }
 //        MainActivity.mPrintService.start();
-        MainActivity.printImageText();
+//        MainActivity.printImageText();
     }
 
     @Override
@@ -308,13 +310,26 @@ public class FourthFragment extends ItemFragment {
                                 MainActivity.secondcsv.Update(mTemp.get(0),getString(R.string.table2_col11));
                                 MainActivity.secondcsv.writeFile();
                                 binding.textView.setText("Success to get billing data. finish");
+
                                 MainActivity.now_value[0] = mTemp.get(0);  /*read date*/
-                                MainActivity.now_value[0] = mTemp.get(1);  /*fixed date*/
-                                MainActivity.now_value[1] = mTemp.get(2);  /*Imp*/
-                                MainActivity.now_value[2] = mTemp.get(3);  /*Exp*/
-                                MainActivity.now_value[3] = mTemp.get(6);  /**/
-                                MainActivity.now_value[4] = mTemp.get(7);  /**/
-                                MainActivity.now_value[5] = mTemp.get(8);  /**/
+                                MainActivity.now_value[1] = mTemp.get(1);  /*fixed date*/
+                                MainActivity.now_value[2] = mTemp.get(2);  /*Imp*/
+                                MainActivity.now_value[3] = mTemp.get(6);  /*Imp Max*/
+
+
+                                MainActivity.total_value[0] = Float.parseFloat(MainActivity.now_value[2]) - Float.parseFloat(MainActivity.old_value[2]);
+                                MainActivity.total_value[1] = MainActivity.total_value[0] * MainActivity.ratio[0] +
+                                        Float.parseFloat(MainActivity.now_value[3]) * MainActivity.ratio[1] + MainActivity.total_value[0] * MainActivity.ratio[2];
+                                MainActivity.total_value[2] = Float.parseFloat(MainActivity.now_value[3]) * MainActivity.ratio[3] + 1 * MainActivity.ratio[4] + 1 * MainActivity.ratio[5];
+                                MainActivity.total_value[3] = MainActivity.total_value[0] * MainActivity.ratio[6] + MainActivity.total_value[0] * MainActivity.ratio[7];
+                                MainActivity.total_value[4] = MainActivity.total_value[0] * MainActivity.ratio[8] + MainActivity.total_value[0] * MainActivity.ratio[9];
+                                MainActivity.total_value[5] = MainActivity.total_value[0] * MainActivity.ratio[10] + MainActivity.total_value[3] * MainActivity.ratio[11] +
+                                        MainActivity.total_value[0] * MainActivity.ratio[12] + MainActivity.total_value[0] * MainActivity.ratio[13] +
+                                        MainActivity.total_value[0] * MainActivity.ratio[14] + MainActivity.total_value[0] * MainActivity.ratio[15];
+                                MainActivity.total_value[6] = MainActivity.total_value[0] * MainActivity.ratio[16] + MainActivity.total_value[0] * MainActivity.ratio[17] +
+                                        MainActivity.total_value[0] * MainActivity.ratio[18] + MainActivity.total_value[2] * MainActivity.ratio[19] + MainActivity.total_value[4] * MainActivity.ratio[20];
+                                MainActivity.total_value[7] = MainActivity.total_value[1] + MainActivity.total_value[2] + MainActivity.total_value[3] +
+                                        MainActivity.total_value[4] + MainActivity.total_value[5] + MainActivity.total_value[6];
                             } else {
                                 ret = -5;
                             }

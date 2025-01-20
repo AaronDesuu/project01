@@ -1,6 +1,7 @@
 package com.fujielectricmeter.blemeter;
 
 import android.content.Context;
+import android.icu.util.Calendar;
 
 import com.google.gson.Gson;
 
@@ -41,23 +42,24 @@ public class DLMS {
     private ArrayList<AccountInfo> AccountInformation;
 
     private Context mContext;
+    private Calendar old;
 
     DLMS(Context context) {
         mContext = context;
         AccountInformation = new ArrayList<AccountInfo>();
-        AccountInfo  level0 = new AccountInfo();
+        AccountInfo level0 = new AccountInfo();
         level0.set("Super   ,00000000000000000000000000000000,7f,00");
         AccountInformation.add(level0);
 
-        AccountInfo  level1 = new AccountInfo();
+        AccountInfo level1 = new AccountInfo();
         level1.set("Admin   ,30303030303030303030303030303030,61,01");
         AccountInformation.add(level1);
 
-        AccountInfo  level2 = new AccountInfo();
+        AccountInfo level2 = new AccountInfo();
         level2.set("Power   ,3030303030303030,41,02");
         AccountInformation.add(level2);
 
-        AccountInfo  level3 = new AccountInfo();
+        AccountInfo level3 = new AccountInfo();
         level3.set("Reader  ,3030303030303030,41,03");
         AccountInformation.add(level3);
     }
@@ -429,6 +431,7 @@ public class DLMS {
         s %= 60;
         return String.format("%02d/%02d/%04d %02d:%02d:%02d", d, m + 1, y + 2010, h, k, s);
     }
+
     public long CurrentDatetimeSec() {    /*yyyy/mm/dd hh:mm:ss*/
 
         long sec;
@@ -444,10 +447,14 @@ public class DLMS {
         android.icu.text.SimpleDateFormat sdf = new android.icu.text.SimpleDateFormat("MMyyyy", Locale.getDefault());
         return sdf.format(new Date());
     }
+
     public String PreviousYearMonth() {    /*MMyyyy*/
 
-        android.icu.text.SimpleDateFormat sdf = new android.icu.text.SimpleDateFormat("MMyyyy", Locale.getDefault());
-        return sdf.format(new Date());
+        Calendar today = Calendar.getInstance();
+        Calendar start = Calendar.getInstance();
+        Calendar end = Calendar.getInstance();
+        today.setTime(new Date());
+
         int diff = (today.get(Calendar.DATE)) - 1;
         start.setTime(today.getTime());
         start.add(Calendar.DATE, -diff);
@@ -455,7 +462,18 @@ public class DLMS {
         end.setTime(start.getTime());
         end.add(Calendar.MONTH, 1);
         end.add(Calendar.DATE, -1);
+        if (end.get(Calendar.MONTH) == 0) {
+            end.add(Calendar.YEAR,-1);
+        }
+
+
+        android.icu.text.SimpleDateFormat sdf = new android.icu.text.SimpleDateFormat("MMyyyy", Locale.getDefault());
+        return sdf.format(new Date());
     }
+
+
+
+
     public String SecToRawDatetime(final long sec) {
 
         int d;

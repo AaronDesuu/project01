@@ -1,5 +1,7 @@
 package com.fujielectricmeter.blemeter;
 
+import static com.fujielectricmeter.blemeter.MainActivity.folderExternal;
+
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.Context;
@@ -178,18 +180,29 @@ public class SecondFragment extends ItemFragment {
                 MainActivity.secondcsv.Reset();
             }
         } else {
-            MainActivity.secondcsv = new CSVParser(MainActivity.folderExternal);
+            MainActivity.secondcsv = new CSVParser(folderExternal);
             if (MainActivity.secondcsv.exist(csvfile)) {
                 MainActivity.secondcsv.readFile(csvfile);
             } else {
                 CSVParser csv = new CSVParser("meter.csv", MainActivity.folderFiles);
-                MainActivity.secondcsv.Copy(csv, csvfile, MainActivity.folderExternal);
+                MainActivity.secondcsv.Copy(csv, csvfile, folderExternal);
                 MainActivity.secondcsv.writeFile();
             }
             MainActivity.Selection = 0;
         }
         updateList();
+        MainActivity.oldcsv=new CSVParser(folderExternal);
+        String oldfile = "122024_meter.csv";
+        if (!MainActivity.oldcsv.exist(oldfile)){
+            MainActivity.oldcsv.readFile("registration.csv");
+        } else {
+            MainActivity.oldcsv.readFile(oldfile);
+        }
+        MainActivity.old_value[1]=MainActivity.oldcsv.Column(getString(R.string.table2_col11));
+        MainActivity.old_value[2]=MainActivity.oldcsv.Column(getString(R.string.table2_col5));
     }
+
+
 
     @Override
     public void invalidate() {
@@ -206,8 +219,7 @@ public class SecondFragment extends ItemFragment {
             MainActivity.mSerialID = MainActivity.secondcsv.Column(getString(R.string.table2_col2));
             MainActivity.mAddress = MainActivity.secondcsv.Column(getString(R.string.table2_col3));
             MainActivity.trail.operation(MainActivity.msecondKey + "," + MainActivity.mSerialID);
-            NavHostFragment.findNavController(SecondFragment.this)
-                    .navigate(R.id.action_SecondFragment_to_FourthFragment);
+            NavHostFragment.findNavController(SecondFragment.this).navigate(R.id.action_SecondFragment_to_FourthFragment);
         }
     };
 
