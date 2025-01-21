@@ -69,7 +69,7 @@ public class MainActivity extends AppCompatActivity implements
     public static float[] ratio = {0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f};
     public static String[] now_value = {"", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "",};
     public static String[] old_value = {"", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "",};
-    public static Float[] total_value = {0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f,};
+    public static float[] total_value = {0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f,};
     public static int MESSAGE_DEVICE_NAME;
     private final String TAG = MainActivity.class.getSimpleName();
     public static StringBuffer CounterParameter = new StringBuffer();
@@ -284,15 +284,16 @@ public class MainActivity extends AppCompatActivity implements
         String _str2 =
                 /*メーター：シリアル番号/契約番号？     乗数   */
                 "Meter      :%d %s     Multiplier    :1.0\n" +
-                        /*日時 MM/DD/YYYY 　　　　　　　　　　　　　　　　　　　　　　　　　今回検針値 6.3 */
-                        "Period To  :%02tm/%02td/%tY                   Pres Reading  :%6.03f\n";
-        String str2 = String.format(_str2, 4002829, "BK0798", now_value[0], now_value[2]);
+                /*日時 MM/DD/YYYY 　　　　　　　　　　　　　　　　　　　　　　　　　今回検針値 6.3 */
+                "Period To  :%s              Pres Reading  :%6.03f\n";
+                String temp = now_value[0].substring(2, 6);
+        String str2 = String.format(_str2, 4002829, "BK0798", now_value[0].substring(0, 9), now_value[2]);
         String _str3 =
                 /*日時 MM/DD/YYYY 　　　　　　　　　　　　　　　　　　前回検針値 6.3 */
-                "Period From:%02tm/%02td/%tY                  Prev Reading : %6.03f\n" +
+                "Period From:%s                  Prev Reading : %6.03f\n" +
                         /*使用電力の瞬時値:2.3 　　　　　　　　　　　　　　　　　　         使用量 6.3 */
                         "Demand KW : %2.03f                         Total KWH Used : %6.03f\n";
-        String str3 = String.format(_str3,old_value[1], old_value[2], now_value[3], total_value[0]);
+        String str3 = String.format(_str3,old_value[1].substring(0, 9),old_value[2], now_value[3], total_value[0]);
         String str4 =
                 "================================================================\n";
         String str5 =
@@ -796,6 +797,7 @@ public class MainActivity extends AppCompatActivity implements
         ratio[18] = Float.parseFloat(ratecsv.Column(getString(R.string.table3_col19)));
         ratio[19] = Float.parseFloat(ratecsv.Column(getString(R.string.table3_col20)));
         ratio[20] = Float.parseFloat(ratecsv.Column(getString(R.string.table3_col21)));
+
 
         mAddressShort = "UnknownMeter";
         mInterval = 0;

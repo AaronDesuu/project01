@@ -191,15 +191,16 @@ public class SecondFragment extends ItemFragment {
             MainActivity.Selection = 0;
         }
         updateList();
+
+        String oldfile= "122024_meter.csv";
         MainActivity.oldcsv=new CSVParser(folderExternal);
-        String oldfile = "122024_meter.csv";
         if (!MainActivity.oldcsv.exist(oldfile)){
             MainActivity.oldcsv.readFile("registration.csv");
         } else {
             MainActivity.oldcsv.readFile(oldfile);
         }
-        MainActivity.old_value[1]=MainActivity.oldcsv.Column(getString(R.string.table2_col11));
-        MainActivity.old_value[2]=MainActivity.oldcsv.Column(getString(R.string.table2_col5));
+        MainActivity.old_value[0]=MainActivity.oldcsv.Column(getString(R.string.table2_col11));
+        MainActivity.old_value[1]=MainActivity.oldcsv.Column(getString(R.string.table2_col5));
     }
 
 

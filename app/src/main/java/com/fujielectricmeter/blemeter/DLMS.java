@@ -462,6 +462,7 @@ public class DLMS {
         end.setTime(start.getTime());
         end.add(Calendar.MONTH, 1);
         end.add(Calendar.DATE, -1);
+
         if (end.get(Calendar.MONTH) == 0) {
             end.add(Calendar.YEAR,-1);
         }

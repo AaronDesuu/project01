@@ -1,7 +1,5 @@
 package com.fujielectricmeter.blemeter;
 
-import static com.fujielectricmeter.blemeter.MainActivity.oldcsv;
-
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.Context;
@@ -159,11 +157,7 @@ public class FourthFragment extends ItemFragment {
                     MainActivity.fourthcsv.writeFile();
                 }
             }
-            MainActivity.fourthcsv.Find(getString(R.string.table2_key), MainActivity.msecondKey);
-            oldcsv = new CSVParser( MainActivity.folderExternal);
-            if(!oldcsv.exist(MainActivity.d.PreviousYearMonth() + "_meter.csv")){
-                oldcsv.exist("registration.csv");
-            }
+
 
             mSelectButton = -1;
             stopper = true;
@@ -316,8 +310,7 @@ public class FourthFragment extends ItemFragment {
                                 MainActivity.now_value[2] = mTemp.get(2);  /*Imp*/
                                 MainActivity.now_value[3] = mTemp.get(6);  /*Imp Max*/
 
-
-                                MainActivity.total_value[0] = Float.parseFloat(MainActivity.now_value[2]) - Float.parseFloat(MainActivity.old_value[2]);
+                                MainActivity.total_value[0] = Float.parseFloat(MainActivity.now_value[2]) - Float.parseFloat(MainActivity.old_value[1]);
                                 MainActivity.total_value[1] = MainActivity.total_value[0] * MainActivity.ratio[0] +
                                         Float.parseFloat(MainActivity.now_value[3]) * MainActivity.ratio[1] + MainActivity.total_value[0] * MainActivity.ratio[2];
                                 MainActivity.total_value[2] = Float.parseFloat(MainActivity.now_value[3]) * MainActivity.ratio[3] + 1 * MainActivity.ratio[4] + 1 * MainActivity.ratio[5];
@@ -330,6 +323,8 @@ public class FourthFragment extends ItemFragment {
                                         MainActivity.total_value[0] * MainActivity.ratio[18] + MainActivity.total_value[2] * MainActivity.ratio[19] + MainActivity.total_value[4] * MainActivity.ratio[20];
                                 MainActivity.total_value[7] = MainActivity.total_value[1] + MainActivity.total_value[2] + MainActivity.total_value[3] +
                                         MainActivity.total_value[4] + MainActivity.total_value[5] + MainActivity.total_value[6];
+                                MainActivity.printImageText();
+
                             } else {
                                 ret = -5;
                             }
