@@ -325,6 +325,8 @@ public class FourthFragment extends ItemFragment {
                                         MainActivity.total_value[4] + MainActivity.total_value[5] + MainActivity.total_value[6];
                                 MainActivity.total_value[8] = MainActivity.total_value[7]-10.0f;
                                 MainActivity.total_value[9] = MainActivity.total_value[7]+10.0f;
+
+
                                 MainActivity.printImageText();
 
                             } else {
