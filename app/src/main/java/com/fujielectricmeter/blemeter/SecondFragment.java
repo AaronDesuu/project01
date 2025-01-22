@@ -184,7 +184,7 @@ public class SecondFragment extends ItemFragment {
             if (MainActivity.secondcsv.exist(csvfile)) {
                 MainActivity.secondcsv.readFile(csvfile);
             } else {
-                CSVParser csv = new CSVParser("meter.csv", MainActivity.folderFiles);
+                CSVParser csv = new CSVParser("meter.csv", folderExternal);
                 MainActivity.secondcsv.Copy(csv, csvfile, folderExternal);
                 MainActivity.secondcsv.writeFile();
             }

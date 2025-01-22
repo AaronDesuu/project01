@@ -66,10 +66,50 @@ public class MainActivity extends AppCompatActivity implements
     public static final int MESSAGE_READ = 3;
     private static final int REQUEST_CONNECT_DEVICE_INSECURE = 2;
 
-    public static float[] ratio = {0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f};
-    public static String[] now_value = {"", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "",};
-    public static String[] old_value = {"", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "",};
-    public static float[] total_value = {0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f,};
+    public static float[] ratio = {
+            0.0f, 0.0f, 0.0f, 0.0f, 0.0f,
+            0.0f, 0.0f, 0.0f, 0.0f, 0.0f,
+            0.0f, 0.0f, 0.0f, 0.0f, 0.0f,
+            0.0f, 0.0f, 0.0f, 0.0f, 0.0f,
+            0.0f, 0.0f, 0.0f, 0.0f, 0.0f};
+
+    public static String[] now_value = {
+            "", "", "", "", "", "",
+            "", "", "", "", "", "",
+            "", "", "", "", "", "",
+            "", "", "", "", "", "",
+            "", "", "", "", "", "",
+            "", "", "", "", "",""};
+
+    public static String[] old_value = {
+            "", "", "", "", "", "",
+            "", "", "", "", "", "",
+            "", "", "", "", "", "",
+            "", "", "", "", "", "",
+            "", "", "", "", "", "",
+            "", "", "", "", "",""};
+
+    public static float[] total_value = {
+            0.0f, 0.0f, 0.0f, 0.0f, 0.0f,
+            0.0f, 0.0f, 0.0f, 0.0f, 0.0f,
+            0.0f, 0.0f, 0.0f, 0.0f, 0.0f,
+            0.0f, 0.0f, 0.0f, 0.0f, 0.0f,
+            0.0f, 0.0f, 0.0f, 0.0f, 0.0f,
+            0.0f, 0.0f, 0.0f, 0.0f, 0.0f};
+    static String [] month ={
+            "January",
+            "February",
+            "March",
+            "April",
+            "May",
+            "June",
+            "July",
+            "August",
+            "September",
+            "October",
+            "November",
+            "December"
+    };
     public static int MESSAGE_DEVICE_NAME;
     private final String TAG = MainActivity.class.getSimpleName();
     public static StringBuffer CounterParameter = new StringBuffer();
@@ -149,29 +189,7 @@ public class MainActivity extends AppCompatActivity implements
             "Reader,Reader,3"};
 
     static String root_column;
-
-    final static String[] root_row = {
-            "1,0,0000001286,48:23:35:0E:47:E3,,,,,,,,",
-            "2,0,0000001251,48:23:35:10:57:43,,,,,,,,",
-            "3,0,0000001252,48:23:35:10:57:A6,,,,,,,,",
-            "4,0,0000001253,48:23:35:10:4D:5C,,,,,,,,",
-            "5,0,0000001254,48:23:35:10:53:3F,,,,,,,,",
-            "6,0,0000001255,48:23:35:0E:37:21,,,,,,,,",
-            "7,0,0000001256,48:23:35:0E:33:65,,,,,,,,",
-            "8,0,0000001257,48:23:35:0E:31:CE,,,,,,,,",
-            "9,0,0000001258,48:23:35:0E:3D:1A,,,,,,,,",
-            "10,0,0000001259,48:23:35:10:55:7E,,,,,,,,",
-            "11,0,0000001260,48:23:35:0E:3C:34,,,,,,,,",
-            "12,0,0000001261,48:23:35:0E:2C:79,,,,,,,,",
-            "13,0,0000001262,48:23:35:0E:2B:DD,,,,,,,,",
-            "14,0,9999999999,48:23:35:10:4F:ED,,,,,,,,",
-            "15,0,9999999998,48:23:35:02:68:50,,,,,,,,",
-            "16,0,9999999997,48:23:35:0E:33:CF,,,,,,,,",
-    };
-    //final static String PRINTER1 = "68:84:7E:65:A9:BA";
-    //private static String mPrintData = null;
     private String Tag;
-
 
     public int Rssi(final int position) {
         return mDeviceList.Rssi(position);
@@ -189,7 +207,6 @@ public class MainActivity extends AppCompatActivity implements
             return null;
         }
     }
-
 
     public static void deleteFile(final String name, final File folder) {
         File file = new File(folder, name);
@@ -261,131 +278,160 @@ public class MainActivity extends AppCompatActivity implements
         mPrintService.write(WoosimCmd.setPageMode());
         mPrintService.write(WoosimCmd.PM_setArea(0, 0, 600, 4500));
 
-/*        total_value[0] = Float.parseFloat(now_value[2]) - Float.parseFloat(old_value[2]);
-        total_value[1] = total_value[0] * ratio[0] +
-                Float.parseFloat(now_value[3]) * ratio[1] + total_value[0] * ratio[2];
-        total_value[2] = Float.parseFloat(now_value[3]) * ratio[3] + 1 * ratio[4] + 1 * ratio[5];
-        total_value[3] = total_value[0] * ratio[6] + total_value[0] * ratio[7];
-        total_value[4] = total_value[0] * ratio[8] + total_value[0] * ratio[9];
-        total_value[5] = total_value[0] * ratio[10] + total_value[3] * ratio[11] +
-                total_value[0] * ratio[12] + total_value[0] * ratio[13] +
-                total_value[0] * ratio[14] + total_value[0] * ratio[15];
-        total_value[6] = total_value[0] * ratio[16] + total_value[0] * ratio[17] +
-                total_value[0] * ratio[18] + total_value[2] * ratio[19] + total_value[4] * ratio[20];
-        total_value[7] = total_value[1] + total_value[2] + total_value[3] +
-                total_value[4] + total_value[5] + total_value[6]; */
-
 
         String _str1 =
                 "================================================================\n" +
-                        /*期間 月(September) 年　　レートの種類:レート名　　　　*/
-                        "Period     :%s %04d       Rate Type     : %s\n";
-        String str1 = String.format(_str1, "September",2024, "typA");
+                /*期間 月(September) 年　　レートの種類:レート名　　　　*/
+                "Period     :%s %04d       Rate Type     : %s\n";
+        String str1 = String.format(_str1, month[0], 2025, "LARGE COMMERCIAL");
         String _str2 =
                 /*メーター：シリアル番号/契約番号？     乗数   */
-                "Meter      :%d %s     Multiplier    :1.0\n" +
+                "Meter      : %s %s       Multiplier    :1.0\n" +
                 /*日時 MM/DD/YYYY 　　　　　　　　　　　　　　　　　　　　　　　　　今回検針値 6.3 */
-                "Period To  :%s              Pres Reading  :%6.03f\n";
-                String temp = now_value[0].substring(2, 6);
-        String str2 = String.format(_str2, 4002829, "BK0798", now_value[0].substring(0, 9), now_value[2]);
+                "Period To  :%s                Pres Reading  : %6.03f\n";
+         String str2 = String.format(_str2,
+                 mSerialID,
+                 "BK0798",
+                 now_value[0].substring(0, 10),
+                 Float.parseFloat(now_value[2])/1000.0f);
         String _str3 =
                 /*日時 MM/DD/YYYY 　　　　　　　　　　　　　　　　　　前回検針値 6.3 */
-                "Period From:%s                  Prev Reading : %6.03f\n" +
+                "Period From:%s                Prev Reading  : %6.03f\n" +
                         /*使用電力の瞬時値:2.3 　　　　　　　　　　　　　　　　　　         使用量 6.3 */
-                        "Demand KW : %2.03f                         Total KWH Used : %6.03f\n";
-        String str3 = String.format(_str3,old_value[1].substring(0, 9),old_value[2], now_value[3], total_value[0]);
+                "Demand KW : %2.04f                  Total KWH Used  : %6.03f\n";
+        String str3 = String.format(_str3,
+                old_value[0].substring(0, 10),
+                Float.parseFloat(old_value[1]),
+                Float.parseFloat(now_value[3])/1000.0f,
+                total_value[0]);
         String str4 =
                 "================================================================\n";
         String str5 =
-                "CHARGES                 RATE              AMOUNT\n" +
-                        "GEN/TRANS CHARGES\n";
+                "CHARGES                   RATE            AMOUNT\n" +
+                "GEN/TRANS CHARGES\n";
         String _str6 =
                 /*change name          　　　　　　　　　　　charge rate　　　rate*使用電力*/
-                "  Generation System Charge    :       " + "%2.04f" + "/kwh" + " %,6.02f\n" +
-                        "  Transmission Demand Charge  :       " + "%4.02f" + "/kw " + " %,6.02f\n" +
-                        "  System Loss Charge          :       " + "%2.03f" + "/kwh" + " %,6.02f\n\n";
-        String str6 = String.format(_str6, ratio[0], total_value[0] * ratio[0], ratio[1], Float.parseFloat(now_value[3]) * ratio[1], ratio[2], total_value[0] * ratio[2]);
+                "  Generation System Charge    :       " + "%2.04f" + "/kwh" + "        %,6.02f\n" +
+                "  Transmission Demand Charge  :       " + "%4.02f" + "/kw " + "        %,6.02f\n" +
+                "  System Loss Charge          :       " + " %2.03f"+ "/kwh" + "        %,6.02f\n";
+        String str6 = String.format(_str6,
+                ratio[0],
+                total_value[0] * ratio[0],
+                ratio[1],
+                Float.parseFloat(now_value[3]) * ratio[1]/1000.0f,
+                ratio[2],
+                total_value[0] * ratio[2]);
         String _str7 =
                 "                                                ----------------\n" +
                         /*　　　　　　　　　　　　　　　　　　　　　　　　 GEN/TRANS CHARGESの小計 */
-                        "                                       SUB TOTAL" + " %,6.02f\n\n";
+                "                                       SUB TOTAL" + "        %,6.02f\n\n";
         String str7 = String.format(_str7, total_value[1]);
         String str8 =
                 "DISTRIBUTION CHARGES\n";
         String _str9 =
                 /*change name          　　　　　　　　　　　charge rate　　　rate*使用電力*/
-                "  Distribution Demand Charge  :       " + "%.02f" + " /kw " + " %,6.02f\n" +
-                        "  Supply Fix Charge           :       " + "%.02f" + " /cst" + " %,6.02f\n" +
-                        "  Metering Fix Charge         :       " + "%.02f" + " /cst" + " %,6.02f\n";
-        String str9 = String.format(_str9, ratio[3], Float.parseFloat(now_value[3]) * ratio[3], ratio[4], 1 * ratio[4], ratio[5], 1 * ratio[5]);
+                "  Distribution Demand Charge  :       " + "%.02f" + "/kw " + "        %,6.02f\n" +
+                "  Supply Fix Charge           :       " + " %.02f" + "/cst" + "        %,6.02f\n" +
+                "  Metering Fix Charge         :       " + " %.02f" + "/cst" + "        %,6.02f\n";
+        String str9 = String.format(_str9,
+                ratio[3],
+                Float.parseFloat(now_value[3]) * ratio[3]/1000.0f,
+                ratio[4],
+                1 * ratio[4],
+                ratio[5],
+                1 * ratio[5]);
         String _str10 =
                 "                                                ----------------\n" +
                         /*　　　　　　　　　DISTRIBUTION CHARGESの小計 */
-                        "                                       SUB TOTAL" + " %,6.02f\n\n";
+                "                                       SUB TOTAL" + "        %,6.02f\n\n";
         String str10 = String.format(_str10, total_value[2]);
+
         String str11 =
                 "REINVESTMENT FUND FOR\n" +
-                        "SUSTAINABLE CAPEX\n";
+                "SUSTAINABLE CAPEX\n";
         String _str12 =
                 /*change name          　　　　　　　charge rate　　　　　　rate*使用電力*/
-                "  Reinvestment Fund for CAPEX :       " + "%.04f" + "/kwh" + " %,6.02f\n" +
-                        "  Member's CAPEX Contribution :       " + "%.04f" + "/kwh" + " %,6.02f\n";
-        String str12 = String.format(_str12, ratio[6], total_value[0] * ratio[6], ratio[7], total_value[0] * ratio[7]);
+                "  Reinvestment Fund for CAPEX :       " + "%.04f" + "/kwh" + "        %,6.02f\n" +
+                "  Member's CAPEX Contribution :       " + "%.04f" + "/kwh" + "        %,6.02f\n";
+        String str12 = String.format(_str12,
+                ratio[6],
+                total_value[0] * ratio[6],
+                ratio[7],
+                total_value[0] * ratio[7]);
         String _str13 =
                 "                                                ----------------\n" +
                         /*　　　　　　　　　　　REINVESTMENT FUND FOR SUSTAINABLE CAPEXの小計 */
-                        "                                       SUB TOTAL" + " %,6.02f\n\n";
+                "                                       SUB TOTAL" + "        %,6.02f\n\n";
         String str13 = String.format(_str13, total_value[3]);
         String str14 =
                 "OTHER CHARGES\n";
         String _str15 =
                 /*change name          　　　　　　　charge rate　　　　　　rate*使用電力*/
-                "  Lifeline Discount/Subsidy   :      " + "%.04f" + "/kwh" + " %,6.02f\n" +
-                        "  Senior Citizen Subsidy      :      " + "%.04f" + "/kwh" + " %,6.02f\n";
-        String str15 = String.format(_str15, ratio[8], total_value[0] * ratio[8], ratio[9], total_value[0] * ratio[9]);
+                "  Lifeline Discount/Subsidy   :      " + "%.04f" + "/kwh" + "        %,6.02f\n" +
+                "  Senior Citizen Subsidy      :      " + " %.04f" + "/kwh" + "        %,6.02f\n";
+        String str15 = String.format(_str15,
+                ratio[8],
+                total_value[0] * ratio[8],
+                ratio[9],
+                total_value[0] * ratio[9]);
         String _str16 =
                 "                                                ----------------\n" +
                         /*　　　　　　　　　　　                          OTHER CHARGESの小計 */
-                        "                                       SUB TOTAL" + " %,6.02f\n\n";
+                "                                       SUB TOTAL" + "        %,6.02f\n\n";
         String str16 = String.format(_str16, total_value[4]);
         String str17 =
                 "UNIVERSAL CHARGES\n";
         String _str18 =
                 /*change name          　　　　　　　charge rate　　　　　　rate*使用電力*/
-                "  Missionary Elec(NPC-SPUG)   :       " + "%.04f" + "/kwh" + " %,6.02f\n" +
-                        "  Missionary Elec(RED)        :       " + "%.04f" + "/kwh" + " %,6.02f\n" +
-                        "  Environmental Charge        :       " + "%.04f" + "/kwh" + " %,6.02f\n";
-        String str18 = String.format(_str18, ratio[10], total_value[0] * ratio[10], ratio[11], total_value[0] * ratio[11], ratio[5], total_value[0] * ratio[12]);
+                "  Missionary Elec(NPC-SPUG)   :       " + "%.04f" + "/kwh" + "        %,6.02f\n" +
+                "  Missionary Elec(RED)        :       " + "%.04f" + "/kwh" + "        %,6.02f\n" +
+                "  Environmental Charge        :       " + "%.04f" + "/kwh" + "        %,6.02f\n";
+        String str18 = String.format(_str18,
+                ratio[10],
+                total_value[0] * ratio[10],
+                ratio[11],
+                total_value[0] * ratio[11], ratio[12],
+                total_value[0] * ratio[12]);
         String _str19 =
                 /*change name          　　　　　　　charge rate　　　　　　rate*使用電力*/
-                "  Feed In Tariff Allowance    :       " + "%.04f" + "/kwh" + " %,6.02f\n" +
-                        "  NPC Stranded Contract       :       " + "%.04f" + "/kwh" + " %,6.02f\n" +
-                        "  NPC Stranded Debts          :       " + "%.04f" + "/kwh" + " %,6.02f\n";
-        String str19 = String.format(_str19, ratio[13], total_value[0] * ratio[13], ratio[14], total_value[0] * ratio[14], ratio[15], total_value[0] * ratio[15]);
+                "  Feed In Tariff Allowance    :       " + "%.04f" + "/kwh" + "        %,6.02f\n" +
+                "  NPC Stranded Contract       :       " + "%.04f" + "/kwh" + "        %,6.02f\n" +
+                "  NPC Stranded Debts          :       " + "%.04f" + "/kwh" + "        %,6.02f\n";
+        String str19 = String.format(_str19,
+                ratio[13], total_value[0] * ratio[13],
+                ratio[14], total_value[0] * ratio[14],
+                ratio[15], total_value[0] * ratio[15]);
         String _str20 =
                 "                                                ----------------\n" +
-                        /*　　　　　　　　　　　UNIVERSAL CHARGESの小計 */
-                        "                                      SUB TOTAL" + " %,6.02f\n\n";
+                  /*　　　　　　　　　　　UNIVERSAL CHARGESの小計 */
+                "                                       SUB TOTAL" + "        %,6.02f\n\n";
         String str20 = String.format(_str20, total_value[5]);
         String str21 =
                 "VALUE ADDED TAX\n";
         String _str22 =
                 /*change name          　　　　　　　charge rate　　　　　　rate*使用電力*/
-                "  Generation VAT              :       " + " %.04f" + "/kwh" + " %,6.02f\n" +
-                        "  Transmission VAT            :       " + " %.04f" + "/kwh" + " %,6.02f\n" +
-                        "  System Loss VAT             :       " + " %.04f" + "/kwh" + " %,6.02f\n";
-        String str22 = String.format(_str22, ratio[16], total_value[0] * ratio[16], ratio[17], total_value[0] * ratio[17], ratio[18], total_value[0] * ratio[18]);
+                "  Generation VAT              :      " + " %.04f" + "/kwh" + "        %,6.02f\n" +
+                "  Transmission VAT            :      " + " %.04f" + "/kwh" + "        %,6.02f\n" +
+                "  System Loss VAT             :      " + " %.04f" + "/kwh" + "        %,6.02f\n";
+        String str22 = String.format(_str22,
+                ratio[16],
+                total_value[0] * ratio[16],
+                ratio[17], total_value[0] * ratio[17],
+                ratio[18], total_value[0] * ratio[18]);
         String _str23 =
                 /*change name          　　　　　　　charge rate　　　　　　rate*使用電力*/
-                "  Distribution VAT            :          " + " %.04f" + "%" + " %,6.02f\n" +
-                        "  Other VAT                   :          " + " %.04f" + "%" + " %,6.02f\n";
-        String str23 = String.format(_str23, ratio[19], total_value[2] * ratio[19], ratio[20], total_value[4] * ratio[20]);
+                "  Distribution VAT            :         " + " %.04f" + "%%" + "        %,6.02f\n" +
+                "  Other VAT                   :         " + " %.04f" + "%%" + "        %,6.02f\n";
+        String str23 = String.format(_str23,
+                ratio[19],
+                total_value[2] * ratio[19],
+                ratio[20],
+                total_value[4] * ratio[20]);
         String _str24 =
                 "                                                ----------------\n" +
-                        /*　　　　　　　　　　  　VALUE ADDED TAXの小計 */
-                        "                                      SUB TOTAL" + " %,6.02f\n\n";
+                 /*VALUE ADDED TAXの小計 */
+                "                                       SUB TOTAL" + "        %,6.02f\n\n";
         String str24 = String.format(_str24, total_value[6]);
-
 
         String str25 =
                 "----------------------------------------------------------------\n";
@@ -401,36 +447,38 @@ public class MainActivity extends AppCompatActivity implements
                 "================================================================\n";
         String _str29 =
                 /*値引額*/
-                "Discount                               " + " %,6.02f\n\n";
-        String str29 = String.format(_str29, 111111.11f);
+                "Discount                         " + "%,6.02f\n";
+        String str29 = String.format(_str29, 10.0f);
         String _str30 =
                 /*合計の請求額から値引きされた金額*/
-                "Amount Before Due                      " + " %,6.02f\n\n";
-        String str30 = String.format(_str30, 111111.11f);
+                "Amount Before Due                " + "%,6.02f\n\n";
+        String str30 = String.format(_str30, total_value[8]);
         String _str31 =
                 /*利息額*/
-                "Interest                               " + " %,6.02f\n\n";
-        String str31 = String.format(_str31, 111111.11f);
+                "Interest                         " + "%,6.02f\n";
+        String str31 = String.format(_str31, 10.0f);
         String _str32 =
                 /*合計の請求額から利息額が追加された金額*/
-                "Amount After Due                       " + " %,6.02f\n\n";
-        String str32 = String.format(_str32, 111111.11f);
+                "Amount After Due                 " + "%,6.02f\n\n";
+        String str32 = String.format(_str32,total_value[9]);
 
-        String str33 =
+        String _str33 =
                 /*支払い期日　           月(Oct)　dd,yyyy　*/
-                "DUE DATE:           " + "%s　%td,%tY\n" +
-                        "DISCO DATE:         " + "%s　%td,%tY\n\n";
+                "     DUE DATE     :" + "%s %d,%d\n" +
+                "     DISCO DATE   :" + "%s %d,%d\n\n";
+        String str33 =String.format(_str33,month[0],10,2025,month[0],11,2025);
 
         String str34 =
                 "NOTE:Please pay this electric bill on or before DUE DATE otherwise,\n" +
-                        "     we will be forced to discontinue serving your electric needs.\n\n";
+                "     we will be forced to discontinue serving your electric needs.\n\n";
         String str35 =
                 "This is not an Official Receipt.\n" +
-                        "Payment of this bill does not mean payment of previous delinquencies if any.\n\n";
-        String str36 =
+                "Payment of this bill does not mean payment of previous delinquencies if any.\n\n";
+        String _str36 =
                 "             **PLEASE PRESENT THIS STATEMENT UPON PAYMENT**\n\n" +
                         /*検針担当：名前 　　　　　　　　　　検診日時 曜日(Thu) dd 月(Oct) yyyy　HH:mm:ss */
-                        "Reader:%s                   " + "Thu 10 Oct 2024 11:39:33\n\n";
+                "Reader:%s                   " + "Thu 10 Oct 2024 11:39:33\n\n";
+        String str36 =  String.format(_str36, "Kobayshi K Kurika");
         String str37 =
                 /*フォーマットのバージョン*/
                 "Version : v1.00.1";
@@ -680,29 +728,8 @@ public class MainActivity extends AppCompatActivity implements
             return;
         }
         copyAssetsFile();
+        rootcsv = new CSVParser("meter.csv", folderExternal);
 
-        //       mPrintData = null;
-
-        root_column = getString(R.string.table2_key) + "," +
-                getString(R.string.table2_col1) + "," +
-                getString(R.string.table2_col2) + "," +
-                getString(R.string.table2_col3) + "," +
-                getString(R.string.table2_col4) + "," +
-                getString(R.string.table2_col5) + "," +
-                getString(R.string.table2_col6) + "," +
-                getString(R.string.table2_col7) + "," +
-                getString(R.string.table2_col8) + "," +
-                getString(R.string.table2_col9) + "," +
-                getString(R.string.table2_col10) + "," +
-                getString(R.string.table2_col11);
-        rootcsv = new CSVParser("meter.csv", folderFiles);
-        if (!rootcsv.exist("meter.csv")) {
-            rootcsv.New(root_column);
-            for (int i = 0; i < root_row.length; i++) {
-                rootcsv.Add(root_row[i]);
-            }
-            rootcsv.writeFile();
-        }
 
         CSVParser csv = new CSVParser(folderExternal);
         login = new CSVParser(folderFiles);
@@ -761,7 +788,7 @@ public class MainActivity extends AppCompatActivity implements
                     }
                 }
                 if (!find) {
-                    login.Add(newAccount + "," + newPassword + ",3");
+                    login.Add(newAccount + "," + newPassword + "," +",3");
                 }
             }
             if (update) {

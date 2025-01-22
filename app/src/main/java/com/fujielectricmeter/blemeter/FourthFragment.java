@@ -152,7 +152,7 @@ public class FourthFragment extends ItemFragment {
                 if (MainActivity.fourthcsv.exist(csvfile)) {
                     MainActivity.fourthcsv.readFile(csvfile);
                 } else {
-                    CSVParser csv = new CSVParser("meter.csv", MainActivity.folderFiles);
+                    CSVParser csv = new CSVParser("meter.csv", MainActivity.folderExternal);
                     MainActivity.fourthcsv.Copy(csv, csvfile, MainActivity.folderExternal);
                     MainActivity.fourthcsv.writeFile();
                 }
@@ -310,10 +310,10 @@ public class FourthFragment extends ItemFragment {
                                 MainActivity.now_value[2] = mTemp.get(2);  /*Imp*/
                                 MainActivity.now_value[3] = mTemp.get(6);  /*Imp Max*/
 
-                                MainActivity.total_value[0] = Float.parseFloat(MainActivity.now_value[2]) - Float.parseFloat(MainActivity.old_value[1]);
+                                MainActivity.total_value[0] = Float.parseFloat(MainActivity.now_value[2])/1000.0f - Float.parseFloat(MainActivity.old_value[1]);
                                 MainActivity.total_value[1] = MainActivity.total_value[0] * MainActivity.ratio[0] +
-                                        Float.parseFloat(MainActivity.now_value[3]) * MainActivity.ratio[1] + MainActivity.total_value[0] * MainActivity.ratio[2];
-                                MainActivity.total_value[2] = Float.parseFloat(MainActivity.now_value[3]) * MainActivity.ratio[3] + 1 * MainActivity.ratio[4] + 1 * MainActivity.ratio[5];
+                                        Float.parseFloat(MainActivity.now_value[3]) * MainActivity.ratio[1]/1000.0f  + MainActivity.total_value[0] * MainActivity.ratio[2];
+                                MainActivity.total_value[2] = Float.parseFloat(MainActivity.now_value[3])/1000.0f * MainActivity.ratio[3]  + 1 * MainActivity.ratio[4] + 1 * MainActivity.ratio[5];
                                 MainActivity.total_value[3] = MainActivity.total_value[0] * MainActivity.ratio[6] + MainActivity.total_value[0] * MainActivity.ratio[7];
                                 MainActivity.total_value[4] = MainActivity.total_value[0] * MainActivity.ratio[8] + MainActivity.total_value[0] * MainActivity.ratio[9];
                                 MainActivity.total_value[5] = MainActivity.total_value[0] * MainActivity.ratio[10] + MainActivity.total_value[3] * MainActivity.ratio[11] +
@@ -323,6 +323,8 @@ public class FourthFragment extends ItemFragment {
                                         MainActivity.total_value[0] * MainActivity.ratio[18] + MainActivity.total_value[2] * MainActivity.ratio[19] + MainActivity.total_value[4] * MainActivity.ratio[20];
                                 MainActivity.total_value[7] = MainActivity.total_value[1] + MainActivity.total_value[2] + MainActivity.total_value[3] +
                                         MainActivity.total_value[4] + MainActivity.total_value[5] + MainActivity.total_value[6];
+                                MainActivity.total_value[8] = MainActivity.total_value[7]-10.0f;
+                                MainActivity.total_value[9] = MainActivity.total_value[7]+10.0f;
                                 MainActivity.printImageText();
 
                             } else {
