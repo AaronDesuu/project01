@@ -4,6 +4,7 @@ import static android.os.Environment.DIRECTORY_DOCUMENTS;
 import static android.os.Environment.DIRECTORY_DOWNLOADS;
 
 import android.Manifest;
+import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.bluetooth.BluetoothAdapter;
@@ -19,12 +20,14 @@ import android.content.ServiceConnection;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.icu.text.SimpleDateFormat;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Message;
+import android.text.format.DateFormat;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -37,6 +40,7 @@ import androidx.annotation.NonNull;
 import androidx.appcompat.app.ActionBar;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
+import androidx.core.graphics.drawable.IconCompatParcelizer;
 import androidx.navigation.NavController;
 import androidx.navigation.Navigation;
 import androidx.navigation.ui.AppBarConfiguration;
@@ -60,6 +64,9 @@ import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.Locale;
 
 public class MainActivity extends AppCompatActivity implements
         ItemFragment.messageManager {
@@ -114,6 +121,12 @@ public class MainActivity extends AppCompatActivity implements
             "November",
             "December"
     };
+
+    public static String getNowDate(){
+        android.icu.text.SimpleDateFormat sdf = new android.icu.text.SimpleDateFormat("EEE dd MMM yyyy HH:mm:ss", Locale.getDefault());
+        return sdf.format(new Date());
+    }
+
     public static int MESSAGE_DEVICE_NAME;
     private final String TAG = MainActivity.class.getSimpleName();
     public static StringBuffer CounterParameter = new StringBuffer();
@@ -328,9 +341,13 @@ public class MainActivity extends AppCompatActivity implements
     public static void printImageText() {
         mPrintService.write(WoosimCmd.initPrinter());
         mPrintService.write(WoosimCmd.setPageMode());
+        mPrintService.write(WoosimCmd.PM_setArea(0, 0, 600, 9000));
 
-        mPrintService.write(WoosimCmd.PM_setArea(0, 0, 600, 4500));
-
+        String title1 ="SAMPLE Receipt\n";
+        String title2 ="           H.V Dela Costa St Salcedo Village Makati 1227,\n"+
+                       "          Metro Manila Philippines\n";
+        String title3 ="        Fuji Electric Sales Philippines Inc.\n";
+        String title4 ="                TEL:000-000-0000\n";
 
         String _str1 =
                 "================================================================\n" +
@@ -339,7 +356,7 @@ public class MainActivity extends AppCompatActivity implements
         String str1 = String.format(_str1, month[0], 2025, "LARGE COMMERCIAL");
         String _str2 =
                 /*メーター：シリアル番号/契約番号？     乗数   */
-                "Meter      : %s %s       Multiplier    :1.0\n" +
+                "Meter      :%s %s       Multiplier    :1.0\n" +
                 /*日時 MM/DD/YYYY 　　　　　　　　　　　　　　　　　　　　　　　　　今回検針値 6.3 */
                 "Period To  :%s                Pres Reading  : %6.03f\n";
          String str2 = String.format(_str2,
@@ -351,7 +368,7 @@ public class MainActivity extends AppCompatActivity implements
                 /*日時 MM/DD/YYYY 　　　　　　　　　　　　　　　　　　前回検針値 6.3 */
                 "Period From:%s                Prev Reading  : %6.03f\n" +
                         /*使用電力の瞬時値:2.3 　　　　　　　　　　　　　　　　　　         使用量 6.3 */
-                "Demand KW : %2.04f                  Total KWH Used  : %6.03f\n";
+                "Demand KW : %2.03f                  Total KWH Used  : %6.03f\n";
         String str3 = String.format(_str3,
                 old_value[0].substring(0, 10),
                 Float.parseFloat(old_value[1]),
@@ -500,19 +517,19 @@ public class MainActivity extends AppCompatActivity implements
                 "================================================================\n";
         String _str29 =
                 /*値引額*/
-                "Discount                         " + "%,6.02f\n";
+                "Discount                              " + "  %,6.02f\n";
         String str29 = String.format(_str29, 10.0f);
         String _str30 =
                 /*合計の請求額から値引きされた金額*/
-                "Amount Before Due                " + "%,6.02f\n\n";
+                "Amount Before Due                   " + "  %,6.02f\n\n";
         String str30 = String.format(_str30, total_value[8]);
         String _str31 =
                 /*利息額*/
-                "Interest                         " + "%,6.02f\n";
+                "Interest                              " + "  %,6.02f\n";
         String str31 = String.format(_str31, 10.0f);
         String _str32 =
                 /*合計の請求額から利息額が追加された金額*/
-                "Amount After Due                 " + "%,6.02f\n\n";
+                "Amount After Due                    " + "  %,6.02f\n\n";
         String str32 = String.format(_str32,total_value[9]);
 
         String _str33 =
@@ -525,18 +542,35 @@ public class MainActivity extends AppCompatActivity implements
                 "NOTE:Please pay this electric bill on or before DUE DATE otherwise,\n" +
                 "     we will be forced to discontinue serving your electric needs.\n\n";
         String str35 =
-                "This is not an Official Receipt.\n" +
-                "Payment of this bill does not mean payment of previous delinquencies if any.\n\n";
+                "This is not an Official Receipt. Payment of this bill does not mean \n" +
+                "payment of previous delinquencies if any.\n\n";
         String _str36 =
-                "             **PLEASE PRESENT THIS STATEMENT UPON PAYMENT**\n\n" +
-                        /*検針担当：名前 　　　　　　　　　　検診日時 曜日(Thu) dd 月(Oct) yyyy　HH:mm:ss */
-                "Reader:%s                   " + "Thu 10 Oct 2024 11:39:33\n\n";
-        String str36 =  String.format(_str36, "Kobayshi K Kurika");
+                "             **PLEASE PRESENT THIS STATEMENT UPON PAYMENT**\n" +
+                 /*検針担当：名前 　　　　　　検診日時 曜日(Thu) dd 月(Oct) yyyy　HH:mm:ss */
+                "Reader:%s                   " + "%s\n\n";
+
+        @SuppressLint("DefaultLocale") String str36 =  String.format(_str36, "Kobayshi K Kurika",getNowDate());
         String str37 =
                 /*フォーマットのバージョン*/
                 "Version : v1.00.1";
 
         mPrintService.write(WoosimCmd.PM_setPosition(0, 0));
+        mPrintService.write(WoosimCmd.setCodeTable(WoosimCmd.MCU_RX, WoosimCmd.CT_CP437, WoosimCmd.FONT_MEDIUM));
+        mPrintService.write(WoosimCmd.setTextStyle(true, false, false, 1, 1));
+        mPrintService.write(title1.getBytes());
+
+        mPrintService.write(WoosimCmd.setCodeTable(WoosimCmd.MCU_RX, WoosimCmd.CT_CP437, WoosimCmd.FONT_MEDIUM));
+        mPrintService.write(WoosimCmd.setTextStyle(true, false, false, 1, 1));
+        mPrintService.write(title2.getBytes());
+
+        mPrintService.write(WoosimCmd.setCodeTable(WoosimCmd.MCU_RX, WoosimCmd.CT_CP437, WoosimCmd.FONT_LARGE));
+        mPrintService.write(WoosimCmd.setTextStyle(true, false, false, 1, 2));
+        mPrintService.write(title3.getBytes());
+
+        mPrintService.write(WoosimCmd.setCodeTable(WoosimCmd.MCU_RX, WoosimCmd.CT_CP437, WoosimCmd.FONT_MEDIUM));
+        mPrintService.write(WoosimCmd.setTextStyle(false, false, false, 1, 1));
+        mPrintService.write(title4.getBytes());
+
         mPrintService.write(WoosimCmd.setCodeTable(WoosimCmd.MCU_RX, WoosimCmd.CT_CP437, WoosimCmd.FONT_MEDIUM));
         mPrintService.write(str1.getBytes());
         mPrintService.write(str2.getBytes());
@@ -545,6 +579,7 @@ public class MainActivity extends AppCompatActivity implements
 
 
         mPrintService.write(WoosimCmd.setCodeTable(WoosimCmd.MCU_RX, WoosimCmd.CT_CP437, WoosimCmd.FONT_LARGE));
+        mPrintService.write(WoosimCmd.setTextStyle(true, false, false, 1, 1));
         mPrintService.write(str5.getBytes());
 
         mPrintService.write(WoosimCmd.setCodeTable(WoosimCmd.MCU_RX, WoosimCmd.CT_CP437, WoosimCmd.FONT_MEDIUM));
@@ -552,6 +587,7 @@ public class MainActivity extends AppCompatActivity implements
         mPrintService.write(str7.getBytes());
 
         mPrintService.write(WoosimCmd.setCodeTable(WoosimCmd.MCU_RX, WoosimCmd.CT_CP437, WoosimCmd.FONT_LARGE));
+        mPrintService.write(WoosimCmd.setTextStyle(true, false, false, 1, 1));
         mPrintService.write(str8.getBytes());
 
         mPrintService.write(WoosimCmd.setCodeTable(WoosimCmd.MCU_RX, WoosimCmd.CT_CP437, WoosimCmd.FONT_MEDIUM));
@@ -560,6 +596,7 @@ public class MainActivity extends AppCompatActivity implements
 
 
         mPrintService.write(WoosimCmd.setCodeTable(WoosimCmd.MCU_RX, WoosimCmd.CT_CP437, WoosimCmd.FONT_LARGE));
+        mPrintService.write(WoosimCmd.setTextStyle(true, false, false, 1, 1));
         mPrintService.write(str11.getBytes());
 
         mPrintService.write(WoosimCmd.setCodeTable(WoosimCmd.MCU_RX, WoosimCmd.CT_CP437, WoosimCmd.FONT_MEDIUM));
@@ -568,6 +605,7 @@ public class MainActivity extends AppCompatActivity implements
 
 
         mPrintService.write(WoosimCmd.setCodeTable(WoosimCmd.MCU_RX, WoosimCmd.CT_CP437, WoosimCmd.FONT_LARGE));
+        mPrintService.write(WoosimCmd.setTextStyle(true, false, false, 1, 1));
         mPrintService.write(str14.getBytes());
 
         mPrintService.write(WoosimCmd.setCodeTable(WoosimCmd.MCU_RX, WoosimCmd.CT_CP437, WoosimCmd.FONT_MEDIUM));
@@ -576,6 +614,7 @@ public class MainActivity extends AppCompatActivity implements
 
 
         mPrintService.write(WoosimCmd.setCodeTable(WoosimCmd.MCU_RX, WoosimCmd.CT_CP437, WoosimCmd.FONT_LARGE));
+        mPrintService.write(WoosimCmd.setTextStyle(true, false, false, 1, 1));
         mPrintService.write(str17.getBytes());
 
         mPrintService.write(WoosimCmd.setCodeTable(WoosimCmd.MCU_RX, WoosimCmd.CT_CP437, WoosimCmd.FONT_MEDIUM));
@@ -585,6 +624,7 @@ public class MainActivity extends AppCompatActivity implements
 
 
         mPrintService.write(WoosimCmd.setCodeTable(WoosimCmd.MCU_RX, WoosimCmd.CT_CP437, WoosimCmd.FONT_LARGE));
+        mPrintService.write(WoosimCmd.setTextStyle(true, false, false, 1, 1));
         mPrintService.write(str21.getBytes());
 
         mPrintService.write(WoosimCmd.setCodeTable(WoosimCmd.MCU_RX, WoosimCmd.CT_CP437, WoosimCmd.FONT_MEDIUM));
@@ -595,6 +635,7 @@ public class MainActivity extends AppCompatActivity implements
         mPrintService.write(str26.getBytes());
 
         mPrintService.write(WoosimCmd.setCodeTable(WoosimCmd.MCU_RX, WoosimCmd.CT_CP437, WoosimCmd.FONT_LARGE));
+        mPrintService.write(WoosimCmd.setTextStyle(true, false, false, 1, 2));
         mPrintService.write(str27.getBytes());
 
         mPrintService.write(WoosimCmd.setCodeTable(WoosimCmd.MCU_RX, WoosimCmd.CT_CP437, WoosimCmd.FONT_MEDIUM));
@@ -602,6 +643,7 @@ public class MainActivity extends AppCompatActivity implements
 
 
         mPrintService.write(WoosimCmd.setCodeTable(WoosimCmd.MCU_RX, WoosimCmd.CT_CP437, WoosimCmd.FONT_LARGE));
+        mPrintService.write(WoosimCmd.setTextStyle(true, false, false, 1, 1));
         mPrintService.write(str29.getBytes());
         mPrintService.write(str30.getBytes());
         mPrintService.write(str31.getBytes());
@@ -609,6 +651,7 @@ public class MainActivity extends AppCompatActivity implements
 
 
         mPrintService.write(WoosimCmd.setCodeTable(WoosimCmd.MCU_RX, WoosimCmd.CT_CP437, WoosimCmd.FONT_LARGE));
+        mPrintService.write(WoosimCmd.setTextStyle(true, false, false, 1, 1));
         mPrintService.write(str33.getBytes());
 
         mPrintService.write(WoosimCmd.setCodeTable(WoosimCmd.MCU_RX, WoosimCmd.CT_CP437, WoosimCmd.FONT_SMALL));
@@ -619,6 +662,7 @@ public class MainActivity extends AppCompatActivity implements
 
         mPrintService.write(WoosimCmd.PM_printStdMode());
     }
+
 
   /*  private static void sendImg(int x, int y, int logo3){
         BitmapFactory.Options options=new BitmapFactory.Options();
@@ -953,7 +997,7 @@ public class MainActivity extends AppCompatActivity implements
 
         String address = "1C:B8:57:50:01:D9";
         BluetoothDevice device = mBluetoothAdapter.getRemoteDevice(address);
-        mPrintService.connect(device, true);
+        mPrintService.connect(device, false);
 //        mPrintService.start();
     }
 

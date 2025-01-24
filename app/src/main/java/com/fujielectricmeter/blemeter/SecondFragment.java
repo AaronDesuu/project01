@@ -191,16 +191,6 @@ public class SecondFragment extends ItemFragment {
             MainActivity.Selection = 0;
         }
         updateList();
-
-        String oldfile= "122024_meter.csv";
-        MainActivity.oldcsv=new CSVParser(folderExternal);
-        if (!MainActivity.oldcsv.exist(oldfile)){
-            MainActivity.oldcsv.readFile("registration.csv");
-        } else {
-            MainActivity.oldcsv.readFile(oldfile);
-        }
-        MainActivity.old_value[0]=MainActivity.oldcsv.Column(getString(R.string.table2_col11));
-        MainActivity.old_value[1]=MainActivity.oldcsv.Column(getString(R.string.table2_col5));
     }
 
 
@@ -216,7 +206,7 @@ public class SecondFragment extends ItemFragment {
             MainActivity.Selection = position;
             Log.i(TAG, "Second to Forth");
             MainActivity.rootcsv.Cell(position, getString(R.string.table2_key));
-            MainActivity.msecondKey = MainActivity.secondcsv.Cell(position, getString(R.string.table2_key));
+            MainActivity.msecondKey  = MainActivity.secondcsv.Cell(position, getString(R.string.table2_key));
             MainActivity.mSerialID = MainActivity.secondcsv.Column(getString(R.string.table2_col2));
             MainActivity.mAddress = MainActivity.secondcsv.Column(getString(R.string.table2_col3));
             MainActivity.trail.operation(MainActivity.msecondKey + "," + MainActivity.mSerialID);

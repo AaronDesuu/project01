@@ -1,5 +1,7 @@
 package com.fujielectricmeter.blemeter;
 
+import static com.fujielectricmeter.blemeter.MainActivity.folderExternal;
+
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.Context;
@@ -157,8 +159,7 @@ public class FourthFragment extends ItemFragment {
                     MainActivity.fourthcsv.writeFile();
                 }
             }
-
-
+            MainActivity.fourthcsv.Find(getString(R.string.table2_key), MainActivity.msecondKey);
             mSelectButton = -1;
             stopper = true;
             if (MainActivity.getLevel() < 3) {
@@ -174,6 +175,18 @@ public class FourthFragment extends ItemFragment {
                 binding.button2.setOnClickListener(new View.OnClickListener() {
                     @Override
                     public void onClick(View view) {
+
+                        String oldfile= "122024_meter.csv";
+                        MainActivity.oldcsv=new CSVParser(folderExternal);
+                        if (!MainActivity.oldcsv.exist(oldfile)){
+                            MainActivity.oldcsv.readFile("registration.csv");
+                        } else {
+                            MainActivity.oldcsv.readFile(oldfile);
+                        }
+                        MainActivity.oldcsv.Find(getString(R.string.table2_key), MainActivity.msecondKey);
+                        MainActivity.old_value[0]=MainActivity.oldcsv.Column(getString(R.string.table2_col4));
+                        MainActivity.old_value[1]=MainActivity.oldcsv.Column(getString(R.string.table2_col5));
+
                         binding.textView.setText("Communicating...");
                         setAnime(binding.button2);
                         buttonFunction(MainActivity.MSG_READER);
