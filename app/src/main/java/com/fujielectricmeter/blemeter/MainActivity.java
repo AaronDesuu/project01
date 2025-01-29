@@ -4,7 +4,6 @@ import static android.os.Environment.DIRECTORY_DOCUMENTS;
 import static android.os.Environment.DIRECTORY_DOWNLOADS;
 
 import android.Manifest;
-import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.bluetooth.BluetoothAdapter;
@@ -18,16 +17,12 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.ServiceConnection;
 import android.content.pm.PackageManager;
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
-import android.icu.text.SimpleDateFormat;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Message;
-import android.text.format.DateFormat;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -40,20 +35,16 @@ import androidx.annotation.NonNull;
 import androidx.appcompat.app.ActionBar;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
-import androidx.core.graphics.drawable.IconCompatParcelizer;
 import androidx.navigation.NavController;
 import androidx.navigation.Navigation;
 import androidx.navigation.ui.AppBarConfiguration;
 import androidx.navigation.ui.NavigationUI;
 
 import com.fujielectricmeter.blemeter.databinding.ActivityMainBinding;
-import com.woosim.printer.WoosimBarcode;
 import com.woosim.printer.WoosimCmd;
-import com.woosim.printer.WoosimImage;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
-import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -64,7 +55,6 @@ import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
-import java.util.Calendar;
 import java.util.Date;
 import java.util.Locale;
 
@@ -107,7 +97,7 @@ public class MainActivity extends AppCompatActivity implements
             0.0f, 0.0f, 0.0f, 0.0f, 0.0f,
             0.0f, 0.0f, 0.0f, 0.0f, 0.0f,
             0.0f, 0.0f, 0.0f, 0.0f, 0.0f};
-    static String [] month ={
+    static String [] MonthList ={
             "January",
             "February",
             "March",
@@ -121,11 +111,19 @@ public class MainActivity extends AppCompatActivity implements
             "November",
             "December"
     };
+    public static String dateTimeToMonth(final String DateTime){
+        String month=DateTime.substring(3,5);
+        Integer pos=Integer.parseInt(month);
+
+        return MonthList[pos-1];
+
+    }
 
     public static String getNowDate(){
         android.icu.text.SimpleDateFormat sdf = new android.icu.text.SimpleDateFormat("EEE dd MMM yyyy HH:mm:ss", Locale.getDefault());
         return sdf.format(new Date());
     }
+
 
     public static int MESSAGE_DEVICE_NAME;
     private final String TAG = MainActivity.class.getSimpleName();
@@ -194,6 +192,7 @@ public class MainActivity extends AppCompatActivity implements
     public static CSVParser secondcsv;
     public static CSVParser ratecsv;
     public static CSVParser oldcsv;
+    public static CSVParser printercsv;
 
     public static CSVParser fourthcsv;
     public static Trail trail;
@@ -290,54 +289,6 @@ public class MainActivity extends AppCompatActivity implements
         }
     }
 
-  /*
-    public static void printLabel()throws IOException {
-        MainActivity.mPrintService.write(WoosimCmd.initPrinter());
-        sendImg(0, 0,R.drawable.logo3);
-        MainActivity.mPrintService.write(WoosimCmd.printData());
-
-        String str1 = "SHIP TO:\n";
-        String str2 = "        #501, Daerung Technotown 3rd\n        448, Gasan-dong Gumcheon-gu\n        Seoul, Rep. of Korea\n";
-        String str3 = "http://www.woosim.com/";
-        String str4 = "ITEM    : Printer";
-        String str5 = "Quantity: 10";
-        String str6 = "TRACKING NUMBER:";
-        String str7 = "134 35490 7564";
-
-        ByteArrayOutputStream byteStream = new ByteArrayOutputStream(512);
-        byteStream.write(WoosimCmd.setCodeTable(WoosimCmd.MCU_RX, WoosimCmd.CT_CP437, WoosimCmd.FONT_LARGE));
-        byteStream.write(WoosimCmd.setTextStyle(true, false, false, 1, 1));
-        byteStream.write(str1.getBytes());
-        byteStream.write(WoosimCmd.setCodeTable(WoosimCmd.MCU_RX, WoosimCmd.CT_CP437, WoosimCmd.FONT_MEDIUM));
-        byteStream.write(WoosimCmd.setTextStyle(false, false, false, 1, 1));
-        byteStream.write(str2.getBytes());
-        byteStream.write(WoosimCmd.setPageMode());
-        byteStream.write(WoosimCmd.PM_setArea(0, 0, 384, 300));
-        byteStream.write(WoosimImage.drawBox(2, 1, 370, 0, 4));
-        byteStream.write(WoosimCmd.PM_setPosition(0, 7));
-        byteStream.write(WoosimBarcode.create2DBarcodeQRCode(0, (byte)0x4D, 3, str3.getBytes()));
-        byteStream.write(WoosimCmd.setCodeTable(WoosimCmd.MCU_RX, WoosimCmd.CT_CP437, WoosimCmd.FONT_LARGE));
-        byteStream.write(WoosimCmd.setTextStyle(true, false, false, 1, 1));
-        byteStream.write(WoosimCmd.PM_setPosition(100, 20));
-        byteStream.write(str4.getBytes());
-        byteStream.write(WoosimCmd.PM_setPosition(100, 55));
-        byteStream.write(str5.getBytes());
-        byteStream.write(WoosimImage.drawBox(2, 90, 370, 0, 4));
-        byteStream.write(WoosimCmd.setTextStyle(false, false, false, 1, 1));
-        byteStream.write(WoosimCmd.PM_setPosition(0, 100));
-        byteStream.write(str6.getBytes());
-        byteStream.write(WoosimCmd.setCodeTable(WoosimCmd.MCU_RX, WoosimCmd.CT_CP437, WoosimCmd.FONT_MEDIUM));
-        byteStream.write(WoosimCmd.setTextStyle(false, false, false, 1, 1));
-        byteStream.write(WoosimCmd.PM_setPosition(130, 130));
-        byteStream.write(str7.getBytes());
-        byteStream.write(WoosimCmd.PM_setPosition(20, 160));
-        byteStream.write(WoosimBarcode.createBarcode(WoosimBarcode.CODE128, 2, 100, false, str7.getBytes()));
-        byteStream.write(WoosimCmd.PM_printStdMode());
-        byteStream.write(WoosimCmd.feedToMark());
-
-        mPrintService.write(byteStream.toByteArray());
-    }
-*/
     public static void printImageText() {
         mPrintService.write(WoosimCmd.initPrinter());
         mPrintService.write(WoosimCmd.setPageMode());
@@ -352,8 +303,8 @@ public class MainActivity extends AppCompatActivity implements
         String _str1 =
                 "================================================================\n" +
                 /*期間 月(September) 年　　レートの種類:レート名　　　　*/
-                "Period     :%s %04d       Rate Type     : %s\n";
-        String str1 = String.format(_str1, month[0], 2025, "LARGE COMMERCIAL");
+                "Period     :%s %s       Rate Type     : %s\n";
+        String str1 = String.format(_str1,dateTimeToMonth(old_value[0]),old_value[0].substring(6, 10), "LARGE COMMERCIAL");
         String _str2 =
                 /*メーター：シリアル番号/契約番号？     乗数   */
                 "Meter      :%s %s       Multiplier    :1.0\n" +
@@ -536,7 +487,7 @@ public class MainActivity extends AppCompatActivity implements
                 /*支払い期日　           月(Oct)　dd,yyyy　*/
                 "     DUE DATE     :" + "%s %d,%d\n" +
                 "     DISCO DATE   :" + "%s %d,%d\n\n";
-        String str33 =String.format(_str33,month[0],10,2025,month[0],11,2025);
+        String str33 =String.format(_str33, MonthList[0],10,2025, MonthList[0],11,2025);
 
         String str34 =
                 "NOTE:Please pay this electric bill on or before DUE DATE otherwise,\n" +
@@ -549,7 +500,7 @@ public class MainActivity extends AppCompatActivity implements
                  /*検針担当：名前 　　　　　　検診日時 曜日(Thu) dd 月(Oct) yyyy　HH:mm:ss */
                 "Reader:%s                   " + "%s\n\n";
 
-        @SuppressLint("DefaultLocale") String str36 =  String.format(_str36, "Kobayshi K Kurika",getNowDate());
+        String str36 =  String.format(_str36, "Kobayshi K Kurika",getNowDate());
         String str37 =
                 /*フォーマットのバージョン*/
                 "Version : v1.00.1";
@@ -663,19 +614,6 @@ public class MainActivity extends AppCompatActivity implements
         mPrintService.write(WoosimCmd.PM_printStdMode());
     }
 
-
-  /*  private static void sendImg(int x, int y, int logo3){
-        BitmapFactory.Options options=new BitmapFactory.Options();
-        options.inScaled=false;
-        Bitmap bmp=BitmapFactory.decodeResource(getResources(), logo3,options);
-        if(bmp==null) return;
-
-        byte[]data= WoosimImage.drawBitmap(x,y,bmp);
-        bmp.recycle();
-        mPrintService.write(data);
-    }
-*/
-
     private boolean copyAssetsFile() {
         try {
             InputStream inputStream = getAssets().open("logo3.jpg");
@@ -784,14 +722,16 @@ public class MainActivity extends AppCompatActivity implements
     }
 
     private void connectDevice(Intent data, boolean secure) {
-        String address = "1C:B8:57:50:01:D9";
-        // Get the device MAC address
-        //if (data.getExtras() != null)
-        //address = data.getExtras().getString(DeviceList.EXTRA_DEVICE_ADDRESS);
-        // Get the BluetoothDevice object
-        BluetoothDevice device = mBluetoothAdapter.getRemoteDevice(address);
-        // Attempt to connect to the device
-        mPrintService.connect(device, secure);
+
+            String address = printercsv.Column(getString(R.string.table2_col3));
+            // Get the device MAC address
+            //if (data.getExtras() != null)
+            //address = data.getExtras().getString(DeviceList.EXTRA_DEVICE_ADDRESS);
+            // Get the BluetoothDevice object
+            BluetoothDevice device = mBluetoothAdapter.getRemoteDevice(address);
+            // Attempt to connect to the device
+            mPrintService.connect(device, secure);
+
     }
 
     @Override
@@ -906,32 +846,34 @@ public class MainActivity extends AppCompatActivity implements
         }
 
         ratecsv = new CSVParser(folderExternal);
-        if (!ratecsv.readFile("rate.csv")) {
+        ratecsv.readFile("rate.csv") ;
+        if(ratecsv.size()>0) {
             //ファイルがなかった場合の処理を後で考える。
+            ratio[0] = Float.parseFloat(ratecsv.Column(getString(R.string.table3_col1)));
+            ratio[1] = Float.parseFloat(ratecsv.Column(getString(R.string.table3_col2)));
+            ratio[2] = Float.parseFloat(ratecsv.Column(getString(R.string.table3_col3)));
+            ratio[3] = Float.parseFloat(ratecsv.Column(getString(R.string.table3_col4)));
+            ratio[4] = Float.parseFloat(ratecsv.Column(getString(R.string.table3_col5)));
+            ratio[5] = Float.parseFloat(ratecsv.Column(getString(R.string.table3_col6)));
+            ratio[6] = Float.parseFloat(ratecsv.Column(getString(R.string.table3_col7)));
+            ratio[7] = Float.parseFloat(ratecsv.Column(getString(R.string.table3_col8)));
+            ratio[8] = Float.parseFloat(ratecsv.Column(getString(R.string.table3_col9)));
+            ratio[9] = Float.parseFloat(ratecsv.Column(getString(R.string.table3_col10)));
+            ratio[10] = Float.parseFloat(ratecsv.Column(getString(R.string.table3_col11)));
+            ratio[11] = Float.parseFloat(ratecsv.Column(getString(R.string.table3_col12)));
+            ratio[12] = Float.parseFloat(ratecsv.Column(getString(R.string.table3_col13)));
+            ratio[13] = Float.parseFloat(ratecsv.Column(getString(R.string.table3_col14)));
+            ratio[14] = Float.parseFloat(ratecsv.Column(getString(R.string.table3_col15)));
+            ratio[15] = Float.parseFloat(ratecsv.Column(getString(R.string.table3_col16)));
+            ratio[16] = Float.parseFloat(ratecsv.Column(getString(R.string.table3_col17)));
+            ratio[17] = Float.parseFloat(ratecsv.Column(getString(R.string.table3_col18)));
+            ratio[18] = Float.parseFloat(ratecsv.Column(getString(R.string.table3_col19)));
+            ratio[19] = Float.parseFloat(ratecsv.Column(getString(R.string.table3_col20)));
+            ratio[20] = Float.parseFloat(ratecsv.Column(getString(R.string.table3_col21)));
         }
 
-
-        ratio[0] = Float.parseFloat(ratecsv.Column(getString(R.string.table3_col1)));
-        ratio[1] = Float.parseFloat(ratecsv.Column(getString(R.string.table3_col2)));
-        ratio[2] = Float.parseFloat(ratecsv.Column(getString(R.string.table3_col3)));
-        ratio[3] = Float.parseFloat(ratecsv.Column(getString(R.string.table3_col4)));
-        ratio[4] = Float.parseFloat(ratecsv.Column(getString(R.string.table3_col5)));
-        ratio[5] = Float.parseFloat(ratecsv.Column(getString(R.string.table3_col6)));
-        ratio[6] = Float.parseFloat(ratecsv.Column(getString(R.string.table3_col7)));
-        ratio[7] = Float.parseFloat(ratecsv.Column(getString(R.string.table3_col8)));
-        ratio[8] = Float.parseFloat(ratecsv.Column(getString(R.string.table3_col9)));
-        ratio[9] = Float.parseFloat(ratecsv.Column(getString(R.string.table3_col10)));
-        ratio[10] = Float.parseFloat(ratecsv.Column(getString(R.string.table3_col11)));
-        ratio[11] = Float.parseFloat(ratecsv.Column(getString(R.string.table3_col12)));
-        ratio[12] = Float.parseFloat(ratecsv.Column(getString(R.string.table3_col13)));
-        ratio[13] = Float.parseFloat(ratecsv.Column(getString(R.string.table3_col14)));
-        ratio[14] = Float.parseFloat(ratecsv.Column(getString(R.string.table3_col15)));
-        ratio[15] = Float.parseFloat(ratecsv.Column(getString(R.string.table3_col16)));
-        ratio[16] = Float.parseFloat(ratecsv.Column(getString(R.string.table3_col17)));
-        ratio[17] = Float.parseFloat(ratecsv.Column(getString(R.string.table3_col18)));
-        ratio[18] = Float.parseFloat(ratecsv.Column(getString(R.string.table3_col19)));
-        ratio[19] = Float.parseFloat(ratecsv.Column(getString(R.string.table3_col20)));
-        ratio[20] = Float.parseFloat(ratecsv.Column(getString(R.string.table3_col21)));
+        printercsv = new CSVParser(folderExternal);
+        printercsv.readFile("printer.csv") ;
 
 
         mAddressShort = "UnknownMeter";
@@ -994,11 +936,16 @@ public class MainActivity extends AppCompatActivity implements
         super.onStart();
         Log.i(TAG, " onStart.");
         mPrintService = new BluetoothPrintService(mHandler);
+        if(printercsv.size()>0){
+            String address = printercsv.Column(getString(R.string.table2_col3));
+            BluetoothDevice device = mBluetoothAdapter.getRemoteDevice(address);
+            mPrintService.connect(device, false);
+        }
 
-        String address = "1C:B8:57:50:01:D9";
-        BluetoothDevice device = mBluetoothAdapter.getRemoteDevice(address);
-        mPrintService.connect(device, false);
+
+
 //        mPrintService.start();
+
     }
 
     @Override

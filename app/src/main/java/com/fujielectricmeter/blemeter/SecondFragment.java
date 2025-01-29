@@ -1,6 +1,7 @@
 package com.fujielectricmeter.blemeter;
 
 import static com.fujielectricmeter.blemeter.MainActivity.folderExternal;
+import static com.fujielectricmeter.blemeter.MainActivity.secondcsv;
 
 import android.app.Activity;
 import android.app.AlertDialog;
@@ -185,8 +186,10 @@ public class SecondFragment extends ItemFragment {
                 MainActivity.secondcsv.readFile(csvfile);
             } else {
                 CSVParser csv = new CSVParser("meter.csv", folderExternal);
-                MainActivity.secondcsv.Copy(csv, csvfile, folderExternal);
-                MainActivity.secondcsv.writeFile();
+                if(csv.size()>0) {
+                    MainActivity.secondcsv.Copy(csv, csvfile, folderExternal);
+                    MainActivity.secondcsv.writeFile();
+                }
             }
             MainActivity.Selection = 0;
         }

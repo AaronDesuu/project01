@@ -1,6 +1,9 @@
 package com.fujielectricmeter.blemeter;
 
 import static com.fujielectricmeter.blemeter.MainActivity.folderExternal;
+import static com.fujielectricmeter.blemeter.MainActivity.oldcsv;
+import static com.fujielectricmeter.blemeter.MainActivity.printercsv;
+import static com.fujielectricmeter.blemeter.MainActivity.ratecsv;
 
 import android.app.Activity;
 import android.app.AlertDialog;
@@ -176,16 +179,16 @@ public class FourthFragment extends ItemFragment {
                     @Override
                     public void onClick(View view) {
 
-                        String oldfile= "122024_meter.csv";
-                        MainActivity.oldcsv=new CSVParser(folderExternal);
-                        if (!MainActivity.oldcsv.exist(oldfile)){
+                        String oldfile = MainActivity.d.PreviousYearMonth() + "_meter.csv";
+                        MainActivity.oldcsv = new CSVParser(folderExternal);
+                        if (!MainActivity.oldcsv.exist(oldfile)) {
                             MainActivity.oldcsv.readFile("registration.csv");
                         } else {
                             MainActivity.oldcsv.readFile(oldfile);
                         }
                         MainActivity.oldcsv.Find(getString(R.string.table2_key), MainActivity.msecondKey);
-                        MainActivity.old_value[0]=MainActivity.oldcsv.Column(getString(R.string.table2_col4));
-                        MainActivity.old_value[1]=MainActivity.oldcsv.Column(getString(R.string.table2_col5));
+                        MainActivity.old_value[0] = MainActivity.oldcsv.Column(getString(R.string.table2_col4));
+                        MainActivity.old_value[1] = MainActivity.oldcsv.Column(getString(R.string.table2_col5));
 
                         binding.textView.setText("Communicating...");
                         setAnime(binding.button2);
@@ -231,27 +234,36 @@ public class FourthFragment extends ItemFragment {
                 });
                 if (Integer.parseInt(MainActivity.rootcsv.Column(getString(R.string.table2_col1))) > 0) {
                     binding.button1.setEnabled(false);
+                } else {
+                    binding.button2.setEnabled(false);
+                    binding.button3.setEnabled(false);
+                    binding.button4.setEnabled(false);
+                    binding.button5.setEnabled(false);
                 }
             } else {
-                binding.button2.setText(R.string.current_read);
+                binding.button1.setText(R.string.current_read);
                 binding.button1.setOnClickListener(new View.OnClickListener() {
                     @Override
                     public void onClick(View view) {
+
+                        String oldfile = MainActivity.d.PreviousYearMonth() + "_meter.csv";
+                        MainActivity.oldcsv = new CSVParser(folderExternal);
+                        if (!MainActivity.oldcsv.exist(oldfile)) {
+                            MainActivity.oldcsv.readFile("registration.csv");
+                        } else {
+                            MainActivity.oldcsv.readFile(oldfile);
+                        }
+                        MainActivity.oldcsv.Find(getString(R.string.table2_key), MainActivity.msecondKey);
+                        MainActivity.old_value[0] = MainActivity.oldcsv.Column(getString(R.string.table2_col4));
+                        MainActivity.old_value[1] = MainActivity.oldcsv.Column(getString(R.string.table2_col5));
+
                         binding.textView.setText("Communicating...");
                         setAnime(binding.button1);
                         buttonFunction(MainActivity.MSG_READER);
                         MainActivity.trail.operation("MSG_READER button");
                     }
                 });
-                binding.button2.setText(R.string.print);
-                binding.button2.setOnClickListener(new View.OnClickListener() {
-                    @Override
-                    public void onClick(View view) {
-                        setAnime(binding.button2);
-                        String data = CreateData();
-                         binding.textView.setText("Printed....\n" + data);
-                    }
-                });
+                binding.button2.setVisibility(View.INVISIBLE);
                 binding.button3.setVisibility(View.INVISIBLE);
                 binding.button4.setVisibility(View.INVISIBLE);
                 binding.button5.setVisibility(View.INVISIBLE);
@@ -286,9 +298,9 @@ public class FourthFragment extends ItemFragment {
                     switch (MainActivity.mSubStage) {
                         case 2:
                             if (mTemp.size() > 1) {
-                                if(!mTemp.get(1).equals("success (0)")){
+                                if (!mTemp.get(1).equals("success (0)")) {
                                     ret = -5;
-                                }else {
+                                } else {
                                     binding.textView.setText("Demand reset success");
                                 }
                             } else {
@@ -307,40 +319,44 @@ public class FourthFragment extends ItemFragment {
                             break;
                         case 6:
                             if (mTemp.size() > 9) {
-                                MainActivity.secondcsv.Update(mTemp.get(1),getString(R.string.table2_col4));
-                                MainActivity.secondcsv.Update(String.format("%.3f",MainActivity.d.Float(1000.0, mTemp.get(2))),getString(R.string.table2_col5));
-                                MainActivity.secondcsv.Update(String.format("%.3f",MainActivity.d.Float(1000.0, mTemp.get(3))),getString(R.string.table2_col6));
-                                MainActivity.secondcsv.Update(String.format("%.3f",MainActivity.d.Float(1000.0, mTemp.get(6))),getString(R.string.table2_col7));
-                                MainActivity.secondcsv.Update(String.format("%.3f",MainActivity.d.Float(1000.0, mTemp.get(7))),getString(R.string.table2_col8));
-                                MainActivity.secondcsv.Update(String.format("%.3f",MainActivity.d.Float(100.0, mTemp.get(8))),getString(R.string.table2_col9));
-                                MainActivity.secondcsv.Update(mTemp.get(9),getString(R.string.table2_col10));
-                                MainActivity.secondcsv.Update(mTemp.get(0),getString(R.string.table2_col11));
+                                MainActivity.secondcsv.Update(mTemp.get(1), getString(R.string.table2_col4));
+                                MainActivity.secondcsv.Update(String.format("%.3f", MainActivity.d.Float(1000.0, mTemp.get(2))), getString(R.string.table2_col5));
+                                MainActivity.secondcsv.Update(String.format("%.3f", MainActivity.d.Float(1000.0, mTemp.get(3))), getString(R.string.table2_col6));
+                                MainActivity.secondcsv.Update(String.format("%.3f", MainActivity.d.Float(1000.0, mTemp.get(6))), getString(R.string.table2_col7));
+                                MainActivity.secondcsv.Update(String.format("%.3f", MainActivity.d.Float(1000.0, mTemp.get(7))), getString(R.string.table2_col8));
+                                MainActivity.secondcsv.Update(String.format("%.3f", MainActivity.d.Float(100.0, mTemp.get(8))), getString(R.string.table2_col9));
+                                MainActivity.secondcsv.Update(mTemp.get(9), getString(R.string.table2_col10));
+                                MainActivity.secondcsv.Update(mTemp.get(0), getString(R.string.table2_col11));
                                 MainActivity.secondcsv.writeFile();
                                 binding.textView.setText("Success to get billing data. finish");
 
-                                MainActivity.now_value[0] = mTemp.get(0);  /*read date*/
-                                MainActivity.now_value[1] = mTemp.get(1);  /*fixed date*/
-                                MainActivity.now_value[2] = mTemp.get(2);  /*Imp*/
-                                MainActivity.now_value[3] = mTemp.get(6);  /*Imp Max*/
+                                if (ratecsv.size() > 0 && printercsv.size() > 0) {
+                                    MainActivity.now_value[0] = mTemp.get(0);  /*read date*/
+                                    MainActivity.now_value[1] = mTemp.get(1);  /*fixed date*/
+                                    MainActivity.now_value[2] = mTemp.get(2);  /*Imp*/
+                                    MainActivity.now_value[3] = mTemp.get(6);  /*Imp Max*/
 
-                                MainActivity.total_value[0] = Float.parseFloat(MainActivity.now_value[2])/1000.0f - Float.parseFloat(MainActivity.old_value[1]);
-                                MainActivity.total_value[1] = MainActivity.total_value[0] * MainActivity.ratio[0] +
-                                        Float.parseFloat(MainActivity.now_value[3]) * MainActivity.ratio[1]/1000.0f  + MainActivity.total_value[0] * MainActivity.ratio[2];
-                                MainActivity.total_value[2] = Float.parseFloat(MainActivity.now_value[3])/1000.0f * MainActivity.ratio[3]  + 1 * MainActivity.ratio[4] + 1 * MainActivity.ratio[5];
-                                MainActivity.total_value[3] = MainActivity.total_value[0] * MainActivity.ratio[6] + MainActivity.total_value[0] * MainActivity.ratio[7];
-                                MainActivity.total_value[4] = MainActivity.total_value[0] * MainActivity.ratio[8] + MainActivity.total_value[0] * MainActivity.ratio[9];
-                                MainActivity.total_value[5] = MainActivity.total_value[0] * MainActivity.ratio[10] + MainActivity.total_value[3] * MainActivity.ratio[11] +
-                                        MainActivity.total_value[0] * MainActivity.ratio[12] + MainActivity.total_value[0] * MainActivity.ratio[13] +
-                                        MainActivity.total_value[0] * MainActivity.ratio[14] + MainActivity.total_value[0] * MainActivity.ratio[15];
-                                MainActivity.total_value[6] = MainActivity.total_value[0] * MainActivity.ratio[16] + MainActivity.total_value[0] * MainActivity.ratio[17] +
-                                        MainActivity.total_value[0] * MainActivity.ratio[18] + MainActivity.total_value[2] * MainActivity.ratio[19] + MainActivity.total_value[4] * MainActivity.ratio[20];
-                                MainActivity.total_value[7] = MainActivity.total_value[1] + MainActivity.total_value[2] + MainActivity.total_value[3] +
-                                        MainActivity.total_value[4] + MainActivity.total_value[5] + MainActivity.total_value[6];
-                                MainActivity.total_value[8] = MainActivity.total_value[7]-10.0f;
-                                MainActivity.total_value[9] = MainActivity.total_value[7]+10.0f;
+                                    MainActivity.total_value[0] = Float.parseFloat(MainActivity.now_value[2]) / 1000.0f - Float.parseFloat(MainActivity.old_value[1]);
+                                    MainActivity.total_value[1] = MainActivity.total_value[0] * MainActivity.ratio[0] +
+                                            Float.parseFloat(MainActivity.now_value[3]) * MainActivity.ratio[1] / 1000.0f + MainActivity.total_value[0] * MainActivity.ratio[2];
+                                    MainActivity.total_value[2] = Float.parseFloat(MainActivity.now_value[3]) / 1000.0f * MainActivity.ratio[3] + 1 * MainActivity.ratio[4] + 1 * MainActivity.ratio[5];
+                                    MainActivity.total_value[3] = MainActivity.total_value[0] * MainActivity.ratio[6] + MainActivity.total_value[0] * MainActivity.ratio[7];
+                                    MainActivity.total_value[4] = MainActivity.total_value[0] * MainActivity.ratio[8] + MainActivity.total_value[0] * MainActivity.ratio[9];
+                                    MainActivity.total_value[5] = MainActivity.total_value[0] * MainActivity.ratio[10] + MainActivity.total_value[3] * MainActivity.ratio[11] +
+                                            MainActivity.total_value[0] * MainActivity.ratio[12] + MainActivity.total_value[0] * MainActivity.ratio[13] +
+                                            MainActivity.total_value[0] * MainActivity.ratio[14] + MainActivity.total_value[0] * MainActivity.ratio[15];
+                                    MainActivity.total_value[6] = MainActivity.total_value[0] * MainActivity.ratio[16] + MainActivity.total_value[0] * MainActivity.ratio[17] +
+                                            MainActivity.total_value[0] * MainActivity.ratio[18] + MainActivity.total_value[2] * MainActivity.ratio[19] + MainActivity.total_value[4] * MainActivity.ratio[20];
+                                    MainActivity.total_value[7] = MainActivity.total_value[1] + MainActivity.total_value[2] + MainActivity.total_value[3] +
+                                            MainActivity.total_value[4] + MainActivity.total_value[5] + MainActivity.total_value[6];
+                                    MainActivity.total_value[8] = MainActivity.total_value[7] - 10.0f;
+                                    MainActivity.total_value[9] = MainActivity.total_value[7] + 10.0f;
 
+                                    MainActivity.printImageText();
 
-                                MainActivity.printImageText();
+                                } else {
+
+                                }
 
                             } else {
                                 ret = -5;
@@ -411,10 +427,10 @@ public class FourthFragment extends ItemFragment {
                     break;
                 case MainActivity.MSG_CHANGE_THRESH:
                     if (mTemp.size() > 1) {
-                        if(!mTemp.get(1).equals("success (0)")){
+                        if (!mTemp.get(1).equals("success (0)")) {
                             binding.textView.setText("Fail to change thresh value1");
                             ret = -5;
-                        }else {
+                        } else {
                             binding.textView.setText("Success to set thresh value1");
                         }
                     } else {
@@ -469,7 +485,7 @@ public class FourthFragment extends ItemFragment {
                         csv.writeFile();
 //                        binding.textView.setText("Clock:"+mTemp.get(27)+"\nImp[kWh]:"+String.format("%.3f", MainActivity.d.Float(1000.0,mTemp.get(28)))+"\nExp[kWh]:"+String.format("%.3f", MainActivity.d.Float(1000.0,mTemp.get(29)))+"\nAbs[kWh]:"+String.format("%.3f", MainActivity.d.Float(1000.0,mTemp.get(30)))+"\nNet[kWh]:"+String.format("%.3f", MainActivity.d.Float(1000.0,mTemp.get(31)))+"\nImpMaxDemand[W]"+mTemp.get(32)+"\nExpMaxDemand[W]"+mTemp.get(33)+"\nMinVolt[V]:"+String.format("%.2f", MainActivity.d.Float(100.0,mTemp.get(34)))+"\n\n\n\n\n");
 
-        //              binding.textView.setText("Success to get and save billing records to file.");
+                        //              binding.textView.setText("Success to get and save billing records to file.");
                     } else {
                         binding.textView.setText("Fail to get and save billing records");
                         ret = -5;
@@ -491,7 +507,7 @@ public class FourthFragment extends ItemFragment {
             }
             mTemp.clear();
         } else {
-            mCnt ++;
+            mCnt++;
             binding.textView.setText("Getting " + mCnt.toString() + " Blocks");
         }
         return ret;

@@ -1,5 +1,7 @@
 package com.fujielectricmeter.blemeter;
 
+import static java.lang.String.format;
+
 import android.content.Context;
 import android.icu.util.Calendar;
 
@@ -429,7 +431,7 @@ public class DLMS {
         s %= 3600;
         k = s / 60;
         s %= 60;
-        return String.format("%02d/%02d/%04d %02d:%02d:%02d", d, m + 1, y + 2010, h, k, s);
+        return format("%02d/%02d/%04d %02d:%02d:%02d", d, m + 1, y + 2010, h, k, s);
     }
 
     public long CurrentDatetimeSec() {    /*yyyy/mm/dd hh:mm:ss*/
@@ -449,27 +451,13 @@ public class DLMS {
     }
 
     public String PreviousYearMonth() {    /*MMyyyy*/
-
-        Calendar today = Calendar.getInstance();
         Calendar start = Calendar.getInstance();
-        Calendar end = Calendar.getInstance();
-        today.setTime(new Date());
-
-        int diff = (today.get(Calendar.DATE)) - 1;
-        start.setTime(today.getTime());
+        start.setTime(new java.util.Date());
+        int diff = (start.get(Calendar.DATE))+1;
         start.add(Calendar.DATE, -diff);
-        start.add(Calendar.MONTH, -1);
-        end.setTime(start.getTime());
-        end.add(Calendar.MONTH, 1);
-        end.add(Calendar.DATE, -1);
-
-        if (end.get(Calendar.MONTH) == 0) {
-            end.add(Calendar.YEAR,-1);
-        }
-
-
-        android.icu.text.SimpleDateFormat sdf = new android.icu.text.SimpleDateFormat("MMyyyy", Locale.getDefault());
-        return sdf.format(new Date());
+        return String.format("%2d%4d",
+                start.get(Calendar.MONTH)+1,
+                start.get(Calendar.YEAR));
     }
 
 
@@ -504,7 +492,7 @@ public class DLMS {
         s %= 3600;
         k = s / 60;
         s %= 60;
-        return String.format("%04x%02x%02xff%02x%02x%02xff800000", y + 2010, m + 1, d, h, k, s);
+        return format("%04x%02x%02xff%02x%02x%02xff800000", y + 2010, m + 1, d, h, k, s);
     }
     public String TimeStampFilename(final String datetime){
         String timestamp = datetime.replace("/","");
@@ -583,16 +571,16 @@ public class DLMS {
         StringBuffer ret = new StringBuffer();
         long eval = 1, val = Long.parseLong(bits);
         if (val > 0) {
-            ret.append(String.format("%d (bit", val));
+            ret.append(format("%d (bit", val));
             for (int i = 0; i < 32; i++) {
                 if ((val & eval) > 0) {
-                    ret.append(String.format(" %d", i));
+                    ret.append(format(" %d", i));
                 }
                 eval <<= 1;
             }
             ret.append(")");
         } else {
-            ret.append(String.format("%X (off)", val));
+            ret.append(format("%X (off)", val));
         }
         return ret.toString();
     }
@@ -600,7 +588,7 @@ public class DLMS {
     public String setOct2Str(final byte[] oct, final int offset, final int length) {
         StringBuffer ret = new StringBuffer();
         for (int i = 0; i < length; i++) {
-            ret.append(String.format("%02X", getUI8(oct, offset + i)));
+            ret.append(format("%02X", getUI8(oct, offset + i)));
         }
         return ret.toString();
     }
@@ -608,7 +596,7 @@ public class DLMS {
     public String setStr2Str(final byte[] oct, final int offset, final int length) {
         StringBuffer ret = new StringBuffer();
         for (int i = 0; i < length; i++) {
-            ret.append(String.format("%c", getUI8(oct, offset + i)));
+            ret.append(format("%c", getUI8(oct, offset + i)));
         }
         return ret.toString();
     }
@@ -695,7 +683,7 @@ public class DLMS {
 
     public String arrange6_int(final String in){
         Long val = Long.parseLong(in);
-        return String.format("%06d", val);
+        return format("%06d", val);
     }
 
     public String arrange_boolean(final String t, final String f,final String in) {
@@ -932,7 +920,7 @@ public class DLMS {
         }
 
         public final String get() {
-            return String.format("%s,%s,%s,%s",
+            return format("%s,%s,%s,%s",
                     mProperty[0], mProperty[1], mProperty[2],mProperty[3]);
         }
 
@@ -1591,7 +1579,7 @@ public class DLMS {
                 eval = 1;
             }
             if ((hex[3 - (i / 8)] & eval) > 0) {
-                out.add(String.format("  %s", alert[i]));
+                out.add(format("  %s", alert[i]));
                 detect++;
             }
             eval <<= 1;
@@ -1607,21 +1595,21 @@ public class DLMS {
         ArrayList<String> tmp = new ArrayList<String>();
         switch (mObj) {
             case IST_APPROVAL_NO:
-                out.add(String.format("Serial NO: %s", data.get(0)));
+                out.add(format("Serial NO: %s", data.get(0)));
                 break;
             case IST_RAM:
-                out.add(String.format("Setting value is \"%s\"", data.get(0)));
+                out.add(format("Setting value is \"%s\"", data.get(0)));
                 break;
             case IST_SERIAL_NO:
-                out.add(String.format("Serial No: %s", data.get(0)));
+                out.add(format("Serial No: %s", data.get(0)));
                 break;
             case IST_FIRM_VER:
-                out.add(String.format("Revision No: %s", data.get(0)));
-                out.add(String.format("Date: %s", data.get(1)));
-                out.add(String.format("Time: %s", data.get(2)));
-                out.add(String.format("Code: %s", data.get(3)));
-                out.add(String.format("Year: %s", data.get(4)));
-                out.add(String.format("Account: %s", data.get(5)));
+                out.add(format("Revision No: %s", data.get(0)));
+                out.add(format("Date: %s", data.get(1)));
+                out.add(format("Time: %s", data.get(2)));
+                out.add(format("Code: %s", data.get(3)));
+                out.add(format("Year: %s", data.get(4)));
+                out.add(format("Account: %s", data.get(5)));
                 break;
             case IST_ALARM_DSC1:
                 getAlert(out, data.get(0), alert1);
@@ -1636,29 +1624,29 @@ public class DLMS {
                 }
                 break;
             case IST_SETUP_PULS:
-                out.add(String.format("Shift: %s", data.get(0)));
-                out.add(String.format("FixedPlus: %s", data.get(1)));
-                out.add(String.format("Source: %s", data.get(2)));
-                out.add(String.format("Division1: %s", data.get(3)));
-                out.add(String.format("Division2: %s", data.get(4)));
-                out.add(String.format("Division3: %s", data.get(5)));
-                out.add(String.format("Division4: %s", data.get(6)));
+                out.add(format("Shift: %s", data.get(0)));
+                out.add(format("FixedPlus: %s", data.get(1)));
+                out.add(format("Source: %s", data.get(2)));
+                out.add(format("Division1: %s", data.get(3)));
+                out.add(format("Division2: %s", data.get(4)));
+                out.add(format("Division3: %s", data.get(5)));
+                out.add(format("Division4: %s", data.get(6)));
                 break;
 
             case IST_SPECIFICATION:
                 out.add(data.get(0));
-                out.add(String.format("Serial NO.: %s", data.get(4)));
-                out.add(String.format("Battery Lev: %s", data.get(9)));
-                out.add(String.format("Potential  : %s", data.get(10)));
-                out.add(String.format("Last status: %s", getBitsStr(data.get(11))));
+                out.add(format("Serial NO.: %s", data.get(4)));
+                out.add(format("Battery Lev: %s", data.get(9)));
+                out.add(format("Potential  : %s", data.get(10)));
+                out.add(format("Last status: %s", getBitsStr(data.get(11))));
                 idx = Integer.parseInt(data.get(12));
-                out.add(String.format("Last event : %s", PQCODE[idx]));
+                out.add(format("Last event : %s", PQCODE[idx]));
 //              out.add(String.format("Fault: %s", data.get(13)));
-                out.add(String.format("Alert1 Dsc : %s", data.get(14)));
+                out.add(format("Alert1 Dsc : %s", data.get(14)));
                 tmp.clear();
                 getAlert(tmp, data.get(14), alert1);
                 out.addAll(tmp);
-                out.add(String.format("Alert2 Dsc : %s", data.get(15)));
+                out.add(format("Alert2 Dsc : %s", data.get(15)));
                 tmp.clear();
                 getAlert(tmp, data.get(15), alert2);
                 out.addAll(tmp);
@@ -1668,29 +1656,29 @@ public class DLMS {
                 out.add(data.get(0));
 //              out.add(String.format("Stamp date: %s", data.get(7)));
 //              out.add(String.format("Stamp date: %s", data.get(9)));
-                out.add(String.format("Serial NO.: %s", data.get(1)));
-                out.add(String.format("IMP: %.3f [kWh]", Float(1000.0, data.get(2))));
-                out.add(String.format("EXP: %.3f [kWh]", Float(1000.0, data.get(3))));
-                out.add(String.format("ABS: %.3f [kWh]", Float(1000.0, data.get(4))));
-                out.add(String.format("NET: %.3f [kWh]", Float(1000.0, data.get(5))));
-                out.add(String.format("Max Imp : %.3f [kW], Exp: %.3f [kW]", Float(1000.0, data.get(6)), Float(1000.0, data.get(8))));
-                out.add(String.format("Inst Imp: %.3f [kW], Exp: %.3f [kW]", Float(1000.0, data.get(10)), Float(1000.0, data.get(11))));
-                out.add(String.format("Volt0: %.2f [V], Min: %.2f [V]", Float(100.0, data.get(12)), Float(100.0, data.get(13))));
-                out.add(String.format("Current L1: %.2f [A], L2: %.2f [A]", Float(100.0, data.get(14)), Float(100.0, data.get(15))));
-                out.add(String.format("Power factor: %.2f ", Float(100.0, data.get(16))));
-                out.add(String.format("Block Imp: %.3f [kW], Exp: %.3f [kW]", Float(1000.0, data.get(17)), Float(1000.0, data.get(18))));
+                out.add(format("Serial NO.: %s", data.get(1)));
+                out.add(format("IMP: %.3f [kWh]", Float(1000.0, data.get(2))));
+                out.add(format("EXP: %.3f [kWh]", Float(1000.0, data.get(3))));
+                out.add(format("ABS: %.3f [kWh]", Float(1000.0, data.get(4))));
+                out.add(format("NET: %.3f [kWh]", Float(1000.0, data.get(5))));
+                out.add(format("Max Imp : %.3f [kW], Exp: %.3f [kW]", Float(1000.0, data.get(6)), Float(1000.0, data.get(8))));
+                out.add(format("Inst Imp: %.3f [kW], Exp: %.3f [kW]", Float(1000.0, data.get(10)), Float(1000.0, data.get(11))));
+                out.add(format("Volt0: %.2f [V], Min: %.2f [V]", Float(100.0, data.get(12)), Float(100.0, data.get(13))));
+                out.add(format("Current L1: %.2f [A], L2: %.2f [A]", Float(100.0, data.get(14)), Float(100.0, data.get(15))));
+                out.add(format("Power factor: %.2f ", Float(100.0, data.get(16))));
+                out.add(format("Block Imp: %.3f [kW], Exp: %.3f [kW]", Float(1000.0, data.get(17)), Float(1000.0, data.get(18))));
                 break;
 
             case IST_BILLING_PARAMS:
                 ArrayList<BillingData> list = new ArrayList<BillingData>();
                 for (int i = 0; i < data.size(); ) {
                     out.add(data.get(i + 0));
-                    out.add(String.format("IMP: %.3f [kWh], EXP: %.3f [kWh]", Float(1000.0, data.get(i + 1)), Float(1000.0, data.get(i + 2))));
-                    out.add(String.format("ABS: %.3f [kWh], NET: %.3f [kWh]", Float(1000.0, data.get(i + 3)), Float(1000.0, data.get(i + 4))));
-                    out.add(String.format("Max Imp: %.3f [kW], Exp: %.3f [kW]", Float(1000.0, data.get(i + 5)), Float(1000.0, data.get(i + 6))));
-                    out.add(String.format("Volt0 Min: %.2f [V]", Float(100.0, data.get(i + 7))));
-                    out.add(String.format("Alert1 Dsc: %s", getBitsStr(data.get(i + 8))));
-                    out.add(String.format("Alert2 Dsc: %s", getBitsStr(data.get(i + 9))));
+                    out.add(format("IMP: %.3f [kWh], EXP: %.3f [kWh]", Float(1000.0, data.get(i + 1)), Float(1000.0, data.get(i + 2))));
+                    out.add(format("ABS: %.3f [kWh], NET: %.3f [kWh]", Float(1000.0, data.get(i + 3)), Float(1000.0, data.get(i + 4))));
+                    out.add(format("Max Imp: %.3f [kW], Exp: %.3f [kW]", Float(1000.0, data.get(i + 5)), Float(1000.0, data.get(i + 6))));
+                    out.add(format("Volt0 Min: %.2f [V]", Float(100.0, data.get(i + 7))));
+                    out.add(format("Alert1 Dsc: %s", getBitsStr(data.get(i + 8))));
+                    out.add(format("Alert2 Dsc: %s", getBitsStr(data.get(i + 9))));
                     i += 10;
                 }
                 break;
@@ -1698,23 +1686,23 @@ public class DLMS {
             case IST_LOAD_PROFILE:
                 for (int i = 0; i < data.size(); ) {
                     out.add(data.get(i++));
-                    out.add(String.format("Status   : %s", getBitsStr(data.get(i++))));
-                    out.add(String.format("Volt0 Ave: %.2f [V]", Float(100.0, data.get(i++))));
-                    out.add(String.format("Block Imp: %.3f [kW], Exp: %.3f [kW]", Float(1000.0, data.get(i++)), Float(1000.0, data.get(i++))));
+                    out.add(format("Status   : %s", getBitsStr(data.get(i++))));
+                    out.add(format("Volt0 Ave: %.2f [V]", Float(100.0, data.get(i++))));
+                    out.add(format("Block Imp: %.3f [kW], Exp: %.3f [kW]", Float(1000.0, data.get(i++)), Float(1000.0, data.get(i++))));
                 }
                 break;
             case IST_AMPR_RECORD:
                 for (int i = 0; i < data.size(); ) {
                     out.add(data.get(i++));
-                    out.add(String.format("Current L1 Ave: %.2f [A]", Float(100.0, data.get(i++))));
+                    out.add(format("Current L1 Ave: %.2f [A]", Float(100.0, data.get(i++))));
                 }
                 break;
             case IST_POWER_QUALITY:
                 for (int i = 0; i < data.size(); ) {
                     out.add(data.get(i++));
                     idx = Integer.parseInt(data.get(i++));
-                    out.add(String.format("Event: %s", PQCODE[idx]));
-                    out.add(String.format("Volt0: %.2f [V]", Float(100.0, data.get(i++))));
+                    out.add(format("Event: %s", PQCODE[idx]));
+                    out.add(format("Volt0: %.2f [V]", Float(100.0, data.get(i++))));
                 }
                 break;
             case IST_METER_LOG:
@@ -1733,13 +1721,13 @@ public class DLMS {
                     sec %= 3600;
                     long min = sec / 60;
                     sec %= 60;
-                    out.add(String.format("%d Day %02d:%02d:%02d,%s,%d", day, hour, min, sec, LOGCODE[idx], num));
+                    out.add(format("%d Day %02d:%02d:%02d,%s,%d", day, hour, min, sec, LOGCODE[idx], num));
                 }
                 break;
             case IST_CAL_ENERGY:
             case IST_CAL_VOLTAMP:
                 for (int i = 0; i < data.size(); i++) {
-                    out.add(String.format("%04X", Long.parseLong(data.get(i))));
+                    out.add(format("%04X", Long.parseLong(data.get(i))));
                 }
                 break;
             default:
@@ -1813,7 +1801,7 @@ public class DLMS {
                 ret = String.valueOf("other reason(250)");/**/
                 break;
             default:
-                ret = String.format("unknown code (%d)", code);/**/
+                ret = format("unknown code (%d)", code);/**/
                 break;
         }
         return ret;
@@ -1932,12 +1920,12 @@ public class DLMS {
                     break;
                 case 5:      //"double_long"
                     val = getI32(in, io[0]);
-                    data.add(String.format("%d", val));
+                    data.add(format("%d", val));
                     io[0] += 4;
                     break;
                 case 6:        //"double_long_unsigned"
                     val = getUI32(in, io[0]);
-                    data.add(String.format("%d", val));
+                    data.add(format("%d", val));
                     io[0] += 4;
                     break;
                 case 7:        //"floating_point"
@@ -1959,7 +1947,7 @@ public class DLMS {
                         sec = getUI8(in, io[0]);
                         io[0]++;
                         io[0] += 4;
-                        data.add(String.format("%02d/%02d/%04d %02d:%02d:%02d", day, mon, year, hour, min, sec));
+                        data.add(format("%02d/%02d/%04d %02d:%02d:%02d", day, mon, year, hour, min, sec));
                     } else {
                         data.add(setOct2Str(in, io[0], io[1]));
                         io[0] += io[1];
@@ -1973,20 +1961,20 @@ public class DLMS {
                 case 13:    //"bcd"
                     break;
                 case 15:    //"integer"
-                    data.add(String.format("%d", getI8(in, io[0])));
+                    data.add(format("%d", getI8(in, io[0])));
                     io[0] += 1;
                     break;
                 case 16:    //"long"
-                    data.add(String.format("%d", getI16(in, io[0])));
+                    data.add(format("%d", getI16(in, io[0])));
                     io[0] += 2;
                     break;
                 case 17:    //"unsigned"
                 case 22:    //"enum"
-                    data.add(String.format("%d", getUI8(in, io[0])));
+                    data.add(format("%d", getUI8(in, io[0])));
                     io[0] += 1;
                     break;
                 case 18:    //"long_unsigned"
-                    data.add(String.format("%d", getUI16(in, io[0])));
+                    data.add(format("%d", getUI16(in, io[0])));
                     io[0] += 2;
                     break;
                 case 19:    //"compact_array"
@@ -2016,7 +2004,7 @@ public class DLMS {
                     sec = getUI8(in, io[0]);
                     io[0]++;
                     io[0] += 4;
-                    data.add(String.format("%02d/%02d/%04d %02d:%02d:%02d", day, mon, year, hour, min, sec));
+                    data.add(format("%02d/%02d/%04d %02d:%02d:%02d", day, mon, year, hour, min, sec));
                     break;
                 case 26:    //"date"
                     year = getUI16(in, io[0]);
@@ -2026,7 +2014,7 @@ public class DLMS {
                     day = getUI8(in, io[0]);
                     io[0]++;
                     io[0]++;//day of week
-                    data.add(String.format("%02d/%02d/%04d", day, mon, year));
+                    data.add(format("%02d/%02d/%04d", day, mon, year));
                     break;
                 case 27:    //"time"
                     hour = getUI8(in, io[0]);
@@ -2036,7 +2024,7 @@ public class DLMS {
                     sec = getUI8(in, io[0]);
                     io[0]++;
                     io[0] += 4;
-                    data.add(String.format("%02d:%02d:%02d", hour, min, sec));
+                    data.add(format("%02d:%02d:%02d", hour, min, sec));
                     break;
                 case 255:    //"don't_care"
                     break;
