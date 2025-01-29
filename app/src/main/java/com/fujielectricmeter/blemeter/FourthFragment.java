@@ -144,6 +144,7 @@ public class FourthFragment extends ItemFragment {
                     .navigate(R.id.action_FourthFragment_to_SecondFragment);
         } else {
             mCallback.fragmentOrder(MainActivity.ODR_SCAN_OFF);
+
             String csvfile = "registration.csv";
             if (MainActivity.fourthcsv != null) {
                 if (!MainActivity.fourthcsv.Present().equals(csvfile)) {
@@ -186,9 +187,9 @@ public class FourthFragment extends ItemFragment {
                         } else {
                             MainActivity.oldcsv.readFile(oldfile);
                         }
-                        MainActivity.oldcsv.Find(getString(R.string.table2_key), MainActivity.msecondKey);
-                        MainActivity.old_value[0] = MainActivity.oldcsv.Column(getString(R.string.table2_col4));
-                        MainActivity.old_value[1] = MainActivity.oldcsv.Column(getString(R.string.table2_col5));
+                            MainActivity.oldcsv.Find(getString(R.string.table2_key), MainActivity.msecondKey);
+                            MainActivity.old_value[0] = MainActivity.oldcsv.Column(getString(R.string.table2_col4));
+                            MainActivity.old_value[1] = MainActivity.oldcsv.Column(getString(R.string.table2_col5));
 
                         binding.textView.setText("Communicating...");
                         setAnime(binding.button2);
@@ -330,34 +331,32 @@ public class FourthFragment extends ItemFragment {
                                 MainActivity.secondcsv.writeFile();
                                 binding.textView.setText("Success to get billing data. finish");
 
-                                if (ratecsv.size() > 0 && printercsv.size() > 0) {
-                                    MainActivity.now_value[0] = mTemp.get(0);  /*read date*/
-                                    MainActivity.now_value[1] = mTemp.get(1);  /*fixed date*/
-                                    MainActivity.now_value[2] = mTemp.get(2);  /*Imp*/
-                                    MainActivity.now_value[3] = mTemp.get(6);  /*Imp Max*/
+                                    if (ratecsv.size() > 0 && printercsv.size() > 0 && MainActivity.old_value[1]!="") {
+                                        MainActivity.now_value[0] = mTemp.get(0);  /*read date*/
+                                        MainActivity.now_value[1] = mTemp.get(1);  /*fixed date*/
+                                        MainActivity.now_value[2] = mTemp.get(2);  /*Imp*/
+                                        MainActivity.now_value[3] = mTemp.get(6);  /*Imp Max*/
 
-                                    MainActivity.total_value[0] = Float.parseFloat(MainActivity.now_value[2]) / 1000.0f - Float.parseFloat(MainActivity.old_value[1]);
-                                    MainActivity.total_value[1] = MainActivity.total_value[0] * MainActivity.ratio[0] +
-                                            Float.parseFloat(MainActivity.now_value[3]) * MainActivity.ratio[1] / 1000.0f + MainActivity.total_value[0] * MainActivity.ratio[2];
-                                    MainActivity.total_value[2] = Float.parseFloat(MainActivity.now_value[3]) / 1000.0f * MainActivity.ratio[3] + 1 * MainActivity.ratio[4] + 1 * MainActivity.ratio[5];
-                                    MainActivity.total_value[3] = MainActivity.total_value[0] * MainActivity.ratio[6] + MainActivity.total_value[0] * MainActivity.ratio[7];
-                                    MainActivity.total_value[4] = MainActivity.total_value[0] * MainActivity.ratio[8] + MainActivity.total_value[0] * MainActivity.ratio[9];
-                                    MainActivity.total_value[5] = MainActivity.total_value[0] * MainActivity.ratio[10] + MainActivity.total_value[3] * MainActivity.ratio[11] +
-                                            MainActivity.total_value[0] * MainActivity.ratio[12] + MainActivity.total_value[0] * MainActivity.ratio[13] +
-                                            MainActivity.total_value[0] * MainActivity.ratio[14] + MainActivity.total_value[0] * MainActivity.ratio[15];
-                                    MainActivity.total_value[6] = MainActivity.total_value[0] * MainActivity.ratio[16] + MainActivity.total_value[0] * MainActivity.ratio[17] +
-                                            MainActivity.total_value[0] * MainActivity.ratio[18] + MainActivity.total_value[2] * MainActivity.ratio[19] + MainActivity.total_value[4] * MainActivity.ratio[20];
-                                    MainActivity.total_value[7] = MainActivity.total_value[1] + MainActivity.total_value[2] + MainActivity.total_value[3] +
-                                            MainActivity.total_value[4] + MainActivity.total_value[5] + MainActivity.total_value[6];
-                                    MainActivity.total_value[8] = MainActivity.total_value[7] - 10.0f;
-                                    MainActivity.total_value[9] = MainActivity.total_value[7] + 10.0f;
 
-                                    MainActivity.printImageText();
+                                        MainActivity.total_value[0] = Float.parseFloat(MainActivity.now_value[2]) / 1000.0f - Float.parseFloat(MainActivity.old_value[1]);
+                                        MainActivity.total_value[1] = MainActivity.total_value[0] * MainActivity.ratio[0] +
+                                                Float.parseFloat(MainActivity.now_value[3]) * MainActivity.ratio[1] / 1000.0f + MainActivity.total_value[0] * MainActivity.ratio[2];
+                                        MainActivity.total_value[2] = Float.parseFloat(MainActivity.now_value[3]) / 1000.0f * MainActivity.ratio[3] + 1 * MainActivity.ratio[4] + 1 * MainActivity.ratio[5];
+                                        MainActivity.total_value[3] = MainActivity.total_value[0] * MainActivity.ratio[6] + MainActivity.total_value[0] * MainActivity.ratio[7];
+                                        MainActivity.total_value[4] = MainActivity.total_value[0] * MainActivity.ratio[8] + MainActivity.total_value[0] * MainActivity.ratio[9];
+                                        MainActivity.total_value[5] = MainActivity.total_value[0] * MainActivity.ratio[10] + MainActivity.total_value[3] * MainActivity.ratio[11] +
+                                                MainActivity.total_value[0] * MainActivity.ratio[12] + MainActivity.total_value[0] * MainActivity.ratio[13] +
+                                                MainActivity.total_value[0] * MainActivity.ratio[14] + MainActivity.total_value[0] * MainActivity.ratio[15];
+                                        MainActivity.total_value[6] = MainActivity.total_value[0] * MainActivity.ratio[16] + MainActivity.total_value[0] * MainActivity.ratio[17] +
+                                                MainActivity.total_value[0] * MainActivity.ratio[18] + MainActivity.total_value[2] * MainActivity.ratio[19] + MainActivity.total_value[4] * MainActivity.ratio[20];
+                                        MainActivity.total_value[7] = MainActivity.total_value[1] + MainActivity.total_value[2] + MainActivity.total_value[3] +
+                                                MainActivity.total_value[4] + MainActivity.total_value[5] + MainActivity.total_value[6];
+                                        MainActivity.total_value[8] = MainActivity.total_value[7] - 10.0f;
+                                        MainActivity.total_value[9] = MainActivity.total_value[7] + 10.0f;
 
-                                } else {
+                                        MainActivity.printImageText();
 
-                                }
-
+                                    }
                             } else {
                                 ret = -5;
                             }
