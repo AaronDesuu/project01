@@ -42,6 +42,7 @@ import androidx.navigation.ui.NavigationUI;
 
 import com.fujielectricmeter.blemeter.databinding.ActivityMainBinding;
 import com.woosim.printer.WoosimCmd;
+import com.woosim.printer.WoosimService;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -63,6 +64,7 @@ public class MainActivity extends AppCompatActivity implements
 
     public static final String DEVICE_NAME = null;
     private static final boolean D = true;
+    public static final int  MESSAGE_DEVICE_NAME =1;
     public static final int MESSAGE_TOAST = 2;
     public static final int MESSAGE_READ = 3;
     private static final int REQUEST_CONNECT_DEVICE_INSECURE = 2;
@@ -73,30 +75,8 @@ public class MainActivity extends AppCompatActivity implements
             0.0f, 0.0f, 0.0f, 0.0f, 0.0f,
             0.0f, 0.0f, 0.0f, 0.0f, 0.0f,
             0.0f, 0.0f, 0.0f, 0.0f, 0.0f};
-
-    public static String[] now_value = {
-            "", "", "", "", "", "",
-            "", "", "", "", "", "",
-            "", "", "", "", "", "",
-            "", "", "", "", "", "",
-            "", "", "", "", "", "",
-            "", "", "", "", "",""};
-
-    public static String[] old_value = {
-            "", "", "", "", "", "",
-            "", "", "", "", "", "",
-            "", "", "", "", "", "",
-            "", "", "", "", "", "",
-            "", "", "", "", "", "",
-            "", "", "", "", "",""};
-
-    public static float[] total_value = {
-            0.0f, 0.0f, 0.0f, 0.0f, 0.0f,
-            0.0f, 0.0f, 0.0f, 0.0f, 0.0f,
-            0.0f, 0.0f, 0.0f, 0.0f, 0.0f,
-            0.0f, 0.0f, 0.0f, 0.0f, 0.0f,
-            0.0f, 0.0f, 0.0f, 0.0f, 0.0f,
-            0.0f, 0.0f, 0.0f, 0.0f, 0.0f};
+  //  public static String[] now_value = {"", "", "", ""};
+  //  public static String[]old_value = {"", ""};
     static String [] MonthList ={
             "January",
             "February",
@@ -111,21 +91,18 @@ public class MainActivity extends AppCompatActivity implements
             "November",
             "December"
     };
+    private WoosimService mWoosim = null;
+
     public static String dateTimeToMonth(final String DateTime){
         String month=DateTime.substring(3,5);
         Integer pos=Integer.parseInt(month);
-
         return MonthList[pos-1];
-
     }
 
     public static String getNowDate(){
         android.icu.text.SimpleDateFormat sdf = new android.icu.text.SimpleDateFormat("EEE dd MMM yyyy HH:mm:ss", Locale.getDefault());
         return sdf.format(new Date());
     }
-
-
-    public static int MESSAGE_DEVICE_NAME;
     private final String TAG = MainActivity.class.getSimpleName();
     public static StringBuffer CounterParameter = new StringBuffer();
     private AppBarConfiguration appBarConfiguration;
@@ -289,12 +266,53 @@ public class MainActivity extends AppCompatActivity implements
         }
     }
 
-    public static void printImageText() {
-        mPrintService.write(WoosimCmd.initPrinter());
-        mPrintService.write(WoosimCmd.setPageMode());
-        mPrintService.write(WoosimCmd.PM_setArea(0, 0, 600, 9000));
+    public static void printImageText(final String [] now_value, final String [] old_value) {
 
-        String title1 ="SAMPLE Receipt\n";
+        float[] total_value = { 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f};
+
+        total_value[0] =
+                Float.parseFloat(now_value[2]) / 1000.0f -
+                        Float.parseFloat(old_value[1]);
+        total_value[1] =
+                total_value[0] * ratio[0] +
+                Float.parseFloat(now_value[3]) * ratio[1] / 1000.0f +
+                total_value[0] * ratio[2];
+        total_value[2] =
+                Float.parseFloat(now_value[3]) / 1000.0f * ratio[3] +
+                1 * ratio[4] +
+                1 * ratio[5];
+        total_value[3] =
+                total_value[0] * ratio[6] +
+                total_value[0] * ratio[7];
+        total_value[4] =
+                total_value[0] * MainActivity.ratio[8] +
+                total_value[0] * MainActivity.ratio[9];
+        total_value[5] =
+                total_value[0] * MainActivity.ratio[10] +
+                total_value[3] * ratio[11] +
+                total_value[0] * ratio[12] +
+                total_value[0] * ratio[13] +
+                total_value[0] * ratio[14] +
+                total_value[0] * ratio[15];
+        total_value[6] =
+                total_value[0] * ratio[16] +
+                total_value[0] * ratio[17] +
+                total_value[0] * ratio[18] +
+                total_value[2] * ratio[19] +
+                total_value[4] * ratio[20];
+        total_value[7] =
+                total_value[1] +
+                total_value[2] +
+                total_value[3] +
+                total_value[4] +
+                total_value[5] +
+                total_value[6];
+        total_value[8] =
+                total_value[7] - 10.0f;
+        total_value[9] =
+                total_value[7] + 10.0f;
+
+        String title1 ="SAMPLE Receipt\n\n\n";
         String title2 ="           H.V Dela Costa St Salcedo Village Makati 1227,\n"+
                        "          Metro Manila Philippines\n";
         String title3 ="        Fuji Electric Sales Philippines Inc.\n";
@@ -503,17 +521,21 @@ public class MainActivity extends AppCompatActivity implements
         String str36 =  String.format(_str36, "Kobayshi K Kurika",getNowDate());
         String str37 =
                 /*フォーマットのバージョン*/
-                "Version : v1.00.1";
+                "Version : v1.00.1\n\n\n\n";
 
+        mPrintService.write(WoosimCmd.initPrinter());
+        if(false) {
+//        mPrintService.write(WoosimCmd.setPageMode());
+//        mPrintService.write(WoosimCmd.PM_setArea(0, 0, 600, 9000));
+//        mPrintService.write(WoosimCmd.PM_setArea(0, 0, 600, 9000));
+        }
         mPrintService.write(WoosimCmd.PM_setPosition(0, 0));
         mPrintService.write(WoosimCmd.setCodeTable(WoosimCmd.MCU_RX, WoosimCmd.CT_CP437, WoosimCmd.FONT_MEDIUM));
         mPrintService.write(WoosimCmd.setTextStyle(true, false, false, 1, 1));
         mPrintService.write(title1.getBytes());
-
         mPrintService.write(WoosimCmd.setCodeTable(WoosimCmd.MCU_RX, WoosimCmd.CT_CP437, WoosimCmd.FONT_MEDIUM));
         mPrintService.write(WoosimCmd.setTextStyle(true, false, false, 1, 1));
         mPrintService.write(title2.getBytes());
-
         mPrintService.write(WoosimCmd.setCodeTable(WoosimCmd.MCU_RX, WoosimCmd.CT_CP437, WoosimCmd.FONT_LARGE));
         mPrintService.write(WoosimCmd.setTextStyle(true, false, false, 1, 2));
         mPrintService.write(title3.getBytes());
@@ -592,14 +614,12 @@ public class MainActivity extends AppCompatActivity implements
         mPrintService.write(WoosimCmd.setCodeTable(WoosimCmd.MCU_RX, WoosimCmd.CT_CP437, WoosimCmd.FONT_MEDIUM));
         mPrintService.write(str28.getBytes());
 
-
         mPrintService.write(WoosimCmd.setCodeTable(WoosimCmd.MCU_RX, WoosimCmd.CT_CP437, WoosimCmd.FONT_LARGE));
         mPrintService.write(WoosimCmd.setTextStyle(true, false, false, 1, 1));
         mPrintService.write(str29.getBytes());
         mPrintService.write(str30.getBytes());
         mPrintService.write(str31.getBytes());
         mPrintService.write(str32.getBytes());
-
 
         mPrintService.write(WoosimCmd.setCodeTable(WoosimCmd.MCU_RX, WoosimCmd.CT_CP437, WoosimCmd.FONT_LARGE));
         mPrintService.write(WoosimCmd.setTextStyle(true, false, false, 1, 1));
@@ -610,7 +630,6 @@ public class MainActivity extends AppCompatActivity implements
         mPrintService.write(str35.getBytes());
         mPrintService.write(str36.getBytes());
         mPrintService.write(str37.getBytes());
-
         mPrintService.write(WoosimCmd.PM_printStdMode());
     }
 
@@ -778,7 +797,6 @@ public class MainActivity extends AppCompatActivity implements
         copyAssetsFile();
         rootcsv = new CSVParser("meter.csv", folderExternal);
 
-
         CSVParser csv = new CSVParser(folderExternal);
         login = new CSVParser(folderFiles);
         if (!login.readFile("login.csv")) {
@@ -844,6 +862,8 @@ public class MainActivity extends AppCompatActivity implements
                 deleteFile("login.csv", folderExternal);
             }
         }
+        printercsv = new CSVParser(folderExternal);
+        printercsv.readFile("printer.csv") ;
 
         ratecsv = new CSVParser(folderExternal);
         ratecsv.readFile("rate.csv") ;
@@ -871,10 +891,6 @@ public class MainActivity extends AppCompatActivity implements
             ratio[19] = Float.parseFloat(ratecsv.Column(getString(R.string.table3_col20)));
             ratio[20] = Float.parseFloat(ratecsv.Column(getString(R.string.table3_col21)));
         }
-
-        printercsv = new CSVParser(folderExternal);
-        printercsv.readFile("printer.csv") ;
-
 
         mAddressShort = "UnknownMeter";
         mInterval = 0;
@@ -928,24 +944,54 @@ public class MainActivity extends AppCompatActivity implements
     }
 
     private void handleMessage(Message msg) {
-
+        switch (msg.what) {
+            case MESSAGE_DEVICE_NAME:
+                // save the connected device's name
+                String mConnectedDeviceName = msg.getData().getString(DEVICE_NAME);
+                Toast.makeText(getApplicationContext(), "Connected to " + mConnectedDeviceName, Toast.LENGTH_SHORT).show();
+  //              redrawMenu();
+                break;
+            case MESSAGE_TOAST:
+  //              Toast.makeText(getApplicationContext(), msg.getData().getInt(TOAST), Toast.LENGTH_SHORT).show();
+                break;
+            case MESSAGE_READ:
+                mWoosim.processRcvData((byte[])msg.obj, msg.arg1);
+                break;
+            case WoosimService.MESSAGE_PRINTER:
+                if (msg.arg1 == WoosimService.MSR) {
+                    if (msg.arg2 == 0) {
+                        Toast.makeText(getApplicationContext(), "MSR reading failure", Toast.LENGTH_SHORT).show();
+                    } else {
+                        byte[][] track = (byte[][]) msg.obj;
+                        if (track[0] != null) {
+                            String str = new String(track[0]);
+   //                         mTrack1View.setText(str);
+                        }
+                        if (track[1] != null) {
+                            String str = new String(track[1]);
+   //                         mTrack2View.setText(str);
+                        }
+                        if (track[2] != null) {
+                            String str = new String(track[2]);
+    //                        mTrack3View.setText(str);
+                        }
+                    }
+                }
+                break;
+        }
     }
 
     @Override
     public void onStart() {
         super.onStart();
         Log.i(TAG, " onStart.");
-        mPrintService = new BluetoothPrintService(mHandler);
-        if(printercsv.size()>0){
-            String address = printercsv.Column(getString(R.string.table2_col3));
-            BluetoothDevice device = mBluetoothAdapter.getRemoteDevice(address);
-            mPrintService.connect(device, false);
+
+        if (!mBluetoothAdapter.isEnabled()) {
+            // Request to enable bluetooth.
+            // Bluetooth session will then be setup during onActivityResult
+            Intent intent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
+            startActivityForResult(intent, REQUEST_ENABLE_BT);
         }
-
-
-
-//        mPrintService.start();
-
     }
 
     @Override
@@ -963,34 +1009,44 @@ public class MainActivity extends AppCompatActivity implements
         checkPermission();
         Log.i(TAG, " onResume.");
         registerReceiver(mGattUpdateReceiver, makeGattUpdateIntentFilter());
-//      registerReceiver(receiver, new IntentFilter(BluetoothDevice.ACTION_FOUND));
-
-        // Ensures Bluetooth is enabled on the device.  If Bluetooth is not currently enabled,
-        // fire an intent to display a dialog asking the user to grant permission to enable it.
-        if (!mBluetoothAdapter.isEnabled()) {
-            Intent enableBtIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
-            startActivityForResult(enableBtIntent, REQUEST_ENABLE_BT);
-            mPermission = true;
-        }
-        if (mPrintService != null) {
-            if (mPrintService.getState() == BluetoothPrintService.STATE_NONE) {
-//                mPrintService.start();
+ //     registerReceiver(receiver, new IntentFilter(BluetoothDevice.ACTION_FOUND));
+        if (mBluetoothAdapter.isEnabled()) {
+            if (mPrintService == null) {
+                // Initialize the BluetoothPrintService to perform bluetooth connections
+                mPrintService = new BluetoothPrintService(mHandler);
+                mWoosim = new WoosimService(mHandler);
+            }
+            else {
+                // Only if the state is STATE_NONE, do we know that we haven't started already
+                if (mPrintService.getState() == BluetoothPrintService.STATE_NONE) {
+                    // Start the Bluetooth print services
+                    mPrintService.start();
+                }
+            }
+            if(printercsv.size()>0){
+                String address = printercsv.Column(getString(R.string.table2_col3));
+                BluetoothDevice device = mBluetoothAdapter.getRemoteDevice(address);
+                mPrintService.connect(device, false);
             }
         }
+        // Ensures Bluetooth is enabled on the device.  If Bluetooth is not currently enabled,
+        // fire an intent to display a dialog asking the user to grant permission to enable it.
     }
 
     @Override
     protected void onPause() {
+        if (mPrintService != null)
+            mPrintService.stop();
         super.onPause();
         Log.i(TAG, " onPause");
     }
 
     @Override
     protected void onDestroy() {
-        if (mPrintService != null) mPrintService.stop();
-        super.onDestroy();
         Log.i(TAG, " onDestroy");
+        super.onDestroy();
     }
+
 
     @Override
     public boolean onOptionsItemSelected(@NonNull MenuItem item) {

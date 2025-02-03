@@ -30,6 +30,8 @@ public class SecondFragment extends ItemFragment {
     private int mState;
     private int mRecordCount;
     private boolean abort = false;
+    public static ArrayList<PrintData> mPrintData = new ArrayList<PrintData>();
+    PrintData printData = new PrintData();
 
     @Override
     public void onAttach(Context context) {
@@ -194,9 +196,15 @@ public class SecondFragment extends ItemFragment {
             MainActivity.Selection = 0;
         }
         updateList();
+
+        String oldfile = MainActivity.d.PreviousYearMonth() + "_meter.csv";
+        MainActivity.oldcsv = new CSVParser(folderExternal);
+        if (!MainActivity.oldcsv.exist(oldfile)) {
+            MainActivity.oldcsv.readFile("registration.csv");
+        } else {
+            MainActivity.oldcsv.readFile(oldfile);
+        }
     }
-
-
 
     @Override
     public void invalidate() {
@@ -237,6 +245,7 @@ public class SecondFragment extends ItemFragment {
                             mPosition = -1;
                             handler.postDelayed(this, MainActivity.mTick);
                             mState++;
+                            mPrintData.clear();
                             break;
                         case 0:
                             while (!abort) {
@@ -257,6 +266,10 @@ public class SecondFragment extends ItemFragment {
                                             MainActivity.mAddress = MainActivity.secondcsv.Column(getString(R.string.table2_col3));
                                             MainActivity.trail.operation(MainActivity.msecondKey + "," + MainActivity.mSerialID);
                                             handler.postDelayed(this, MainActivity.mTick);
+                                            MainActivity.oldcsv.Find(getString(R.string.table2_key), MainActivity.msecondKey);
+                                            printData.old_value[0] = MainActivity.oldcsv.Column(getString(R.string.table2_col4));/*fix date*/
+                                            printData.old_value[1] = MainActivity.oldcsv.Column(getString(R.string.table2_col5));/*Imp*/
+
                                             mState++;
                                             break;
                                         } else {
@@ -277,6 +290,9 @@ public class SecondFragment extends ItemFragment {
                                 } else {
                                     mCallback.showToast("Batch Finish!");
                                     Log.i(TAG, "Batch Finish");
+                                    for(int i =0; i< mPrintData.size();i++) {
+                                        MainActivity.printImageText(mPrintData.get(i).now_value, mPrintData.get(i).old_value);
+                                    }
                                 }
                                 mState = -1;
                                 mPosition = -1;
@@ -374,6 +390,11 @@ public class SecondFragment extends ItemFragment {
                         MainActivity.secondcsv.Update(String.format("%.3f",MainActivity.d.Float(100.0, mTemp.get(8))),getString(R.string.table2_col9));
                         MainActivity.secondcsv.Update(mTemp.get(9),getString(R.string.table2_col10));
                         MainActivity.secondcsv.Update(mTemp.get(0),getString(R.string.table2_col11));
+                        printData.now_value[0] = mTemp.get(0);  /*read date*/
+                        printData.now_value[1] = mTemp.get(1);  /*fixed date*/
+                        printData.now_value[2] = mTemp.get(2);  /*Imp*/
+                        printData.now_value[3] = mTemp.get(6);  /*Imp Max*/
+                        mPrintData.add(printData);
                     } else {
                         ret = -5;
                     }
