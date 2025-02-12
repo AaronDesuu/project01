@@ -258,18 +258,18 @@ public class SecondFragment extends ItemFragment {
                                     MainActivity.msecondKey = MainActivity.secondcsv.Cell(mPosition, getString(R.string.table2_key));
                                     int activate = Integer.parseInt(MainActivity.secondcsv.Column(getString(R.string.table2_col1)));
                                     if (activate > 0) {
-                                        String sid = MainActivity.secondcsv.Column(getString(R.string.table2_col2));
-                                        String val = MainActivity.secondcsv.Column(getString(R.string.table2_col11));
                                         MainActivity.oldcsv.Find(getString(R.string.table2_key), MainActivity.msecondKey);
                                         printData.old_value[0] = MainActivity.oldcsv.Column(getString(R.string.table2_col4));/*fix date*/
                                         printData.old_value[1] = MainActivity.oldcsv.Column(getString(R.string.table2_col5));/*Imp*/
+
+                                        String sid = MainActivity.secondcsv.Column(getString(R.string.table2_col2));
+                                        String val = MainActivity.secondcsv.Column(getString(R.string.table2_col11));
+                                        MainActivity.mSerialID = sid;
                                         if (val.isEmpty()) {
                                             Log.i(TAG, String.format("Batch Check %d", mPosition));
-                                            MainActivity.mSerialID = sid;
                                             MainActivity.mAddress = MainActivity.secondcsv.Column(getString(R.string.table2_col3));
                                             MainActivity.trail.operation(MainActivity.msecondKey + "," + MainActivity.mSerialID);
                                             handler.postDelayed(this, MainActivity.mTick);
-
                                             mState++;
                                             break;
                                         } else {

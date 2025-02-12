@@ -10,8 +10,8 @@ android {
         applicationId "com.fujielectricmeter.blemeter"
         minSdk 24
         targetSdk 33
-        versionCode 8
-        versionName "1.062F"
+        versionCode 9
+        versionName "1.063F"
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
     }
 

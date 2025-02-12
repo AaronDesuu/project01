@@ -30,6 +30,7 @@ public class FourthFragment extends ItemFragment {
     private AlertDialog.Builder builder;
     private int mRecordCount;
     public static PrintData mPrintData = new PrintData();
+
     private void buttonFunction(final int msg) {
         if (mSelectButton < 0) {
             if (mCallback.messageID() < 0) {
@@ -192,9 +193,21 @@ public class FourthFragment extends ItemFragment {
                 binding.button2.setOnClickListener(new View.OnClickListener() {
                     @Override
                     public void onClick(View view) {
-                        binding.textView.setText("Communicating...");
                         setAnime(binding.button2);
-                        buttonFunction(MainActivity.MSG_READER);
+                        if (ratecsv.size() > 0 && printercsv.size() > 0 && !mPrintData.old_value[1].isEmpty()) {
+                            String val = MainActivity.secondcsv.Column(getString(R.string.table2_col11));
+                            if (val.isEmpty()) {
+                                binding.textView.setText("Communicating...");
+                                buttonFunction(MainActivity.MSG_READER);
+                            } else {
+                                String[] now_value = {"", "", "", ""};
+                                mPrintData.now_value[0] = MainActivity.secondcsv.Column(getString(R.string.table2_col11));  /*read date*/
+                                mPrintData.now_value[1] = MainActivity.secondcsv.Column(getString(R.string.table2_col4));  /*fixed date*/
+                                mPrintData.now_value[2] = MainActivity.secondcsv.Column(getString(R.string.table2_col5));  /*Imp*/
+                                mPrintData.now_value[3] = MainActivity.secondcsv.Column(getString(R.string.table2_col7));  /*Imp Max*/
+                                MainActivity.printImageText(mPrintData.now_value, mPrintData.old_value);
+                            }
+                        }
                         MainActivity.trail.operation("MSG_READER button");
                     }
                 });
@@ -319,14 +332,13 @@ public class FourthFragment extends ItemFragment {
                                 MainActivity.secondcsv.Update(mTemp.get(0), getString(R.string.table2_col11));
                                 MainActivity.secondcsv.writeFile();
                                 binding.textView.setText("Success to get billing data. finish");
-                                if (ratecsv.size() > 0 && printercsv.size() > 0 && !mPrintData.old_value[1].isEmpty()) {
-                                    String [] now_value = {"","","",""};
-                                    mPrintData.now_value[0] = mTemp.get(0);  /*read date*/
-                                    mPrintData.now_value[1] = mTemp.get(1);  /*fixed date*/
-                                    mPrintData.now_value[2] = mTemp.get(2);  /*Imp*/
-                                    mPrintData.now_value[3] = mTemp.get(6);  /*Imp Max*/
-                                    MainActivity.printImageText(mPrintData.now_value, mPrintData.old_value);
-                                }
+                                String[] now_value = {"", "", "", ""};
+                                mPrintData.now_value[0] = mTemp.get(0);  /*read date*/
+                                mPrintData.now_value[1] = mTemp.get(1);  /*fixed date*/
+                                mPrintData.now_value[2] = mTemp.get(2);  /*Imp*/
+                                mPrintData.now_value[3] = mTemp.get(6);  /*Imp Max*/
+                                MainActivity.printImageText(mPrintData.now_value, mPrintData.old_value);
+
                             } else {
                                 ret = -5;
                             }
