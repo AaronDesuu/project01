@@ -260,19 +260,24 @@ public class SecondFragment extends ItemFragment {
                                     if (activate > 0) {
                                         String sid = MainActivity.secondcsv.Column(getString(R.string.table2_col2));
                                         String val = MainActivity.secondcsv.Column(getString(R.string.table2_col11));
+                                        MainActivity.oldcsv.Find(getString(R.string.table2_key), MainActivity.msecondKey);
+                                        printData.old_value[0] = MainActivity.oldcsv.Column(getString(R.string.table2_col4));/*fix date*/
+                                        printData.old_value[1] = MainActivity.oldcsv.Column(getString(R.string.table2_col5));/*Imp*/
                                         if (val.isEmpty()) {
                                             Log.i(TAG, String.format("Batch Check %d", mPosition));
                                             MainActivity.mSerialID = sid;
                                             MainActivity.mAddress = MainActivity.secondcsv.Column(getString(R.string.table2_col3));
                                             MainActivity.trail.operation(MainActivity.msecondKey + "," + MainActivity.mSerialID);
                                             handler.postDelayed(this, MainActivity.mTick);
-                                            MainActivity.oldcsv.Find(getString(R.string.table2_key), MainActivity.msecondKey);
-                                            printData.old_value[0] = MainActivity.oldcsv.Column(getString(R.string.table2_col4));/*fix date*/
-                                            printData.old_value[1] = MainActivity.oldcsv.Column(getString(R.string.table2_col5));/*Imp*/
 
                                             mState++;
                                             break;
                                         } else {
+                                            printData.now_value[0] = MainActivity.secondcsv.Column(getString(R.string.table2_col11));
+                                            printData.now_value[1] = MainActivity.secondcsv.Column(getString(R.string.table2_col4));
+                                            printData.now_value[2] = MainActivity.secondcsv.Column(getString(R.string.table2_col5));
+                                            printData.now_value[3] = MainActivity.secondcsv.Column(getString(R.string.table2_col7));
+                                            mPrintData.add(printData);
                                             Log.i(TAG, String.format("Batch Skip %d", mPosition));
                                         }
                                     } else {
@@ -299,6 +304,7 @@ public class SecondFragment extends ItemFragment {
                                 mCallback.fragmentOrder(MainActivity.ODR_UPDATE);
                                 mCallback.fragmentOrder(MainActivity.ODR_SCAN_ON);
                                 mCallback.fragmentMessage(-1);
+                                stopper = true;
                             }
                             break;
                         case 1:

@@ -163,13 +163,13 @@ public class MainActivity extends AppCompatActivity implements
     public static File folderDocument;
 
     public static CSVParser login;
-    public static CSVParser rootcsv;
+    public static CSVParser rootcsv = null;
     public static CSVParser firstcsv;
 
     public static CSVParser secondcsv;
-    public static CSVParser ratecsv;
-    public static CSVParser oldcsv;
-    public static CSVParser printercsv;
+    public static CSVParser ratecsv = null;;
+    public static CSVParser oldcsv = null;;
+    public static CSVParser printercsv = null;;
 
     public static CSVParser fourthcsv;
     public static Trail trail;
@@ -795,8 +795,6 @@ public class MainActivity extends AppCompatActivity implements
             return;
         }
         copyAssetsFile();
-        rootcsv = new CSVParser("meter.csv", folderExternal);
-
         CSVParser csv = new CSVParser(folderExternal);
         login = new CSVParser(folderFiles);
         if (!login.readFile("login.csv")) {
@@ -862,36 +860,6 @@ public class MainActivity extends AppCompatActivity implements
                 deleteFile("login.csv", folderExternal);
             }
         }
-        printercsv = new CSVParser(folderExternal);
-        printercsv.readFile("printer.csv") ;
-
-        ratecsv = new CSVParser(folderExternal);
-        ratecsv.readFile("rate.csv") ;
-        if(ratecsv.size()>0) {
-            //ファイルがなかった場合の処理を後で考える。
-            ratio[0] = Float.parseFloat(ratecsv.Column(getString(R.string.table3_col1)));
-            ratio[1] = Float.parseFloat(ratecsv.Column(getString(R.string.table3_col2)));
-            ratio[2] = Float.parseFloat(ratecsv.Column(getString(R.string.table3_col3)));
-            ratio[3] = Float.parseFloat(ratecsv.Column(getString(R.string.table3_col4)));
-            ratio[4] = Float.parseFloat(ratecsv.Column(getString(R.string.table3_col5)));
-            ratio[5] = Float.parseFloat(ratecsv.Column(getString(R.string.table3_col6)));
-            ratio[6] = Float.parseFloat(ratecsv.Column(getString(R.string.table3_col7)));
-            ratio[7] = Float.parseFloat(ratecsv.Column(getString(R.string.table3_col8)));
-            ratio[8] = Float.parseFloat(ratecsv.Column(getString(R.string.table3_col9)));
-            ratio[9] = Float.parseFloat(ratecsv.Column(getString(R.string.table3_col10)));
-            ratio[10] = Float.parseFloat(ratecsv.Column(getString(R.string.table3_col11)));
-            ratio[11] = Float.parseFloat(ratecsv.Column(getString(R.string.table3_col12)));
-            ratio[12] = Float.parseFloat(ratecsv.Column(getString(R.string.table3_col13)));
-            ratio[13] = Float.parseFloat(ratecsv.Column(getString(R.string.table3_col14)));
-            ratio[14] = Float.parseFloat(ratecsv.Column(getString(R.string.table3_col15)));
-            ratio[15] = Float.parseFloat(ratecsv.Column(getString(R.string.table3_col16)));
-            ratio[16] = Float.parseFloat(ratecsv.Column(getString(R.string.table3_col17)));
-            ratio[17] = Float.parseFloat(ratecsv.Column(getString(R.string.table3_col18)));
-            ratio[18] = Float.parseFloat(ratecsv.Column(getString(R.string.table3_col19)));
-            ratio[19] = Float.parseFloat(ratecsv.Column(getString(R.string.table3_col20)));
-            ratio[20] = Float.parseFloat(ratecsv.Column(getString(R.string.table3_col21)));
-        }
-
         mAddressShort = "UnknownMeter";
         mInterval = 0;
         mCurrentMessage = -1;
@@ -1010,6 +978,33 @@ public class MainActivity extends AppCompatActivity implements
         Log.i(TAG, " onResume.");
         registerReceiver(mGattUpdateReceiver, makeGattUpdateIntentFilter());
  //     registerReceiver(receiver, new IntentFilter(BluetoothDevice.ACTION_FOUND));
+        rootcsv = new CSVParser("meter.csv", folderExternal);
+        printercsv = new CSVParser("printer.csv", folderExternal);
+        ratecsv = new CSVParser("rate.csv", folderExternal);
+        if(ratecsv.size()>0) {
+            //ファイルがなかった場合の処理を後で考える。
+            ratio[0] = Float.parseFloat(ratecsv.Column(getString(R.string.table3_col1)));
+            ratio[1] = Float.parseFloat(ratecsv.Column(getString(R.string.table3_col2)));
+            ratio[2] = Float.parseFloat(ratecsv.Column(getString(R.string.table3_col3)));
+            ratio[3] = Float.parseFloat(ratecsv.Column(getString(R.string.table3_col4)));
+            ratio[4] = Float.parseFloat(ratecsv.Column(getString(R.string.table3_col5)));
+            ratio[5] = Float.parseFloat(ratecsv.Column(getString(R.string.table3_col6)));
+            ratio[6] = Float.parseFloat(ratecsv.Column(getString(R.string.table3_col7)));
+            ratio[7] = Float.parseFloat(ratecsv.Column(getString(R.string.table3_col8)));
+            ratio[8] = Float.parseFloat(ratecsv.Column(getString(R.string.table3_col9)));
+            ratio[9] = Float.parseFloat(ratecsv.Column(getString(R.string.table3_col10)));
+            ratio[10] = Float.parseFloat(ratecsv.Column(getString(R.string.table3_col11)));
+            ratio[11] = Float.parseFloat(ratecsv.Column(getString(R.string.table3_col12)));
+            ratio[12] = Float.parseFloat(ratecsv.Column(getString(R.string.table3_col13)));
+            ratio[13] = Float.parseFloat(ratecsv.Column(getString(R.string.table3_col14)));
+            ratio[14] = Float.parseFloat(ratecsv.Column(getString(R.string.table3_col15)));
+            ratio[15] = Float.parseFloat(ratecsv.Column(getString(R.string.table3_col16)));
+            ratio[16] = Float.parseFloat(ratecsv.Column(getString(R.string.table3_col17)));
+            ratio[17] = Float.parseFloat(ratecsv.Column(getString(R.string.table3_col18)));
+            ratio[18] = Float.parseFloat(ratecsv.Column(getString(R.string.table3_col19)));
+            ratio[19] = Float.parseFloat(ratecsv.Column(getString(R.string.table3_col20)));
+            ratio[20] = Float.parseFloat(ratecsv.Column(getString(R.string.table3_col21)));
+        }
         if (mBluetoothAdapter.isEnabled()) {
             if (mPrintService == null) {
                 // Initialize the BluetoothPrintService to perform bluetooth connections
