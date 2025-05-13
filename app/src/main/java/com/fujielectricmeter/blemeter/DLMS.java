@@ -379,11 +379,36 @@ public class DLMS {
             334,    //30
             365,    //31
     };
+    static  String[] MonthList = {
+            "----",
+            "January",
+            "February",
+            "March",
+            "April",
+            "May",
+            "June",
+            "July",
+            "August",
+            "September",
+            "October",
+            "November",
+            "December"
+    };
 
-    public long DatetimeToSec(String datetime) {    /*dd/mm/yyyy hh:mm:ss*/
-        int y = Integer.parseInt(datetime.substring(6, 10));
-        int m = Integer.parseInt(datetime.substring(3, 5));
-        int d = Integer.parseInt(datetime.substring(0, 2));
+    public static String dateTimeToMonth(final String DateTime) {
+        int pos = Integer.parseInt(DateTime.substring(5, 7));
+        return String.format("%s %s", MonthList[pos], DateTime.substring(0, 4));
+    }
+
+    public static String getNowDate() {
+        android.icu.text.SimpleDateFormat sdf = new android.icu.text.SimpleDateFormat("EEE dd MMM yyyy HH:mm:ss", Locale.getDefault());
+        return sdf.format(new Date());
+    }
+
+    public long DatetimeToSec(String datetime) {    /*yyyy/mm/dd hh:mm:ss*/
+        int y = Integer.parseInt(datetime.substring(0, 4));
+        int m = Integer.parseInt(datetime.substring(5, 7));
+        int d = Integer.parseInt(datetime.substring(8, 10));
         int h = Integer.parseInt(datetime.substring(11, 13));
         int k = Integer.parseInt(datetime.substring(14, 16));
         int s = Integer.parseInt(datetime.substring(17, 19));
@@ -431,14 +456,14 @@ public class DLMS {
         s %= 3600;
         k = s / 60;
         s %= 60;
-        return format("%02d/%02d/%04d %02d:%02d:%02d", d, m + 1, y + 2010, h, k, s);
+        return format("%04d/%02d/%02d %02d:%02d:%02d", y + 2010, m + 1, d, h, k, s);
     }
 
     public long CurrentDatetimeSec() {    /*yyyy/mm/dd hh:mm:ss*/
 
         long sec;
         String datetime;
-        android.icu.text.SimpleDateFormat sdf = new android.icu.text.SimpleDateFormat("dd/MM/yyyy HH:mm:ss", Locale.getDefault());
+        android.icu.text.SimpleDateFormat sdf = new android.icu.text.SimpleDateFormat("yyyy/MM/dd HH:mm:ss", Locale.getDefault());
         Date date = new Date();
         sec = MainActivity.d.DatetimeToSec(sdf.format(date));
         return sec;
@@ -446,22 +471,32 @@ public class DLMS {
 
     public String CurrentYearMonth() {    /*MMyyyy*/
 
-        android.icu.text.SimpleDateFormat sdf = new android.icu.text.SimpleDateFormat("MMyyyy", Locale.getDefault());
+        android.icu.text.SimpleDateFormat sdf = new android.icu.text.SimpleDateFormat("yyyyMM", Locale.getDefault());
         return sdf.format(new Date());
     }
-
-    public String PreviousYearMonth() {    /*MMyyyy*/
+    public String AnyYearMonth(final int year, final int month) {    /*MMyyyy*/
         Calendar start = Calendar.getInstance();
         start.setTime(new java.util.Date());
-        int diff = (start.get(Calendar.DATE))+1;
-        start.add(Calendar.DATE, -diff);
-        return String.format("%2d%4d",
-                start.get(Calendar.MONTH)+1,
-                start.get(Calendar.YEAR));
+        start.add(Calendar.YEAR, year);
+        start.add(Calendar.MONTH, month);
+        return String.format("%4d%2d", start.get(Calendar.YEAR), start.get(Calendar.MONTH) + 1);
     }
 
+    public String FormattedMonthDay(final int month, final int days) {    /*MMyyyy*/
+        Calendar start = Calendar.getInstance();
+        start.setTime(new java.util.Date());
+        start.add(Calendar.MONTH, month);
+        start.add(Calendar.DATE, days);
+        int pos = start.get(Calendar.MONTH) + 1;
+        return String.format("%s %2d, %4d", MonthList[pos], start.get(Calendar.DATE), start.get(Calendar.YEAR));
+    }
 
-
+    public String ConvertLocalDatetime(final String YearMonDay){
+        return String.format("%s/%s/%s",
+                YearMonDay.substring(5,7),  /*Mon*/
+                YearMonDay.substring(8,10),  /*Day*/
+                YearMonDay.substring(0,4)); /*Mon*/
+    }
 
     public String SecToRawDatetime(final long sec) {
 
@@ -500,7 +535,6 @@ public class DLMS {
         timestamp = timestamp.replace(" ","_");
         return timestamp;
     }
-
     private int getUI8(final byte[] in, final int offset) {
         int ret;
         if (in[offset] < 0)
@@ -694,7 +728,7 @@ public class DLMS {
         }
     }
 
-    private void writeFile(String data, File file) {
+    void writeFile(String data, File file) {
         // try-with-resources
         try (FileWriter writer = new FileWriter(file, true)) {
             writer.write(data + "\n");
@@ -704,7 +738,7 @@ public class DLMS {
     }
 
     // ファイルを読み出し*---
-    private String readFile(File file) {
+    String readFile(File file) {
         String text = null;
         // try-with-resources
         try (BufferedReader br = new BufferedReader(new FileReader(file))) {
@@ -1738,7 +1772,7 @@ public class DLMS {
 
     public String getNowDate(final boolean modeling) {
         final Long now = System.currentTimeMillis();
-        final DateFormat df = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss");
+        final DateFormat df = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
         final Date date = new Date(now);
 
         if (modeling)
@@ -1947,7 +1981,7 @@ public class DLMS {
                         sec = getUI8(in, io[0]);
                         io[0]++;
                         io[0] += 4;
-                        data.add(format("%02d/%02d/%04d %02d:%02d:%02d", day, mon, year, hour, min, sec));
+                        data.add(format("%04d/%02d/%02d %02d:%02d:%02d", year, mon, day, hour, min, sec));
                     } else {
                         data.add(setOct2Str(in, io[0], io[1]));
                         io[0] += io[1];
@@ -2004,7 +2038,7 @@ public class DLMS {
                     sec = getUI8(in, io[0]);
                     io[0]++;
                     io[0] += 4;
-                    data.add(format("%02d/%02d/%04d %02d:%02d:%02d", day, mon, year, hour, min, sec));
+                    data.add(format("%04d/%02d/%02d %02d:%02d:%02d", year, mon, day, hour, min, sec));
                     break;
                 case 26:    //"date"
                     year = getUI16(in, io[0]);
@@ -2014,7 +2048,7 @@ public class DLMS {
                     day = getUI8(in, io[0]);
                     io[0]++;
                     io[0]++;//day of week
-                    data.add(format("%02d/%02d/%04d", day, mon, year));
+                    data.add(format("%04d/%02d/%02d", year, mon, day));
                     break;
                 case 27:    //"time"
                     hour = getUI8(in, io[0]);

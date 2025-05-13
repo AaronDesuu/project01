@@ -35,12 +35,14 @@ import androidx.annotation.NonNull;
 import androidx.appcompat.app.ActionBar;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
+import androidx.core.content.FileProvider;
 import androidx.navigation.NavController;
 import androidx.navigation.Navigation;
 import androidx.navigation.ui.AppBarConfiguration;
 import androidx.navigation.ui.NavigationUI;
 
 import com.fujielectricmeter.blemeter.databinding.ActivityMainBinding;
+import com.google.gson.Gson;
 import com.woosim.printer.WoosimCmd;
 import com.woosim.printer.WoosimService;
 
@@ -56,15 +58,15 @@ import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
-import java.util.Date;
-import java.util.Locale;
+import java.util.List;
+import android.net.Uri;
 
 public class MainActivity extends AppCompatActivity implements
         ItemFragment.messageManager {
 
     public static final String DEVICE_NAME = null;
     private static final boolean D = true;
-    public static final int  MESSAGE_DEVICE_NAME =1;
+    public static final int MESSAGE_DEVICE_NAME = 1;
     public static final int MESSAGE_TOAST = 2;
     public static final int MESSAGE_READ = 3;
     private static final int REQUEST_CONNECT_DEVICE_INSECURE = 2;
@@ -75,34 +77,10 @@ public class MainActivity extends AppCompatActivity implements
             0.0f, 0.0f, 0.0f, 0.0f, 0.0f,
             0.0f, 0.0f, 0.0f, 0.0f, 0.0f,
             0.0f, 0.0f, 0.0f, 0.0f, 0.0f};
-  //  public static String[] now_value = {"", "", "", ""};
-  //  public static String[]old_value = {"", ""};
-    static String [] MonthList ={
-            "January",
-            "February",
-            "March",
-            "April",
-            "May",
-            "June",
-            "July",
-            "August",
-            "September",
-            "October",
-            "November",
-            "December"
-    };
+    //  public static String[] now_value = {"", "", "", ""};
+    //  public static String[]old_value = {"", ""};
     private WoosimService mWoosim = null;
 
-    public static String dateTimeToMonth(final String DateTime){
-        String month=DateTime.substring(3,5);
-        Integer pos=Integer.parseInt(month);
-        return MonthList[pos-1];
-    }
-
-    public static String getNowDate(){
-        android.icu.text.SimpleDateFormat sdf = new android.icu.text.SimpleDateFormat("EEE dd MMM yyyy HH:mm:ss", Locale.getDefault());
-        return sdf.format(new Date());
-    }
     private final String TAG = MainActivity.class.getSimpleName();
     public static StringBuffer CounterParameter = new StringBuffer();
     private AppBarConfiguration appBarConfiguration;
@@ -167,9 +145,12 @@ public class MainActivity extends AppCompatActivity implements
     public static CSVParser firstcsv;
 
     public static CSVParser secondcsv;
-    public static CSVParser ratecsv = null;;
-    public static CSVParser oldcsv = null;;
-    public static CSVParser printercsv = null;;
+    public static CSVParser ratecsv = null;
+    ;
+    public static CSVParser oldcsv = null;
+    ;
+    public static CSVParser printercsv = null;
+    ;
 
     public static CSVParser fourthcsv;
     public static Trail trail;
@@ -265,372 +246,423 @@ public class MainActivity extends AppCompatActivity implements
         } catch (Exception e) {
         }
     }
+    private static float trimFloat(final float in){
+        String str = String.format("%.02f", in);
+        return Float.parseFloat(str);
+    }
 
-    public static void printImageText(final String [] now_value, final String [] old_value) {
 
-        float[] total_value = { 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f};
+    private static void OutputBillingData(final String[] now_value, final String[] old_value, final boolean withPrinting) {
 
+        float[] total_value = {0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f};
         total_value[0] =
-                Float.parseFloat(now_value[2]) / 1000.0f -
-                        Float.parseFloat(old_value[1]);
+                Float.parseFloat(now_value[2]) - Float.parseFloat(old_value[1]);
         total_value[1] =
                 total_value[0] * ratio[0] +
-                Float.parseFloat(now_value[3]) * ratio[1] / 1000.0f +
-                total_value[0] * ratio[2];
+                        Float.parseFloat(now_value[3]) * ratio[1] +
+                        total_value[0] * ratio[2];
         total_value[2] =
-                Float.parseFloat(now_value[3]) / 1000.0f * ratio[3] +
-                1 * ratio[4] +
-                1 * ratio[5];
+                Float.parseFloat(now_value[3]) * ratio[3] +
+                        1 * ratio[4] +
+                        1 * ratio[5];
         total_value[3] =
                 total_value[0] * ratio[6] +
-                total_value[0] * ratio[7];
+                        total_value[0] * ratio[7];
         total_value[4] =
-                total_value[0] * MainActivity.ratio[8] +
-                total_value[0] * MainActivity.ratio[9];
+                total_value[0] * ratio[8] + total_value[0] * ratio[9];
         total_value[5] =
                 total_value[0] * MainActivity.ratio[10] +
-                total_value[3] * ratio[11] +
-                total_value[0] * ratio[12] +
-                total_value[0] * ratio[13] +
-                total_value[0] * ratio[14] +
-                total_value[0] * ratio[15];
+                        total_value[3] * ratio[11] +
+                        total_value[0] * ratio[12] +
+                        total_value[0] * ratio[13] +
+                        total_value[0] * ratio[14] +
+                        total_value[0] * ratio[15];
         total_value[6] =
                 total_value[0] * ratio[16] +
-                total_value[0] * ratio[17] +
-                total_value[0] * ratio[18] +
-                total_value[2] * ratio[19] +
-                total_value[4] * ratio[20];
+                        total_value[0] * ratio[17] +
+                        total_value[0] * ratio[18] +
+                        total_value[2] * ratio[19] +
+                        total_value[4] * ratio[20];
         total_value[7] =
                 total_value[1] +
-                total_value[2] +
-                total_value[3] +
-                total_value[4] +
-                total_value[5] +
-                total_value[6];
+                        total_value[2] +
+                        total_value[3] +
+                        total_value[4] +
+                        total_value[5] +
+                        total_value[6];
+
+        BillingData data = new BillingData();
+        data.Period = d.dateTimeToMonth(old_value[0]);
+        data.Commercial = "LARGE";
+        data.SerialID = old_value[2];
+        data.Multiplier = 1.0f;
+        data.PeriodFrom = d.ConvertLocalDatetime(old_value[0]);
+        data.PeriodTo = d.ConvertLocalDatetime(now_value[0]);
+        data.PrevReading = Float.parseFloat(old_value[1]);
+        data.PresReading = Float.parseFloat(now_value[2]);
+        data.MaxDemand = Float.parseFloat(now_value[3]);
+        data.TotalUse = total_value[0];
+        data.GenTransCharges = trimFloat(total_value[1]);
+        data.DistributionCharges = trimFloat(total_value[2]);
+        data.SustainableCapex = trimFloat(total_value[3]);
+        data.OtherCharges = trimFloat(total_value[4]);
+        data.UniversalCharges = trimFloat(total_value[5]);
+        data.ValueAddedTax = trimFloat(total_value[6]);
+        data.TotalAmount = trimFloat(total_value[7]);
+        data.DueDate = d.FormattedMonthDay(1, 0);
+        data.DiscoDate = d.FormattedMonthDay(1, 1);
+        data.Discount = 10.0f;
+        data.Interest = 10.0f;
         total_value[8] =
-                total_value[7] - 10.0f;
+                data.TotalAmount - data.Discount;
         total_value[9] =
-                total_value[7] + 10.0f;
+                data.TotalAmount + data.Interest;
+        data.Reader = "Fuji Taro";
+        data.ReadDatetime = d.getNowDate();
+        data.Version =  "v1.00.2";
 
-        String title1 ="SAMPLE Receipt\n\n\n";
-        String title2 ="           H.V Dela Costa St Salcedo Village Makati 1227,\n"+
-                       "          Metro Manila Philippines\n";
-        String title3 ="        Fuji Electric Sales Philippines Inc.\n";
-        String title4 ="                TEL:000-000-0000\n";
+        Gson gson = new Gson();
+        List<BillingData> outputlist  = new ArrayList<>();
+        outputlist.add(data);
+        String name = d.CurrentYearMonth()+ "_" + data.SerialID + ".json";
+        writeFile(data.SerialID + ": " + gson.toJson(outputlist), name, folderExternal);
+        System.out.println(data.SerialID + ": " + gson.toJson(outputlist));
+        if (withPrinting) {
+            String title1 = "SAMPLE RECEIPT\n\n\n";
+            String title2 = "           H.V Dela Costa St Salcedo Village Makati 1227,\n" +
+                    "          Metro Manila Philippines\n";
+            String title3 = "        Fuji Electric Sales Philippines Inc.\n";
+            String title4 = "                TEL:000-000-0000\n";
 
-        String _str1 =
-                "================================================================\n" +
-                /*期間 月(September) 年　　レートの種類:レート名　　　　*/
-                "Period     :%s %s       Rate Type     : %s\n";
-        String str1 = String.format(_str1,dateTimeToMonth(old_value[0]),old_value[0].substring(6, 10), "LARGE COMMERCIAL");
-        String _str2 =
-                /*メーター：シリアル番号/契約番号？     乗数   */
-                "Meter      :%s %s       Multiplier    :1.0\n" +
-                /*日時 MM/DD/YYYY 　　　　　　　　　　　　　　　　　　　　　　　　　今回検針値 6.3 */
-                "Period To  :%s                Pres Reading  : %6.03f\n";
-         String str2 = String.format(_str2,
-                 mSerialID,
-                 "BK0798",
-                 now_value[0].substring(0, 10),
-                 Float.parseFloat(now_value[2])/1000.0f);
-        String _str3 =
-                /*日時 MM/DD/YYYY 　　　　　　　　　　　　　　　　　　前回検針値 6.3 */
-                "Period From:%s                Prev Reading  : %6.03f\n" +
-                        /*使用電力の瞬時値:2.3 　　　　　　　　　　　　　　　　　　         使用量 6.3 */
-                "Demand KW : %2.03f                  Total KWH Used  : %6.03f\n";
-        String str3 = String.format(_str3,
-                old_value[0].substring(0, 10),
-                Float.parseFloat(old_value[1]),
-                Float.parseFloat(now_value[3])/1000.0f,
-                total_value[0]);
-        String str4 =
-                "================================================================\n";
-        String str5 =
-                "CHARGES                   RATE            AMOUNT\n" +
-                "GEN/TRANS CHARGES\n";
-        String _str6 =
-                /*change name          　　　　　　　　　　　charge rate　　　rate*使用電力*/
-                "  Generation System Charge    :       " + "%2.04f" + "/kwh" + "        %,6.02f\n" +
-                "  Transmission Demand Charge  :       " + "%4.02f" + "/kw " + "        %,6.02f\n" +
-                "  System Loss Charge          :       " + " %2.03f"+ "/kwh" + "        %,6.02f\n";
-        String str6 = String.format(_str6,
-                ratio[0],
-                total_value[0] * ratio[0],
-                ratio[1],
-                Float.parseFloat(now_value[3]) * ratio[1]/1000.0f,
-                ratio[2],
-                total_value[0] * ratio[2]);
-        String _str7 =
-                "                                                ----------------\n" +
-                        /*　　　　　　　　　　　　　　　　　　　　　　　　 GEN/TRANS CHARGESの小計 */
-                "                                       SUB TOTAL" + "        %,6.02f\n\n";
-        String str7 = String.format(_str7, total_value[1]);
-        String str8 =
-                "DISTRIBUTION CHARGES\n";
-        String _str9 =
-                /*change name          　　　　　　　　　　　charge rate　　　rate*使用電力*/
-                "  Distribution Demand Charge  :       " + "%.02f" + "/kw " + "        %,6.02f\n" +
-                "  Supply Fix Charge           :       " + " %.02f" + "/cst" + "        %,6.02f\n" +
-                "  Metering Fix Charge         :       " + " %.02f" + "/cst" + "        %,6.02f\n";
-        String str9 = String.format(_str9,
-                ratio[3],
-                Float.parseFloat(now_value[3]) * ratio[3]/1000.0f,
-                ratio[4],
-                1 * ratio[4],
-                ratio[5],
-                1 * ratio[5]);
-        String _str10 =
-                "                                                ----------------\n" +
-                        /*　　　　　　　　　DISTRIBUTION CHARGESの小計 */
-                "                                       SUB TOTAL" + "        %,6.02f\n\n";
-        String str10 = String.format(_str10, total_value[2]);
+            String _str1 =
+                    "================================================================\n" +
+                            /*期間 月(September) 年　　レートの種類:レート名　　　　*/
+                            "Period     :%s       Rate Type     : %s COMMERCIAL\n";
+            String str1 = String.format(_str1, data.Period, data.Commercial);
+            String _str2 =
+                    /*メーター：シリアル番号/契約番号？     乗数   */
+                    "Meter      :%s       Multiplier    :%1.01f\n" +
+                            /*日時 MM/DD/YYYY 　　　　　　　　　　　　　　　　　　　　　　　　　今回検針値 6.3 */
+                            "Period To  :%s                Pres Reading  : %6.03f\n";
+            String str2 = String.format(_str2, data.SerialID, data.Multiplier, data.PeriodTo, data.PresReading);
+            String _str3 =
+                    /*日時 MM/DD/YYYY 　　　　　　　　　　　　　　　　　　前回検針値 6.3 */
+                    "Period From:%s                Prev Reading  : %6.03f\n" +
+                            /*使用電力の瞬時値:2.3 　　　　　　　　　　　　　　　　　　         使用量 6.3 */
+                            "Demand KW : %2.03f                  Total KWH Used  : %6.03f\n";
+            String str3 = String.format(_str3, data.PeriodFrom, data.PrevReading, data.MaxDemand, data.TotalUse);
+            String str4 =
+                    "================================================================\n";
+            String str5 =
+                    "CHARGES                   RATE            AMOUNT\n" +
+                            "GEN/TRANS CHARGES\n";
+            String _str6 =
+                    /*change name          　　　　　　　　　　　charge rate　　　rate*使用電力*/
+                    "  Generation System Charge    :       " + "%2.04f" + "/kwh" + "        %,6.02f\n" +
+                            "  Transmission Demand Charge  :       " + "%4.02f" + "/kw " + "        %,6.02f\n" +
+                            "  System Loss Charge          :       " + " %2.03f" + "/kwh" + "        %,6.02f\n";
+            String str6 = String.format(_str6,
+                    ratio[0],
+                    total_value[0] * ratio[0],
+                    ratio[1],
+                    Float.parseFloat(now_value[3]) * ratio[1],
+                    ratio[2],
+                    total_value[0] * ratio[2]);
+            String _str7 =
+                    "                                                ----------------\n" +
+                   /*　　　　　　　　　　　　　　　　　　　　　　　　 GEN/TRANS CHARGESの小計 */
+                    "                                       SUB TOTAL" + "        %,6.02f\n\n";
+            String str7 = String.format(_str7, data.GenTransCharges);
+            String str8 =
+                    "DISTRIBUTION CHARGES\n";
+            String _str9 =
+                    /*change name          　　　　　　　　　　　charge rate　　　rate*使用電力*/
+                    "  Distribution Demand Charge  :       " + "%.02f" + "/kw " + "        %,6.02f\n" +
+                            "  Supply Fix Charge           :       " + " %.02f" + "/cst" + "        %,6.02f\n" +
+                            "  Metering Fix Charge         :       " + " %.02f" + "/cst" + "        %,6.02f\n";
+            String str9 = String.format(_str9,
+                    ratio[3],
+                    Float.parseFloat(now_value[3]) * ratio[3],
+                    ratio[4],
+                    1 * ratio[4],
+                    ratio[5],
+                    1 * ratio[5]);
+            String _str10 =
+                    "                                                ----------------\n" +
+                    /*　　　　　　　　　DISTRIBUTION CHARGESの小計 */
+                    "                                       SUB TOTAL" + "        %,6.02f\n\n";
+            String str10 = String.format(_str10, data.DistributionCharges);
+            String str11 =
+                    "REINVESTMENT FUND FOR\n" +
+                            "SUSTAINABLE CAPEX\n";
+            String _str12 =
+                    /*change name          　　　　　　　charge rate　　　　　　rate*使用電力*/
+                    "  Reinvestment Fund for CAPEX :       " + "%.04f" + "/kwh" + "        %,6.02f\n" +
+                            "  Member's CAPEX Contribution :       " + "%.04f" + "/kwh" + "        %,6.02f\n";
+            String str12 = String.format(_str12,
+                    ratio[6],
+                    total_value[0] * ratio[6],
+                    ratio[7],
+                    total_value[0] * ratio[7]);
+            String _str13 =
+                    "                                                ----------------\n" +
+                            /*　　　　　　　　　　　REINVESTMENT FUND FOR SUSTAINABLE CAPEXの小計 */
+                            "                                       SUB TOTAL" + "        %,6.02f\n\n";
+            String str13 = String.format(_str13, data.SustainableCapex);
+            String str14 =
+                    "OTHER CHARGES\n";
+            String _str15 =
+                    /*change name          　　　　　　　charge rate　　　　　　rate*使用電力*/
+                    "  Lifeline Discount/Subsidy   :      " + "%.04f" + "/kwh" + "        %,6.02f\n" +
+                            "  Senior Citizen Subsidy      :      " + " %.04f" + "/kwh" + "        %,6.02f\n";
+            String str15 = String.format(_str15,
+                    ratio[8],
+                    total_value[0] * ratio[8],
+                    ratio[9],
+                    total_value[0] * ratio[9]);
+            String _str16 =
+                    "                                                ----------------\n" +
+                    /*　　　　　　　　　　　                          OTHER CHARGESの小計 */
+                    "                                       SUB TOTAL" + "        %,6.02f\n\n";
+            String str16 = String.format(_str16, data.OtherCharges);
+            String str17 =
+                    "UNIVERSAL CHARGES\n";
+            String _str18 =
+                    /*change name          　　　　　　　charge rate　　　　　　rate*使用電力*/
+                    "  Missionary Elec(NPC-SPUG)   :       " + "%.04f" + "/kwh" + "        %,6.02f\n" +
+                            "  Missionary Elec(RED)        :       " + "%.04f" + "/kwh" + "        %,6.02f\n" +
+                            "  Environmental Charge        :       " + "%.04f" + "/kwh" + "        %,6.02f\n";
+            String str18 = String.format(_str18,
+                    ratio[10],
+                    total_value[0] * ratio[10],
+                    ratio[11],
+                    total_value[0] * ratio[11], ratio[12],
+                    total_value[0] * ratio[12]);
+            String _str19 =
+                    /*change name          　　　　　　　charge rate　　　　　　rate*使用電力*/
+                    "  Feed In Tariff Allowance    :       " + "%.04f" + "/kwh" + "        %,6.02f\n" +
+                            "  NPC Stranded Contract       :       " + "%.04f" + "/kwh" + "        %,6.02f\n" +
+                            "  NPC Stranded Debts          :       " + "%.04f" + "/kwh" + "        %,6.02f\n";
+            String str19 = String.format(_str19,
+                    ratio[13], total_value[0] * ratio[13],
+                    ratio[14], total_value[0] * ratio[14],
+                    ratio[15], total_value[0] * ratio[15]);
+            String _str20 =
+                    "                                                ----------------\n" +
+                    /*　　　　　　　　　　　UNIVERSAL CHARGESの小計 */
+                    "                                       SUB TOTAL" + "        %,6.02f\n\n";
+            String str20 = String.format(_str20, data.UniversalCharges);
+            String str21 =
+                    "VALUE ADDED TAX\n";
+            String _str22 =
+                    /*change name          　　　　　　　charge rate　　　　　　rate*使用電力*/
+                    "  Generation VAT              :      " + " %.04f" + "/kwh" + "        %,6.02f\n" +
+                            "  Transmission VAT            :      " + " %.04f" + "/kwh" + "        %,6.02f\n" +
+                            "  System Loss VAT             :      " + " %.04f" + "/kwh" + "        %,6.02f\n";
+            String str22 = String.format(_str22,
+                    ratio[16],
+                    total_value[0] * ratio[16],
+                    ratio[17], total_value[0] * ratio[17],
+                    ratio[18], total_value[0] * ratio[18]);
+            String _str23 =
+                    /*change name          　　　　　　　charge rate　　　　　　rate*使用電力*/
+                    "  Distribution VAT            :         " + " %.04f" + "%%" + "        %,6.02f\n" +
+                            "  Other VAT                   :         " + " %.04f" + "%%" + "        %,6.02f\n";
+            String str23 = String.format(_str23,
+                    ratio[19],
+                    total_value[2] * ratio[19],
+                    ratio[20],
+                    total_value[4] * ratio[20]);
+            String _str24 =
+                    "                                                ----------------\n" +
+                            /*VALUE ADDED TAXの小計 */
+                            "                                       SUB TOTAL" + "        %,6.02f\n\n";
+            String str24 = String.format(_str24, data.ValueAddedTax);
 
-        String str11 =
-                "REINVESTMENT FUND FOR\n" +
-                "SUSTAINABLE CAPEX\n";
-        String _str12 =
-                /*change name          　　　　　　　charge rate　　　　　　rate*使用電力*/
-                "  Reinvestment Fund for CAPEX :       " + "%.04f" + "/kwh" + "        %,6.02f\n" +
-                "  Member's CAPEX Contribution :       " + "%.04f" + "/kwh" + "        %,6.02f\n";
-        String str12 = String.format(_str12,
-                ratio[6],
-                total_value[0] * ratio[6],
-                ratio[7],
-                total_value[0] * ratio[7]);
-        String _str13 =
-                "                                                ----------------\n" +
-                        /*　　　　　　　　　　　REINVESTMENT FUND FOR SUSTAINABLE CAPEXの小計 */
-                "                                       SUB TOTAL" + "        %,6.02f\n\n";
-        String str13 = String.format(_str13, total_value[3]);
-        String str14 =
-                "OTHER CHARGES\n";
-        String _str15 =
-                /*change name          　　　　　　　charge rate　　　　　　rate*使用電力*/
-                "  Lifeline Discount/Subsidy   :      " + "%.04f" + "/kwh" + "        %,6.02f\n" +
-                "  Senior Citizen Subsidy      :      " + " %.04f" + "/kwh" + "        %,6.02f\n";
-        String str15 = String.format(_str15,
-                ratio[8],
-                total_value[0] * ratio[8],
-                ratio[9],
-                total_value[0] * ratio[9]);
-        String _str16 =
-                "                                                ----------------\n" +
-                        /*　　　　　　　　　　　                          OTHER CHARGESの小計 */
-                "                                       SUB TOTAL" + "        %,6.02f\n\n";
-        String str16 = String.format(_str16, total_value[4]);
-        String str17 =
-                "UNIVERSAL CHARGES\n";
-        String _str18 =
-                /*change name          　　　　　　　charge rate　　　　　　rate*使用電力*/
-                "  Missionary Elec(NPC-SPUG)   :       " + "%.04f" + "/kwh" + "        %,6.02f\n" +
-                "  Missionary Elec(RED)        :       " + "%.04f" + "/kwh" + "        %,6.02f\n" +
-                "  Environmental Charge        :       " + "%.04f" + "/kwh" + "        %,6.02f\n";
-        String str18 = String.format(_str18,
-                ratio[10],
-                total_value[0] * ratio[10],
-                ratio[11],
-                total_value[0] * ratio[11], ratio[12],
-                total_value[0] * ratio[12]);
-        String _str19 =
-                /*change name          　　　　　　　charge rate　　　　　　rate*使用電力*/
-                "  Feed In Tariff Allowance    :       " + "%.04f" + "/kwh" + "        %,6.02f\n" +
-                "  NPC Stranded Contract       :       " + "%.04f" + "/kwh" + "        %,6.02f\n" +
-                "  NPC Stranded Debts          :       " + "%.04f" + "/kwh" + "        %,6.02f\n";
-        String str19 = String.format(_str19,
-                ratio[13], total_value[0] * ratio[13],
-                ratio[14], total_value[0] * ratio[14],
-                ratio[15], total_value[0] * ratio[15]);
-        String _str20 =
-                "                                                ----------------\n" +
-                  /*　　　　　　　　　　　UNIVERSAL CHARGESの小計 */
-                "                                       SUB TOTAL" + "        %,6.02f\n\n";
-        String str20 = String.format(_str20, total_value[5]);
-        String str21 =
-                "VALUE ADDED TAX\n";
-        String _str22 =
-                /*change name          　　　　　　　charge rate　　　　　　rate*使用電力*/
-                "  Generation VAT              :      " + " %.04f" + "/kwh" + "        %,6.02f\n" +
-                "  Transmission VAT            :      " + " %.04f" + "/kwh" + "        %,6.02f\n" +
-                "  System Loss VAT             :      " + " %.04f" + "/kwh" + "        %,6.02f\n";
-        String str22 = String.format(_str22,
-                ratio[16],
-                total_value[0] * ratio[16],
-                ratio[17], total_value[0] * ratio[17],
-                ratio[18], total_value[0] * ratio[18]);
-        String _str23 =
-                /*change name          　　　　　　　charge rate　　　　　　rate*使用電力*/
-                "  Distribution VAT            :         " + " %.04f" + "%%" + "        %,6.02f\n" +
-                "  Other VAT                   :         " + " %.04f" + "%%" + "        %,6.02f\n";
-        String str23 = String.format(_str23,
-                ratio[19],
-                total_value[2] * ratio[19],
-                ratio[20],
-                total_value[4] * ratio[20]);
-        String _str24 =
-                "                                                ----------------\n" +
-                 /*VALUE ADDED TAXの小計 */
-                "                                       SUB TOTAL" + "        %,6.02f\n\n";
-        String str24 = String.format(_str24, total_value[6]);
+            String str25 =
+                    "----------------------------------------------------------------\n";
+            String _str26 =
+                    /*現在の請求額*/
+                    "CURRENT BILL                                       Php" + " %,6.02f\n";
+            String str26 = String.format(_str26, total_value[7]);
+            String _str27 =
+                    /*各小計の合計の請求額*/
+                    "TOTAL AMOUNT                       Php" + " %,6.02f\n";
+            String str27 = String.format(_str27, data.TotalAmount);
+            String str28 =
+                    "================================================================\n";
+            String _str29 =
+                    /*値引額*/
+                    "Discount                              " + "  %,6.02f\n";
+            String str29 = String.format(_str29, data.Discount);
+            String _str30 =
+                    /*合計の請求額から値引きされた金額*/
+                    "Amount Before Due                   " + "  %,6.02f\n\n";
+            String str30 = String.format(_str30, total_value[8]);
+            String _str31 =
+                    /*利息額*/
+                    "Interest                              " + "  %,6.02f\n";
+            String str31 = String.format(_str31, data.Interest);
+            String _str32 =
+                    /*合計の請求額から利息額が追加された金額*/
+                    "Amount After Due                    " + "  %,6.02f\n\n";
+            String str32 = String.format(_str32, total_value[9]);
 
-        String str25 =
-                "----------------------------------------------------------------\n";
-        String _str26 =
-                /*現在の請求額*/
-                "CURRENT BILL                                       Php" + " %,6.02f\n";
-        String str26 = String.format(_str26, total_value[7]);
-        String _str27 =
-                /*各小計の合計の請求額*/
-                "TOTAL AMOUNT                       Php" + " %,6.02f\n";
-        String str27 = String.format(_str27, total_value[7]);
-        String str28 =
-                "================================================================\n";
-        String _str29 =
-                /*値引額*/
-                "Discount                              " + "  %,6.02f\n";
-        String str29 = String.format(_str29, 10.0f);
-        String _str30 =
-                /*合計の請求額から値引きされた金額*/
-                "Amount Before Due                   " + "  %,6.02f\n\n";
-        String str30 = String.format(_str30, total_value[8]);
-        String _str31 =
-                /*利息額*/
-                "Interest                              " + "  %,6.02f\n";
-        String str31 = String.format(_str31, 10.0f);
-        String _str32 =
-                /*合計の請求額から利息額が追加された金額*/
-                "Amount After Due                    " + "  %,6.02f\n\n";
-        String str32 = String.format(_str32,total_value[9]);
-
-        String _str33 =
-                /*支払い期日　           月(Oct)　dd,yyyy　*/
-                "     DUE DATE     :" + "%s %d,%d\n" +
-                "     DISCO DATE   :" + "%s %d,%d\n\n";
-        String str33 =String.format(_str33, MonthList[0],10,2025, MonthList[0],11,2025);
-
-        String str34 =
-                "NOTE:Please pay this electric bill on or before DUE DATE otherwise,\n" +
-                "     we will be forced to discontinue serving your electric needs.\n\n";
-        String str35 =
-                "This is not an Official Receipt. Payment of this bill does not mean \n" +
-                "payment of previous delinquencies if any.\n\n";
-        String _str36 =
-                "             **PLEASE PRESENT THIS STATEMENT UPON PAYMENT**\n" +
-                 /*検針担当：名前 　　　　　　検診日時 曜日(Thu) dd 月(Oct) yyyy　HH:mm:ss */
-                "Reader:%s                   " + "%s\n\n";
-
-        String str36 =  String.format(_str36, "Kobayshi K Kurika",getNowDate());
-        String str37 =
-                /*フォーマットのバージョン*/
-                "Version : v1.00.1\n\n\n\n";
-
-        mPrintService.write(WoosimCmd.initPrinter());
-        if(false) {
+            String _str33 =
+                    /*支払い期日　           月(Oct)　dd,yyyy　*/
+                    "     DUE DATE     :" + "%s\n" +
+                    "     DISCO DATE   :" + "%s\n\n";
+            String str33 = String.format(_str33, data.DueDate, data.DiscoDate);
+            String str34 =
+                    "NOTE:Please pay this electric bill on or before DUE DATE otherwise,\n" +
+                            "     we will be forced to discontinue serving your electric needs.\n\n";
+            String str35 =
+                    "This is not an Official Receipt. Payment of this bill does not mean \n" +
+                            "payment of previous delinquencies if any.\n\n";
+            String _str36 =
+                    "             **PLEASE PRESENT THIS STATEMENT UPON PAYMENT**\n" +
+                            /*検針担当：名前 　　　　　　検診日時 曜日(Thu) dd 月(Oct) yyyy　HH:mm:ss */
+                            "Reader:%s                   " + "%s\n\n";
+            String str36 = String.format(_str36, data.Reader, data.ReadDatetime );
+            String _str37 =
+                    /*フォーマットのバージョン*/
+                    "Version : %s\n\n\n\n";
+            String str37 = String.format(_str37, data.Version );
+            mPrintService.write(WoosimCmd.initPrinter());
+            if (false) {
 //        mPrintService.write(WoosimCmd.setPageMode());
 //        mPrintService.write(WoosimCmd.PM_setArea(0, 0, 600, 9000));
 //        mPrintService.write(WoosimCmd.PM_setArea(0, 0, 600, 9000));
+            }
+            mPrintService.write(WoosimCmd.PM_setPosition(0, 0));
+            mPrintService.write(WoosimCmd.setCodeTable(WoosimCmd.MCU_RX, WoosimCmd.CT_CP437, WoosimCmd.FONT_MEDIUM));
+            mPrintService.write(WoosimCmd.setTextStyle(true, false, false, 1, 1));
+            mPrintService.write(title1.getBytes());
+            mPrintService.write(WoosimCmd.setCodeTable(WoosimCmd.MCU_RX, WoosimCmd.CT_CP437, WoosimCmd.FONT_MEDIUM));
+            mPrintService.write(WoosimCmd.setTextStyle(true, false, false, 1, 1));
+            mPrintService.write(title2.getBytes());
+            mPrintService.write(WoosimCmd.setCodeTable(WoosimCmd.MCU_RX, WoosimCmd.CT_CP437, WoosimCmd.FONT_LARGE));
+            mPrintService.write(WoosimCmd.setTextStyle(true, false, false, 1, 2));
+            mPrintService.write(title3.getBytes());
+
+            mPrintService.write(WoosimCmd.setCodeTable(WoosimCmd.MCU_RX, WoosimCmd.CT_CP437, WoosimCmd.FONT_MEDIUM));
+            mPrintService.write(WoosimCmd.setTextStyle(false, false, false, 1, 1));
+            mPrintService.write(title4.getBytes());
+
+            mPrintService.write(WoosimCmd.setCodeTable(WoosimCmd.MCU_RX, WoosimCmd.CT_CP437, WoosimCmd.FONT_MEDIUM));
+            mPrintService.write(str1.getBytes());
+            mPrintService.write(str2.getBytes());
+            mPrintService.write(str3.getBytes());
+            mPrintService.write(str4.getBytes());
+
+
+            mPrintService.write(WoosimCmd.setCodeTable(WoosimCmd.MCU_RX, WoosimCmd.CT_CP437, WoosimCmd.FONT_LARGE));
+            mPrintService.write(WoosimCmd.setTextStyle(true, false, false, 1, 1));
+            mPrintService.write(str5.getBytes());
+
+            mPrintService.write(WoosimCmd.setCodeTable(WoosimCmd.MCU_RX, WoosimCmd.CT_CP437, WoosimCmd.FONT_MEDIUM));
+            mPrintService.write(str6.getBytes());
+            mPrintService.write(str7.getBytes());
+
+            mPrintService.write(WoosimCmd.setCodeTable(WoosimCmd.MCU_RX, WoosimCmd.CT_CP437, WoosimCmd.FONT_LARGE));
+            mPrintService.write(WoosimCmd.setTextStyle(true, false, false, 1, 1));
+            mPrintService.write(str8.getBytes());
+
+            mPrintService.write(WoosimCmd.setCodeTable(WoosimCmd.MCU_RX, WoosimCmd.CT_CP437, WoosimCmd.FONT_MEDIUM));
+            mPrintService.write(str9.getBytes());
+            mPrintService.write(str10.getBytes());
+
+
+            mPrintService.write(WoosimCmd.setCodeTable(WoosimCmd.MCU_RX, WoosimCmd.CT_CP437, WoosimCmd.FONT_LARGE));
+            mPrintService.write(WoosimCmd.setTextStyle(true, false, false, 1, 1));
+            mPrintService.write(str11.getBytes());
+
+            mPrintService.write(WoosimCmd.setCodeTable(WoosimCmd.MCU_RX, WoosimCmd.CT_CP437, WoosimCmd.FONT_MEDIUM));
+            mPrintService.write(str12.getBytes());
+            mPrintService.write(str13.getBytes());
+
+
+            mPrintService.write(WoosimCmd.setCodeTable(WoosimCmd.MCU_RX, WoosimCmd.CT_CP437, WoosimCmd.FONT_LARGE));
+            mPrintService.write(WoosimCmd.setTextStyle(true, false, false, 1, 1));
+            mPrintService.write(str14.getBytes());
+
+            mPrintService.write(WoosimCmd.setCodeTable(WoosimCmd.MCU_RX, WoosimCmd.CT_CP437, WoosimCmd.FONT_MEDIUM));
+            mPrintService.write(str15.getBytes());
+            mPrintService.write(str16.getBytes());
+
+
+            mPrintService.write(WoosimCmd.setCodeTable(WoosimCmd.MCU_RX, WoosimCmd.CT_CP437, WoosimCmd.FONT_LARGE));
+            mPrintService.write(WoosimCmd.setTextStyle(true, false, false, 1, 1));
+            mPrintService.write(str17.getBytes());
+
+            mPrintService.write(WoosimCmd.setCodeTable(WoosimCmd.MCU_RX, WoosimCmd.CT_CP437, WoosimCmd.FONT_MEDIUM));
+            mPrintService.write(str18.getBytes());
+            mPrintService.write(str19.getBytes());
+            mPrintService.write(str20.getBytes());
+
+
+            mPrintService.write(WoosimCmd.setCodeTable(WoosimCmd.MCU_RX, WoosimCmd.CT_CP437, WoosimCmd.FONT_LARGE));
+            mPrintService.write(WoosimCmd.setTextStyle(true, false, false, 1, 1));
+            mPrintService.write(str21.getBytes());
+
+            mPrintService.write(WoosimCmd.setCodeTable(WoosimCmd.MCU_RX, WoosimCmd.CT_CP437, WoosimCmd.FONT_MEDIUM));
+            mPrintService.write(str22.getBytes());
+            mPrintService.write(str23.getBytes());
+            mPrintService.write(str24.getBytes());
+            mPrintService.write(str25.getBytes());
+            mPrintService.write(str26.getBytes());
+
+            mPrintService.write(WoosimCmd.setCodeTable(WoosimCmd.MCU_RX, WoosimCmd.CT_CP437, WoosimCmd.FONT_LARGE));
+            mPrintService.write(WoosimCmd.setTextStyle(true, false, false, 1, 2));
+            mPrintService.write(str27.getBytes());
+
+            mPrintService.write(WoosimCmd.setCodeTable(WoosimCmd.MCU_RX, WoosimCmd.CT_CP437, WoosimCmd.FONT_MEDIUM));
+            mPrintService.write(str28.getBytes());
+
+            mPrintService.write(WoosimCmd.setCodeTable(WoosimCmd.MCU_RX, WoosimCmd.CT_CP437, WoosimCmd.FONT_LARGE));
+            mPrintService.write(WoosimCmd.setTextStyle(true, false, false, 1, 1));
+            mPrintService.write(str29.getBytes());
+            mPrintService.write(str30.getBytes());
+            mPrintService.write(str31.getBytes());
+            mPrintService.write(str32.getBytes());
+
+            mPrintService.write(WoosimCmd.setCodeTable(WoosimCmd.MCU_RX, WoosimCmd.CT_CP437, WoosimCmd.FONT_LARGE));
+            mPrintService.write(WoosimCmd.setTextStyle(true, false, false, 1, 1));
+            mPrintService.write(str33.getBytes());
+
+            mPrintService.write(WoosimCmd.setCodeTable(WoosimCmd.MCU_RX, WoosimCmd.CT_CP437, WoosimCmd.FONT_SMALL));
+            mPrintService.write(str34.getBytes());
+            mPrintService.write(str35.getBytes());
+            mPrintService.write(str36.getBytes());
+            mPrintService.write(str37.getBytes());
+            mPrintService.write(WoosimCmd.PM_printStdMode());
         }
-        mPrintService.write(WoosimCmd.PM_setPosition(0, 0));
-        mPrintService.write(WoosimCmd.setCodeTable(WoosimCmd.MCU_RX, WoosimCmd.CT_CP437, WoosimCmd.FONT_MEDIUM));
-        mPrintService.write(WoosimCmd.setTextStyle(true, false, false, 1, 1));
-        mPrintService.write(title1.getBytes());
-        mPrintService.write(WoosimCmd.setCodeTable(WoosimCmd.MCU_RX, WoosimCmd.CT_CP437, WoosimCmd.FONT_MEDIUM));
-        mPrintService.write(WoosimCmd.setTextStyle(true, false, false, 1, 1));
-        mPrintService.write(title2.getBytes());
-        mPrintService.write(WoosimCmd.setCodeTable(WoosimCmd.MCU_RX, WoosimCmd.CT_CP437, WoosimCmd.FONT_LARGE));
-        mPrintService.write(WoosimCmd.setTextStyle(true, false, false, 1, 2));
-        mPrintService.write(title3.getBytes());
+    }
 
-        mPrintService.write(WoosimCmd.setCodeTable(WoosimCmd.MCU_RX, WoosimCmd.CT_CP437, WoosimCmd.FONT_MEDIUM));
-        mPrintService.write(WoosimCmd.setTextStyle(false, false, false, 1, 1));
-        mPrintService.write(title4.getBytes());
+    public void OutputBillingData(final String[] now_value, final String[] old_value){
 
-        mPrintService.write(WoosimCmd.setCodeTable(WoosimCmd.MCU_RX, WoosimCmd.CT_CP437, WoosimCmd.FONT_MEDIUM));
-        mPrintService.write(str1.getBytes());
-        mPrintService.write(str2.getBytes());
-        mPrintService.write(str3.getBytes());
-        mPrintService.write(str4.getBytes());
-
-
-        mPrintService.write(WoosimCmd.setCodeTable(WoosimCmd.MCU_RX, WoosimCmd.CT_CP437, WoosimCmd.FONT_LARGE));
-        mPrintService.write(WoosimCmd.setTextStyle(true, false, false, 1, 1));
-        mPrintService.write(str5.getBytes());
-
-        mPrintService.write(WoosimCmd.setCodeTable(WoosimCmd.MCU_RX, WoosimCmd.CT_CP437, WoosimCmd.FONT_MEDIUM));
-        mPrintService.write(str6.getBytes());
-        mPrintService.write(str7.getBytes());
-
-        mPrintService.write(WoosimCmd.setCodeTable(WoosimCmd.MCU_RX, WoosimCmd.CT_CP437, WoosimCmd.FONT_LARGE));
-        mPrintService.write(WoosimCmd.setTextStyle(true, false, false, 1, 1));
-        mPrintService.write(str8.getBytes());
-
-        mPrintService.write(WoosimCmd.setCodeTable(WoosimCmd.MCU_RX, WoosimCmd.CT_CP437, WoosimCmd.FONT_MEDIUM));
-        mPrintService.write(str9.getBytes());
-        mPrintService.write(str10.getBytes());
-
-
-        mPrintService.write(WoosimCmd.setCodeTable(WoosimCmd.MCU_RX, WoosimCmd.CT_CP437, WoosimCmd.FONT_LARGE));
-        mPrintService.write(WoosimCmd.setTextStyle(true, false, false, 1, 1));
-        mPrintService.write(str11.getBytes());
-
-        mPrintService.write(WoosimCmd.setCodeTable(WoosimCmd.MCU_RX, WoosimCmd.CT_CP437, WoosimCmd.FONT_MEDIUM));
-        mPrintService.write(str12.getBytes());
-        mPrintService.write(str13.getBytes());
-
-
-        mPrintService.write(WoosimCmd.setCodeTable(WoosimCmd.MCU_RX, WoosimCmd.CT_CP437, WoosimCmd.FONT_LARGE));
-        mPrintService.write(WoosimCmd.setTextStyle(true, false, false, 1, 1));
-        mPrintService.write(str14.getBytes());
-
-        mPrintService.write(WoosimCmd.setCodeTable(WoosimCmd.MCU_RX, WoosimCmd.CT_CP437, WoosimCmd.FONT_MEDIUM));
-        mPrintService.write(str15.getBytes());
-        mPrintService.write(str16.getBytes());
-
-
-        mPrintService.write(WoosimCmd.setCodeTable(WoosimCmd.MCU_RX, WoosimCmd.CT_CP437, WoosimCmd.FONT_LARGE));
-        mPrintService.write(WoosimCmd.setTextStyle(true, false, false, 1, 1));
-        mPrintService.write(str17.getBytes());
-
-        mPrintService.write(WoosimCmd.setCodeTable(WoosimCmd.MCU_RX, WoosimCmd.CT_CP437, WoosimCmd.FONT_MEDIUM));
-        mPrintService.write(str18.getBytes());
-        mPrintService.write(str19.getBytes());
-        mPrintService.write(str20.getBytes());
-
-
-        mPrintService.write(WoosimCmd.setCodeTable(WoosimCmd.MCU_RX, WoosimCmd.CT_CP437, WoosimCmd.FONT_LARGE));
-        mPrintService.write(WoosimCmd.setTextStyle(true, false, false, 1, 1));
-        mPrintService.write(str21.getBytes());
-
-        mPrintService.write(WoosimCmd.setCodeTable(WoosimCmd.MCU_RX, WoosimCmd.CT_CP437, WoosimCmd.FONT_MEDIUM));
-        mPrintService.write(str22.getBytes());
-        mPrintService.write(str23.getBytes());
-        mPrintService.write(str24.getBytes());
-        mPrintService.write(str25.getBytes());
-        mPrintService.write(str26.getBytes());
-
-        mPrintService.write(WoosimCmd.setCodeTable(WoosimCmd.MCU_RX, WoosimCmd.CT_CP437, WoosimCmd.FONT_LARGE));
-        mPrintService.write(WoosimCmd.setTextStyle(true, false, false, 1, 2));
-        mPrintService.write(str27.getBytes());
-
-        mPrintService.write(WoosimCmd.setCodeTable(WoosimCmd.MCU_RX, WoosimCmd.CT_CP437, WoosimCmd.FONT_MEDIUM));
-        mPrintService.write(str28.getBytes());
-
-        mPrintService.write(WoosimCmd.setCodeTable(WoosimCmd.MCU_RX, WoosimCmd.CT_CP437, WoosimCmd.FONT_LARGE));
-        mPrintService.write(WoosimCmd.setTextStyle(true, false, false, 1, 1));
-        mPrintService.write(str29.getBytes());
-        mPrintService.write(str30.getBytes());
-        mPrintService.write(str31.getBytes());
-        mPrintService.write(str32.getBytes());
-
-        mPrintService.write(WoosimCmd.setCodeTable(WoosimCmd.MCU_RX, WoosimCmd.CT_CP437, WoosimCmd.FONT_LARGE));
-        mPrintService.write(WoosimCmd.setTextStyle(true, false, false, 1, 1));
-        mPrintService.write(str33.getBytes());
-
-        mPrintService.write(WoosimCmd.setCodeTable(WoosimCmd.MCU_RX, WoosimCmd.CT_CP437, WoosimCmd.FONT_SMALL));
-        mPrintService.write(str34.getBytes());
-        mPrintService.write(str35.getBytes());
-        mPrintService.write(str36.getBytes());
-        mPrintService.write(str37.getBytes());
-        mPrintService.write(WoosimCmd.PM_printStdMode());
+        AlertDialog.Builder builder = null;
+        builder = new AlertDialog.Builder(this);
+        builder.setTitle("Printing confirmation");
+        builder.setMessage("Serial ID: " + old_value[2] + "\nBilling data will be saved to JSON.\nWould you like to print receipt?");
+        builder.setPositiveButton("Yes", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialogInterface, int i) {
+                OutputBillingData(now_value, old_value, true);
+            }
+        });
+        builder.setNegativeButton("No", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialogInterface, int i) {
+                OutputBillingData(now_value, old_value, false);
+            }
+        });
+        builder.setOnDismissListener(new DialogInterface.OnDismissListener() {
+            @Override
+            public void onDismiss(DialogInterface dialogInterface) {
+            }
+        });
+        builder.show();
     }
 
     private boolean copyAssetsFile() {
@@ -681,16 +713,15 @@ public class MainActivity extends AppCompatActivity implements
                                 Manifest.permission.BLUETOOTH_SCAN,
                                 Manifest.permission.BLUETOOTH_CONNECT,
                                 Manifest.permission.ACCESS_COARSE_LOCATION}, 1000);
-            }
-            else{
+            } else {
                 mPermission = true;
             }
         } else {
             if (
                     (ActivityCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH) != PackageManager.PERMISSION_GRANTED) ||
-                    (ActivityCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_ADMIN) != PackageManager.PERMISSION_GRANTED) ||
-                    (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) ||
-                    (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED)
+                            (ActivityCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_ADMIN) != PackageManager.PERMISSION_GRANTED) ||
+                            (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) ||
+                            (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED)
             ) {
                 // パーミッションの許可を取得する
                 ActivityCompat.requestPermissions(this,
@@ -742,14 +773,14 @@ public class MainActivity extends AppCompatActivity implements
 
     private void connectDevice(Intent data, boolean secure) {
 
-            String address = printercsv.Column(getString(R.string.table2_col3));
-            // Get the device MAC address
-            //if (data.getExtras() != null)
-            //address = data.getExtras().getString(DeviceList.EXTRA_DEVICE_ADDRESS);
-            // Get the BluetoothDevice object
-            BluetoothDevice device = mBluetoothAdapter.getRemoteDevice(address);
-            // Attempt to connect to the device
-            mPrintService.connect(device, secure);
+        String address = printercsv.Column(getString(R.string.table2_col3));
+        // Get the device MAC address
+        //if (data.getExtras() != null)
+        //address = data.getExtras().getString(DeviceList.EXTRA_DEVICE_ADDRESS);
+        // Get the BluetoothDevice object
+        BluetoothDevice device = mBluetoothAdapter.getRemoteDevice(address);
+        // Attempt to connect to the device
+        mPrintService.connect(device, secure);
 
     }
 
@@ -852,7 +883,7 @@ public class MainActivity extends AppCompatActivity implements
                     }
                 }
                 if (!find) {
-                    login.Add(newAccount + "," + newPassword + "," +",3");
+                    login.Add(newAccount + "," + newPassword + "," + ",3");
                 }
             }
             if (update) {
@@ -917,13 +948,13 @@ public class MainActivity extends AppCompatActivity implements
                 // save the connected device's name
                 String mConnectedDeviceName = msg.getData().getString(DEVICE_NAME);
                 Toast.makeText(getApplicationContext(), "Connected to " + mConnectedDeviceName, Toast.LENGTH_SHORT).show();
-  //              redrawMenu();
+                //              redrawMenu();
                 break;
             case MESSAGE_TOAST:
-  //              Toast.makeText(getApplicationContext(), msg.getData().getInt(TOAST), Toast.LENGTH_SHORT).show();
+                //              Toast.makeText(getApplicationContext(), msg.getData().getInt(TOAST), Toast.LENGTH_SHORT).show();
                 break;
             case MESSAGE_READ:
-                mWoosim.processRcvData((byte[])msg.obj, msg.arg1);
+                mWoosim.processRcvData((byte[]) msg.obj, msg.arg1);
                 break;
             case WoosimService.MESSAGE_PRINTER:
                 if (msg.arg1 == WoosimService.MSR) {
@@ -933,15 +964,15 @@ public class MainActivity extends AppCompatActivity implements
                         byte[][] track = (byte[][]) msg.obj;
                         if (track[0] != null) {
                             String str = new String(track[0]);
-   //                         mTrack1View.setText(str);
+                            //                         mTrack1View.setText(str);
                         }
                         if (track[1] != null) {
                             String str = new String(track[1]);
-   //                         mTrack2View.setText(str);
+                            //                         mTrack2View.setText(str);
                         }
                         if (track[2] != null) {
                             String str = new String(track[2]);
-    //                        mTrack3View.setText(str);
+                            //                        mTrack3View.setText(str);
                         }
                     }
                 }
@@ -977,11 +1008,11 @@ public class MainActivity extends AppCompatActivity implements
         checkPermission();
         Log.i(TAG, " onResume.");
         registerReceiver(mGattUpdateReceiver, makeGattUpdateIntentFilter());
- //     registerReceiver(receiver, new IntentFilter(BluetoothDevice.ACTION_FOUND));
+        //     registerReceiver(receiver, new IntentFilter(BluetoothDevice.ACTION_FOUND));
         rootcsv = new CSVParser("meter.csv", folderExternal);
         printercsv = new CSVParser("printer.csv", folderExternal);
         ratecsv = new CSVParser("rate.csv", folderExternal);
-        if(ratecsv.size()>0) {
+        if (ratecsv.size() > 0) {
             //ファイルがなかった場合の処理を後で考える。
             ratio[0] = Float.parseFloat(ratecsv.Column(getString(R.string.table3_col1)));
             ratio[1] = Float.parseFloat(ratecsv.Column(getString(R.string.table3_col2)));
@@ -1010,15 +1041,14 @@ public class MainActivity extends AppCompatActivity implements
                 // Initialize the BluetoothPrintService to perform bluetooth connections
                 mPrintService = new BluetoothPrintService(mHandler);
                 mWoosim = new WoosimService(mHandler);
-            }
-            else {
+            } else {
                 // Only if the state is STATE_NONE, do we know that we haven't started already
                 if (mPrintService.getState() == BluetoothPrintService.STATE_NONE) {
                     // Start the Bluetooth print services
                     mPrintService.start();
                 }
             }
-            if(printercsv.size()>0){
+            if (printercsv.size() > 0) {
                 String address = printercsv.Column(getString(R.string.table2_col3));
                 BluetoothDevice device = mBluetoothAdapter.getRemoteDevice(address);
                 mPrintService.connect(device, false);
@@ -1152,6 +1182,18 @@ public class MainActivity extends AppCompatActivity implements
             case R.id.menu_load:
                 break;
             case R.id.menu_save:
+                String csvfile = MainActivity.d.CurrentYearMonth() + "_meter.csv";
+                String data = readFile(csvfile, folderExternal);
+                if (data != null) {
+                    Intent intent = new Intent(Intent.ACTION_SEND);
+                    intent.putExtra(Intent.EXTRA_SUBJECT, csvfile);
+                    intent.putExtra(Intent.EXTRA_TEXT, data);
+                    intent.setType("text/plain");
+                    startActivity(intent);
+                } else {
+                    showToast("No data!!!");
+                }
+                ret = true;
                 break;
             case R.id.menu_select:
                 final Handler handler;
@@ -1171,18 +1213,25 @@ public class MainActivity extends AppCompatActivity implements
                 ret = true;
                 break;
             case R.id.menu_share:
-                String csvfile = MainActivity.d.CurrentYearMonth() + "_meter.csv";
-                String data = readFile(csvfile, folderExternal);
-                if (data != null) {
-                    Intent intent = new Intent(Intent.ACTION_SEND);
-                    intent.putExtra(Intent.EXTRA_SUBJECT, csvfile);
-                    intent.putExtra(Intent.EXTRA_TEXT, data);
-                    intent.setType("text/plain");
-                    startActivity(intent);
-                } else {
-                    showToast("No data!!!");
+                if (mSerialID != null) {
+                    try {
+                        Intent shareIntent = new Intent(Intent.ACTION_SEND_MULTIPLE);
+                        shareIntent.putExtra(Intent.EXTRA_SUBJECT, "Json file");
+                        shareIntent.setType("text/plain");
+                        shareIntent.putExtra(Intent.EXTRA_EMAIL, new String[]{"<E-mail address>"});
+                        File file = new File(folderExternal, d.CurrentYearMonth() + "_" + mSerialID + ".json");
+                        if(file.exists()) {
+                            Uri uri = FileProvider.getUriForFile(this, "com.fujielectricmeter.blemeter", file);
+                            ArrayList<Uri> uris = new ArrayList<Uri>();
+                            uris.add(uri);
+                            shareIntent.putParcelableArrayListExtra(Intent.EXTRA_STREAM, uris);
+                            startActivity(Intent.createChooser(shareIntent, "Email:").
+                                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));
+                        }
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
                 }
-                ret = true;
                 break;
             default:
                 ret = super.onOptionsItemSelected(item);
@@ -1202,7 +1251,12 @@ public class MainActivity extends AppCompatActivity implements
         menu.findItem(R.id.menu_load).setVisible(false);
         menu.findItem(R.id.menu_save).setVisible(false);
         menu.findItem(R.id.menu_user).setVisible(false);
-        menu.findItem(R.id.menu_share).setVisible(true);
+        if (mFragmentid == 4) {
+            menu.findItem(R.id.menu_share).setVisible(true);
+        }
+        else{
+            menu.findItem(R.id.menu_share).setVisible(false);
+        }
         if (mFragmentid < 2) {
             if (Level != null) {
                 if (Integer.parseInt(Level) <= 1) {

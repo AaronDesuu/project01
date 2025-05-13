@@ -1,19 +1,20 @@
 package com.fujielectricmeter.blemeter;
 
 import static com.fujielectricmeter.blemeter.MainActivity.folderExternal;
-import static com.fujielectricmeter.blemeter.MainActivity.oldcsv;
 import static com.fujielectricmeter.blemeter.MainActivity.printercsv;
 import static com.fujielectricmeter.blemeter.MainActivity.ratecsv;
 
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.os.Bundle;
 import android.os.Handler;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.EditText;
 
 import androidx.annotation.NonNull;
 import androidx.navigation.fragment.NavHostFragment;
@@ -166,18 +167,18 @@ public class FourthFragment extends ItemFragment {
             }
             MainActivity.fourthcsv.Find(getString(R.string.table2_key), MainActivity.msecondKey);
 
-            String oldfile = MainActivity.d.PreviousYearMonth() + "_meter.csv";
+            String oldfile = MainActivity.d.AnyYearMonth(0,-1) + "_meter.csv";
             MainActivity.oldcsv = new CSVParser(folderExternal);
             if (!MainActivity.oldcsv.exist(oldfile)) {
                 MainActivity.oldcsv.readFile("registration.csv");
             } else {
                 MainActivity.oldcsv.readFile(oldfile);
             }
+
             MainActivity.oldcsv.Find(getString(R.string.table2_key), MainActivity.msecondKey);
             mPrintData.old_value[0] = MainActivity.oldcsv.Column(getString(R.string.table2_col4));
             mPrintData.old_value[1] = MainActivity.oldcsv.Column(getString(R.string.table2_col5));
-
-
+            mPrintData.old_value[2] = MainActivity.mSerialID ;
             mSelectButton = -1;
             stopper = true;
             if (MainActivity.getLevel() < 3) {
@@ -205,7 +206,7 @@ public class FourthFragment extends ItemFragment {
                                 mPrintData.now_value[1] = MainActivity.secondcsv.Column(getString(R.string.table2_col4));  /*fixed date*/
                                 mPrintData.now_value[2] = MainActivity.secondcsv.Column(getString(R.string.table2_col5));  /*Imp*/
                                 mPrintData.now_value[3] = MainActivity.secondcsv.Column(getString(R.string.table2_col7));  /*Imp Max*/
-                                MainActivity.printImageText(mPrintData.now_value, mPrintData.old_value);
+                                mCallback.OutputBillingData(mPrintData.now_value, mPrintData.old_value);
                             }
                         }
                         MainActivity.trail.operation("MSG_READER button");
@@ -273,8 +274,8 @@ public class FourthFragment extends ItemFragment {
                 binding.button6.setVisibility(View.INVISIBLE);
             }
         }
-//        MainActivity.mPrintService.start();
-//        MainActivity.printImageText();
+//      MainActivity.mPrintService.start();
+//      MainActivity.printImageText();
     }
 
     @Override
@@ -323,22 +324,20 @@ public class FourthFragment extends ItemFragment {
                         case 6:
                             if (mTemp.size() > 9) {
                                 MainActivity.secondcsv.Update(mTemp.get(1), getString(R.string.table2_col4));
-                                MainActivity.secondcsv.Update(String.format("%.3f", MainActivity.d.Float(1000.0, mTemp.get(2))), getString(R.string.table2_col5));
+                                mPrintData.now_value[2] = String.format("%.3f",MainActivity.d.Float(1000.0, mTemp.get(2)));
+                                mPrintData.now_value[3] = String.format("%.3f",MainActivity.d.Float(1000.0, mTemp.get(6)));
+                                MainActivity.secondcsv.Update(mPrintData.now_value[2] , getString(R.string.table2_col5));
                                 MainActivity.secondcsv.Update(String.format("%.3f", MainActivity.d.Float(1000.0, mTemp.get(3))), getString(R.string.table2_col6));
-                                MainActivity.secondcsv.Update(String.format("%.3f", MainActivity.d.Float(1000.0, mTemp.get(6))), getString(R.string.table2_col7));
+                                MainActivity.secondcsv.Update(mPrintData.now_value[3] , getString(R.string.table2_col7));
                                 MainActivity.secondcsv.Update(String.format("%.3f", MainActivity.d.Float(1000.0, mTemp.get(7))), getString(R.string.table2_col8));
                                 MainActivity.secondcsv.Update(String.format("%.3f", MainActivity.d.Float(100.0, mTemp.get(8))), getString(R.string.table2_col9));
                                 MainActivity.secondcsv.Update(mTemp.get(9), getString(R.string.table2_col10));
                                 MainActivity.secondcsv.Update(mTemp.get(0), getString(R.string.table2_col11));
                                 MainActivity.secondcsv.writeFile();
-                                binding.textView.setText("Success to get billing data. finish");
-                                String[] now_value = {"", "", "", ""};
                                 mPrintData.now_value[0] = mTemp.get(0);  /*read date*/
                                 mPrintData.now_value[1] = mTemp.get(1);  /*fixed date*/
-                                mPrintData.now_value[2] = mTemp.get(2);  /*Imp*/
-                                mPrintData.now_value[3] = mTemp.get(6);  /*Imp Max*/
-                                MainActivity.printImageText(mPrintData.now_value, mPrintData.old_value);
-
+                                mCallback.OutputBillingData(mPrintData.now_value, mPrintData.old_value);
+                                binding.textView.setText("Success to get billing data. finish");
                             } else {
                                 ret = -5;
                             }
@@ -419,6 +418,7 @@ public class FourthFragment extends ItemFragment {
                         ret = -5;
                     }
                     break;
+
                 case MainActivity.MSG_ENERGY_RECORD:
                     if (mTemp.size() > 5) {
                         String timestamp = mTemp.get(0).replace("/", "");
@@ -436,6 +436,7 @@ public class FourthFragment extends ItemFragment {
                         ret = -5;
                     }
                     break;
+
                 case MainActivity.MSG_EVENT_RECORD:
                     if (mTemp.size() > 3) {
                         String timestamp = mTemp.get(0).replace("/", "");
@@ -453,6 +454,7 @@ public class FourthFragment extends ItemFragment {
                         ret = -5;
                     }
                     break;
+
                 case MainActivity.MSG_BILLING_RECORD:
                     if (mTemp.size() > 9) {
                         String timestamp = mTemp.get(0).replace("/", "");
@@ -464,14 +466,13 @@ public class FourthFragment extends ItemFragment {
                         csv.New("Clock,Imp[kWh],Exp[kWh],Abs[kWh],Net[kWh],ImpMaxDemand[W],ExpMaxDemand[W],MinVolt[V],Alert");
                         csv.Add(mTemp);
                         csv.writeFile();
-//                        binding.textView.setText("Clock:"+mTemp.get(27)+"\nImp[kWh]:"+String.format("%.3f", MainActivity.d.Float(1000.0,mTemp.get(28)))+"\nExp[kWh]:"+String.format("%.3f", MainActivity.d.Float(1000.0,mTemp.get(29)))+"\nAbs[kWh]:"+String.format("%.3f", MainActivity.d.Float(1000.0,mTemp.get(30)))+"\nNet[kWh]:"+String.format("%.3f", MainActivity.d.Float(1000.0,mTemp.get(31)))+"\nImpMaxDemand[W]"+mTemp.get(32)+"\nExpMaxDemand[W]"+mTemp.get(33)+"\nMinVolt[V]:"+String.format("%.2f", MainActivity.d.Float(100.0,mTemp.get(34)))+"\n\n\n\n\n");
-
-                        //              binding.textView.setText("Success to get and save billing records to file.");
+                        binding.textView.setText("Success to get and save billing records to file.");
                     } else {
                         binding.textView.setText("Fail to get and save billing records");
                         ret = -5;
                     }
                     break;
+
                 case MainActivity.MSG_SET_CLOCK:
                     if (mTemp.size() > 1) {
                         if (!mTemp.get(1).equals("success (0)")) {

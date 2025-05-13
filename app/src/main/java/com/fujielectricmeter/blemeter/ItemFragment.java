@@ -30,7 +30,9 @@ public class ItemFragment extends Fragment {
 
         void showToast(final String text);
 
-    }
+        void OutputBillingData(final String[] now_value, final String[] old_value);
+
+        }
     public final static String TAG = ItemFragment.class.getSimpleName();
     public boolean stopper = true;
     public Button mCurrentButton;

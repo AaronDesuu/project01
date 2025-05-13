@@ -27,8 +27,8 @@
     <string name="menu_select">選択</string>
     <string name="menu_scan">スキャン</string>
     <string name="menu_disconnect">切断</string>
-    <string name="menu_share">Save</string>
-    <string name="menu_save">Write</string>
+    <string name="menu_share">E-mail</string>
+    <string name="menu_save">Save</string>
     <string name="menu_load">Read</string>
     <string name="menu_batch">Batch Reading</string>
     <string name="menu_user">User setting</string>
