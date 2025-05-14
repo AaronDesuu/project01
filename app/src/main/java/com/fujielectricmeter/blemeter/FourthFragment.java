@@ -398,6 +398,11 @@ public class FourthFragment extends ItemFragment {
                                 MainActivity.secondcsv.writeFile();
                                 MainActivity.fourthcsv.writeFile();
                                 binding.textView.append("\nSuccess to register meter\nFinish!");
+                                binding.button1.setEnabled(false);
+                                binding.button2.setEnabled(true);
+                                binding.button3.setEnabled(true);
+                                binding.button4.setEnabled(true);
+                                binding.button5.setEnabled(true);
                             } else {
                                 binding.textView.append("\nFail to register meter\nFinish!");
                                 ret = -5;

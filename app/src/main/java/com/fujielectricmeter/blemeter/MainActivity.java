@@ -1215,8 +1215,10 @@ public class MainActivity extends AppCompatActivity implements
             case R.id.menu_share:
                 if (mSerialID != null) {
                     try {
+//                        Intent shareIntent = new Intent(Intent.ACTION_SEND);
                         Intent shareIntent = new Intent(Intent.ACTION_SEND_MULTIPLE);
                         shareIntent.putExtra(Intent.EXTRA_SUBJECT, "Json file");
+//                        shareIntent.setType("application/json");
                         shareIntent.setType("text/plain");
                         shareIntent.putExtra(Intent.EXTRA_EMAIL, new String[]{"<E-mail address>"});
                         File file = new File(folderExternal, d.CurrentYearMonth() + "_" + mSerialID + ".json");
@@ -1257,6 +1259,12 @@ public class MainActivity extends AppCompatActivity implements
         else{
             menu.findItem(R.id.menu_share).setVisible(false);
         }
+        if (mFragmentid == 2) {
+            menu.findItem(R.id.menu_batch).setVisible(true);
+        }
+        else{
+            menu.findItem(R.id.menu_batch).setVisible(false);
+        }
         if (mFragmentid < 2) {
             if (Level != null) {
                 if (Integer.parseInt(Level) <= 1) {
@@ -1269,17 +1277,14 @@ public class MainActivity extends AppCompatActivity implements
                 menu.findItem(R.id.menu_user).setVisible(false);
                 menu.findItem(R.id.menu_password).setVisible(false);
             }
-            menu.findItem(R.id.menu_batch).setVisible(false);
             menu.findItem(R.id.menu_stop).setVisible(false);
         } else {
             menu.findItem(R.id.menu_user).setVisible(false);
             menu.findItem(R.id.menu_password).setVisible(false);
             if (mItemFragment.running()) {
                 menu.findItem(R.id.menu_stop).setVisible(true);
-                menu.findItem(R.id.menu_batch).setVisible(false);
             } else {
                 menu.findItem(R.id.menu_stop).setVisible(false);
-                menu.findItem(R.id.menu_batch).setVisible(true);
             }
         }
         menu.findItem(R.id.menu_exit).setVisible(true);
