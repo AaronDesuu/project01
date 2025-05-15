@@ -255,6 +255,7 @@ public class FourthFragment extends ItemFragment {
                     binding.button3.setEnabled(false);
                     binding.button4.setEnabled(false);
                     binding.button5.setEnabled(false);
+//                    binding.button6.setEnabled(false);
                 }
             } else {
                 binding.button1.setText(R.string.current_read);
@@ -397,12 +398,16 @@ public class FourthFragment extends ItemFragment {
                                 MainActivity.rootcsv.writeFile();
                                 MainActivity.secondcsv.writeFile();
                                 MainActivity.fourthcsv.writeFile();
+                                mPrintData.old_value[0] = mTemp.get(1);
+                                mPrintData.old_value[1] = String.format("%.3f", MainActivity.d.Float(1000.0, mTemp.get(2)));
+
                                 binding.textView.append("\nSuccess to register meter\nFinish!");
                                 binding.button1.setEnabled(false);
                                 binding.button2.setEnabled(true);
                                 binding.button3.setEnabled(true);
                                 binding.button4.setEnabled(true);
                                 binding.button5.setEnabled(true);
+                                binding.button6.setEnabled(true);
                             } else {
                                 binding.textView.append("\nFail to register meter\nFinish!");
                                 ret = -5;

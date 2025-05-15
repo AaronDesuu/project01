@@ -325,8 +325,8 @@ public class MainActivity extends AppCompatActivity implements
         List<BillingData> outputlist  = new ArrayList<>();
         outputlist.add(data);
         String name = d.CurrentYearMonth()+ "_" + data.SerialID + ".json";
-        writeFile(data.SerialID + ": " + gson.toJson(outputlist), name, folderExternal);
-        System.out.println(data.SerialID + ": " + gson.toJson(outputlist));
+        writeFile(gson.toJson(outputlist), name, folderExternal);
+        System.out.println(gson.toJson(outputlist));
         if (withPrinting) {
             String title1 = "SAMPLE RECEIPT\n\n\n";
             String title2 = "           H.V Dela Costa St Salcedo Village Makati 1227,\n" +
