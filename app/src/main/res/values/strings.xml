@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">BleMeter</string>
+    <string name="app_name">BleMeterKai</string>
     <string name="action_settings">Settings</string>
     <!-- Strings used for fragments for navigation -->
     <string name="login">Login</string>
@@ -122,4 +122,30 @@
     <string name="change_threshold">Change Threshold</string>
     <string name="btn_checker">確認</string>
     <string name="bt_not_enabled_leaving" />
+
+
+    <!-- TODO: Remove or change this placeholder text -->
+    <string name="hello_blank_fragment">Hello blank fragment</string>
+    <!-- ... other strings ... -->
+    <string name="title_home">Home</string>
+    <string name="title_profile">Profile</string>
+    <string name="title_upload">Upload</string>
+
+    <string name="profile_picture_desc">Profile Picture</string>
+    <string name="profile_name_label">Name:</string>
+    <string name="profile_email_label">Email:</string>
+    <string name="profile_role_label">Role:</string>
+    <string name="profile_edit_button">Edit Profile</string>
+
+
+    <!-- Labels for your fragments if not already present -->
+    <!-- <string name="account_fragment_label">Login</string> -->
+ <!-- Or as per your existing file -->
+    <!-- <string name="first_fragment_label">Home Page</string> -->
+ <!-- Or "First Fragment" -->
+    <!-- <string name="second_fragment_label">Second Fragment</string> -->
+
+    <!-- <string name="third_fragment_label">Third Fragment</string> -->
+
+    <!-- <string name="fourth_fragment_label">Fourth Fragment</string> -->
 </resources>

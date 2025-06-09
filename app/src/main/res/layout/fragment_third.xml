@@ -20,7 +20,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".ThirdFragment">
+    tools:context=".ui.main.backup.ThirdFragmentBackup">
 
     <androidx.camera.view.PreviewView
         android:id="@+id/viewFinder"
