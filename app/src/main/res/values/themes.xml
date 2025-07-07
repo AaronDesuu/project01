@@ -1,19 +1,87 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
-    <!-- Base application theme. -->
-    <style name="Theme.BLESM" parent="Theme.AppCompat.Light.DarkActionBar">
-        <!-- Primary brand color. -->
-        <item name="colorPrimary">@color/purple_500</item>
-        <item name="colorPrimaryDark">@color/purple_700</item>
-        <item name="colorAccent">@color/teal_200</item>
-        <!-- Customize your theme here. -->
+    <style name="Theme.BLESM" parent="Theme.Material3.DayNight.NoActionBar">
+        <!-- Material 3 color roles -->
+        <item name="colorPrimary">@color/md_theme_primary</item>
+        <item name="colorOnPrimary">@color/md_theme_onPrimary</item>
+        <item name="colorPrimaryContainer">@color/md_theme_primaryContainer</item>
+        <item name="colorOnPrimaryContainer">@color/md_theme_onPrimaryContainer</item>
+        <item name="colorSecondary">@color/md_theme_secondary</item>
+        <item name="colorOnSecondary">@color/md_theme_onSecondary</item>
+        <item name="colorSecondaryContainer">@color/md_theme_secondaryContainer</item>
+        <item name="colorOnSecondaryContainer">@color/md_theme_onSecondaryContainer</item>
+        <item name="colorTertiary">@color/md_theme_tertiary</item>
+        <item name="colorOnTertiary">@color/md_theme_onTertiary</item>
+        <item name="colorTertiaryContainer">@color/md_theme_tertiaryContainer</item>
+        <item name="colorOnTertiaryContainer">@color/md_theme_onTertiaryContainer</item>
+        <item name="colorError">@color/md_theme_error</item>
+        <item name="colorOnError">@color/md_theme_onError</item>
+        <item name="colorErrorContainer">@color/md_theme_errorContainer</item>
+        <item name="colorOnErrorContainer">@color/md_theme_onErrorContainer</item>
+        <item name="android:colorBackground">@color/md_theme_background</item>
+        <item name="colorOnBackground">@color/md_theme_onBackground</item>
+        <item name="colorSurface">@color/md_theme_surface</item>
+        <item name="colorOnSurface">@color/md_theme_onSurface</item>
+        <item name="colorSurfaceVariant">@color/md_theme_surfaceVariant</item>
+        <item name="colorOnSurfaceVariant">@color/md_theme_onSurfaceVariant</item>
+        <item name="colorOutline">@color/md_theme_outline</item>
+        <item name="colorOutlineVariant">@color/md_theme_outlineVariant</item>
+        <item name="colorSurfaceInverse">@color/md_theme_inverseSurface</item>
+        <item name="colorOnSurfaceInverse">@color/md_theme_inverseOnSurface</item>
+        <item name="colorPrimaryInverse">@color/md_theme_inversePrimary</item>
+        <item name="colorScrim">@color/md_theme_scrim</item>
+
+        <!-- Status bar color. -->
+        <!-- For M3, the status bar is often translucent or matches surface colors. -->
+        <!-- You might want to set android:windowLightStatusBar for light themes. -->
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:windowLightStatusBar" tools:targetApi="m">true</item> <!-- true for light, false for dark -->
+
+        <!-- For edge-to-edge content (optional but recommended for M3 look) -->
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+        <item name="android:windowDrawsSystemBarBackgrounds">true</item>
+
+        <!-- Old attributes, you might not need them directly like this in M3 -->
+        <!-- <item name="colorPrimaryDark">@color/purple_700</item> --> <!-- M3 handles variants with Container colors -->
+        <!-- <item name="colorAccent">@color/teal_200</item> --> <!-- Accent is often covered by Secondary or Tertiary -->
+
+        <!-- You can define specific component styles here if needed -->
+        <!-- e.g., <item name="materialCardViewStyle">@style/Widget.App.CardView</item> -->
     </style>
 
-    <style name="Theme.BLESM.NoActionBar">
+    <!--
+        The Theme.BLESM.NoActionBar is already handled by making Theme.BLESM parent
+        Theme.Material3.DayNight.NoActionBar. You can remove this if Theme.BLESM is your main app theme.
+        If you have activities that specifically use Theme.BLESM.NoActionBar and others that
+        use Theme.BLESM (with an ActionBar, though your original didn't explicitly set one up to show),
+        you'd make two M3 themes:
+        1. Theme.BLESM parent="Theme.Material3.DayNight" (if you want an action bar by default)
+        2. Theme.BLESM.NoActionBar parent="Theme.Material3.DayNight.NoActionBar"
+    -->
+    <!-- <style name="Theme.BLESM.NoActionBar">
         <item name="windowActionBar">false</item>
         <item name="windowNoTitle">true</item>
-    </style>
+    </style> -->
 
-    <style name="Theme.BLESM.AppBarOverlay" parent="ThemeOverlay.AppCompat.Dark.ActionBar" />
+    <!--
+        For AppBar and Popup Overlays with Material 3, the theming is usually handled
+        by the main theme's attributes (e.g., colorSurface for Toolbar background,
+        colorOnSurface for text).
+        You might not need these explicit overlay themes or they might need to be
+        updated to Material 3 overlay parents if you have very specific customizations.
 
-    <style name="Theme.BLESM.PopupOverlay" parent="ThemeOverlay.AppCompat.Light" />
+        If you use MaterialToolbar, it will pick up colors from the theme.
+        For example, its background might be colorSurface or colorPrimary based on its style.
+        Text will be colorOnSurface or colorOnPrimary.
+    -->
+    <style name="Theme.BLESM.AppBarOverlay" parent="ThemeOverlay.Material3.Dark.ActionBar" />
+    <style name="Theme.BLESM.PopupOverlay" parent="ThemeOverlay.Material3.Light" />
+    <!--
+        Alternatively, for Toolbars, you might not even need an overlay if the main theme provides
+        the correct surface and onSurface colors.
+        Consider using:
+        <item name="toolbarStyle">@style/Widget.Material3.Toolbar</item> (in your main theme)
+        and then ensuring your Toolbar in XML doesn't override colors in a way that
+        conflicts with M3.
+    -->
+
 </resources>
