@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/bottom_nav_content_graph"
+    app:startDestination="@id/homeFragment">
+
+    <fragment
+        android:id="@+id/homeFragment"
+        android:name="com.blemeterkai.meterkai.ui.main.HomeFragment"
+        android:label="@string/home_fragment_label"
+        tools:layout="@layout/fragment_home">
+        <action
+            android:id="@+id/action_homeFragment_to_meterFirstFragment"
+            app:destination="@id/meterFirstFragment" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/meterFirstFragment"
+        android:name="com.blemeterkai.meterkai.ui.main.meter.FirstFragment"
+        android:label="@string/second_fragment_label"
+        tools:layout="@layout/fragment_first">
+        <action
+            android:id="@+id/action_meterFirstFragment_to_meterSecondFragment"
+            app:destination="@id/meterSecondFragment" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/UploadFragment"
+        android:name="com.blemeterkai.meterkai.ui.main.UploadFragment"
+        android:label="Upload CSV"
+        tools:layout="@layout/fragment_upload" />
+
+    <fragment
+        android:id="@+id/ProfileFragment"
+        android:name="com.blemeterkai.meterkai.ui.main.ProfileFragment"
+        android:label="Profile"
+        tools:layout="@layout/fragment_profile" />
+
+    <fragment
+        android:id="@+id/meterSecondFragment"
+        android:name="com.blemeterkai.meterkai.ui.main.meter.SecondFragment"
+        android:label="@string/fourth_fragment_label"
+        tools:layout="@layout/fragment_second">
+        <action
+            android:id="@+id/action_meterSecondFragment_to_meterFirstFragment"
+            app:destination="@id/meterFirstFragment"
+            app:popUpTo="@id/meterFirstFragment"
+            app:popUpToInclusive="true" />
+    </fragment>
+
+</navigation>

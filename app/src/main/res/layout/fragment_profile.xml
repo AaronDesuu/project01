@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".ui.main.ProfileFragment">
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_above="@+id/imageViewLogout"
+        android:fillViewport="true"> <!-- Changed ID here -->
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_horizontal"
+            android:orientation="vertical"
+            android:padding="16dp">
+
+            <!-- ... Your existing LinearLayout content ... -->
+            <ImageView
+                android:id="@+id/imageViewProfilePic"
+                android:layout_width="120dp"
+                android:layout_height="120dp"
+                android:layout_marginBottom="24dp"
+                android:contentDescription="@string/profile_picture_desc"
+                app:srcCompat="@drawable/ic_default_profile_placeholder" />
+
+            <TextView
+                android:id="@+id/textViewProfileNameLabel"
+                style="@style/TextAppearance.MaterialComponents.Caption"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/profile_name_label"
+                android:textSize="16sp" />
+
+            <TextView
+                android:id="@+id/textViewProfileName"
+                style="@style/TextAppearance.MaterialComponents.Headline6"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="16dp"
+                android:textSize="20sp"
+                tools:text="Example User" />
+
+            <TextView
+                android:id="@+id/textViewProfileEmailLabel"
+                style="@style/TextAppearance.MaterialComponents.Caption"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/profile_email_label"
+                android:textSize="16sp" />
+
+            <TextView
+                android:id="@+id/textViewProfileEmail"
+                style="@style/TextAppearance.MaterialComponents.Body1"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="16dp"
+                android:textSize="18sp"
+                tools:text="user@example.com" />
+
+            <TextView
+                android:id="@+id/textViewProfileRoleLabel"
+                style="@style/TextAppearance.MaterialComponents.Caption"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/profile_role_label"
+                android:textSize="16sp" />
+
+            <TextView
+                android:id="@+id/textViewProfileRole"
+                style="@style/TextAppearance.MaterialComponents.Body1"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textSize="18sp"
+                tools:text="Administrator" />
+
+            <Button
+                android:id="@+id/buttonEditProfile"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="32dp"
+                android:text="@string/profile_edit_button" />
+
+        </LinearLayout>
+    </ScrollView>
+
+    <!-- Changed Button to ImageView -->
+    <ImageView
+        android:id="@+id/imageViewLogout"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentEnd="true"
+        android:layout_alignParentBottom="true"
+        android:layout_margin="16dp"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        android:clickable="true"
+        android:contentDescription="@string/profile_logout_button"
+        android:focusable="true"
+        android:padding="8dp"
+        app:srcCompat="@drawable/ic_logout" />
+
+</RelativeLayout>
